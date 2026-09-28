@@ -1,0 +1,573 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// 1. User & Authentication (Super Admin, Admin, Editor)
+// -------------------------------------------------------------
+enum UserRole {
+  super_admin
+  admin
+  editor
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(admin)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paymentsVerified Payment[] @relation("VerifiedPayments")
+
+  @@index([role])
+  @@map("users")
+}
+
+// -------------------------------------------------------------
+// 2. Customer
+// -------------------------------------------------------------
+enum CustomerSource {
+  whatsapp
+  facebook
+  instagram
+  tiktok
+  google
+  referral
+  website
+  other
+}
+
+enum CustomerStatus {
+  active
+  inactive
+  archived
+}
+
+model Customer {
+  id        String         @id @default(uuid())
+  name      String
+  phone     String
+  whatsapp  String?
+  email     String?
+  notes     String?        @db.Text
+  source    CustomerSource @default(whatsapp)
+  status    CustomerStatus @default(active)
+  isDeleted Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Future custom domain readiness
+  customDomain String?
+
+  orders      Order[]
+  invitations Invitation[]
+  payments    Payment[]
+  leads       Lead[]
+  media       Media[]
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+// -------------------------------------------------------------
+// 3. Lead & Pipeline
+// -------------------------------------------------------------
+enum LeadStatus {
+  new
+  contacted
+  waiting_details
+  details_received
+  designing
+  preview_sent
+  awaiting_payment
+  paid
+  completed
+  cancelled
+}
+
+model Lead {
+  id            String         @id @default(uuid())
+  customerId    String?
+  name          String
+  phone         String
+  whatsapp      String?
+  source        CustomerSource @default(whatsapp)
+  campaign      String?
+  eventType     String         @default("wedding")
+  selectedTheme String?
+  status        LeadStatus     @default(new)
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
+  @@map("leads")
+}
+
+// -------------------------------------------------------------
+// 4. Order (Workflow Bridge)
+// -------------------------------------------------------------
+enum OrderStatus {
+  new
+  contacted
+  details_received
+  designing
+  preview_sent
+  awaiting_payment
+  payment_proof_received
+  paid
+  published
+  completed
+  cancelled
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  orderNumber  String      @unique
+  customerId   String
+  invitationId String?     @unique
+  packageId    String?
+  amount       Decimal     @db.Decimal(10, 2)
+  currency     String      @default("EGP")
+  status       OrderStatus @default(new)
+  notes        String?     @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  invitation Invitation? @relation(fields: [invitationId], references: [id])
+  payments   Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// -------------------------------------------------------------
+// 5. Payment (Manual InstaPay Administrative Tracking)
+// -------------------------------------------------------------
+enum PaymentMethod {
+  instapay
+  vodafone_cash
+}
+
+enum PaymentStatus {
+  pending
+  proof_received
+  verified
+  rejected
+  refunded
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  orderId         String
+  customerId      String
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("EGP")
+  method          PaymentMethod @default(instapay)
+  status          PaymentStatus @default(pending)
+  referenceNumber String?
+  paymentProofUrl String?
+  notes           String?       @db.Text
+  verifiedAt      DateTime?
+  verifiedById    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  order      Order     @relation(fields: [orderId], references: [id])
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  verifiedBy User?     @relation("VerifiedPayments", fields: [verifiedById], references: [id])
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// -------------------------------------------------------------
+// 6. Invitation (The Core Event Entity)
+// -------------------------------------------------------------
+enum InvitationType {
+  wedding
+  engagement
+  henna
+  katb_ketab
+  custom
+}
+
+enum InvitationStatus {
+  draft
+  preview
+  published
+  paused
+  expired
+  archived
+}
+
+enum InvitationPrivacy {
+  public
+  unlisted
+  private
+}
+
+model Invitation {
+  id           String            @id @default(uuid())
+  customerId   String
+  orderId      String?
+  slug         String            @unique
+  title        String
+  type         InvitationType    @default(wedding)
+  status       InvitationStatus  @default(draft)
+  privacy      InvitationPrivacy @default(unlisted)
+  previewToken String            @unique @default(uuid())
+
+  // Couple names & texts
+  coupleGroomAr    String
+  coupleBrideAr    String
+  coupleGroomEn    String?
+  coupleBrideEn    String?
+  parentsGroomAr   String?
+  parentsBrideAr   String?
+  weddingMessageAr String? @db.Text
+  weddingMessageEn String? @db.Text
+
+  // Media
+  coverImageUrl  String?
+  coupleImageUrl String?
+  galleryImages  String[] @default([])
+  musicUrl       String?
+  musicTitle     String?
+
+  // Theme
+  themeId     String
+  themeConfig Json?
+
+  // Feature Toggles
+  isMultiEvent             Boolean @default(false)
+  rsvpEnabled              Boolean @default(true)
+  countdownEnabled         Boolean @default(true)
+  envelopeAnimationEnabled Boolean @default(true)
+
+  // Timeline & Validity
+  eventDate DateTime
+  startDate DateTime?
+  expiresAt DateTime?
+
+  // Future Extensibility
+  customDomain String?
+
+  // Counters
+  viewsCount          Int @default(0)
+  uniqueVisitorsCount Int @default(0)
+
+  // Soft Delete (Never cascade delete customer data)
+  isDeleted DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  customer  Customer            @relation(fields: [customerId], references: [id])
+  theme     Theme               @relation(fields: [themeId], references: [id])
+  order     Order?
+  events    InvitationEvent[]
+  sections  InvitationSection[]
+  media     Media[]
+  guests    Guest[]
+  rsvps     RSVP[]
+  analytics AnalyticsEvent[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([type])
+  @@index([customerId])
+  @@index([previewToken])
+  @@index([createdAt])
+  @@map("invitations")
+}
+
+// -------------------------------------------------------------
+// 7. InvitationEvent (Multi-Event Wedding Journey)
+// -------------------------------------------------------------
+enum EventType {
+  engagement
+  henna
+  katb_ketab
+  wedding
+  reception
+  custom
+}
+
+model InvitationEvent {
+  id           String     @id @default(uuid())
+  invitationId String
+  type         EventType  @default(wedding)
+  titleAr      String
+  titleEn      String?
+  subtitleAr   String?
+  date         DateTime
+  startTime    String
+  endTime      String?
+
+  // Location
+  venueNameAr      String
+  venueNameEn      String?
+  addressAr        String
+  latitude         Float?
+  longitude        Float?
+  googleMapsUrl    String?
+  openStreetMapUrl String?
+
+  // Specifics
+  descriptionAr     String?  @db.Text
+  dressCodeAr       String?
+  imageUrl          String?
+  sortOrder         Int      @default(0)
+  isVisible         Boolean  @default(true)
+  isHennaFemaleOnly Boolean  @default(false)
+  themeOverride     Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  media      Media[]
+
+  @@index([invitationId])
+  @@index([date])
+  @@index([sortOrder])
+  @@map("invitation_events")
+}
+
+// -------------------------------------------------------------
+// 8. InvitationSection (Sections Visibility & Order)
+// -------------------------------------------------------------
+model InvitationSection {
+  id           String   @id @default(uuid())
+  invitationId String
+  sectionKey   String
+  isEnabled    Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  customConfig Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@unique([invitationId, sectionKey])
+  @@index([invitationId])
+  @@index([sortOrder])
+  @@map("invitation_sections")
+}
+
+// -------------------------------------------------------------
+// 9. Theme (Design System Engine)
+// -------------------------------------------------------------
+model Theme {
+  id           String   @id @default(uuid())
+  name         String
+  nameAr       String
+  slug         String   @unique
+  previewImage String?
+  config       Json
+  isActive     Boolean  @default(true)
+  isDefault    Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  invitations Invitation[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("themes")
+}
+
+// -------------------------------------------------------------
+// 10. Media (Cloudinary Asset Management)
+// -------------------------------------------------------------
+enum MediaType {
+  image
+  audio
+  video
+  document
+}
+
+model Media {
+  id           String    @id @default(uuid())
+  invitationId String?
+  eventId      String?
+  customerId   String?
+  filePath     String    @default("")
+  fileName     String    @default("")
+  originalName String    @default("")
+  mimeType     String    @default("image/jpeg")
+  sizeBytes    Int       @default(0)
+  url          String
+  publicId     String?
+  type         MediaType @default(image)
+  category     String?
+  isPublic     Boolean   @default(true)
+  caption      String?
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  invitation Invitation?      @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  event      InvitationEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  customer   Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([invitationId])
+  @@index([eventId])
+  @@index([customerId])
+  @@index([category])
+  @@map("media")
+}
+
+// -------------------------------------------------------------
+// 11. Guest (Guest List & Future Check-In)
+// -------------------------------------------------------------
+enum CheckInStatus {
+  pending
+  checked_in
+}
+
+model Guest {
+  id            String        @id @default(uuid())
+  invitationId  String
+  name          String
+  phone         String?
+  email         String?
+  notes         String?
+  inviteCode    String?       @unique
+  qrCodeUrl     String?
+  isAttending   Boolean?
+  guestCount    Int           @default(1)
+  tableNumber   String?
+  checkInStatus CheckInStatus @default(pending)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  rsvps      RSVP[]
+
+  @@index([invitationId])
+  @@index([phone])
+  @@index([inviteCode])
+  @@map("guests")
+}
+
+// -------------------------------------------------------------
+// 12. RSVP (Attendance Confirmation Responses)
+// -------------------------------------------------------------
+enum AttendanceStatus {
+  attending
+  not_attending
+  maybe
+}
+
+model RSVP {
+  id                String           @id @default(uuid())
+  invitationId      String
+  guestId           String?
+  name              String
+  phone             String?
+  attendanceStatus  AttendanceStatus @default(attending)
+  guestCount        Int              @default(1)
+  message           String?          @db.Text
+  attendingEventIds String[]         @default([])
+  createdAt         DateTime         @default(now())
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  guest      Guest?     @relation(fields: [guestId], references: [id], onDelete: SetNull)
+
+  @@index([invitationId])
+  @@index([guestId])
+  @@index([attendanceStatus])
+  @@index([createdAt])
+  @@map("rsvps")
+}
+
+// -------------------------------------------------------------
+// 13. AnalyticsEvent (Privacy-Conscious Tracking)
+// -------------------------------------------------------------
+model AnalyticsEvent {
+  id           String   @id @default(uuid())
+  invitationId String
+  eventType    String
+  deviceType   String?
+  browser      String?
+  referrer     String?
+  country      String?  @default("EG")
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@index([invitationId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// -------------------------------------------------------------
+// 14. PricingPlan (Informational Packages)
+// -------------------------------------------------------------
+model PricingPlan {
+  id           String   @id @default(uuid())
+  name         String
+  nameAr       String
+  slug         String   @unique
+  price        Decimal  @db.Decimal(10, 2)
+  currency     String   @default("EGP")
+  durationDays Int      @default(60)
+  features     String[] @default([])
+  featuresAr   String[] @default([])
+  badge        String?
+  isPopular    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("pricing_plans")
+}
+
+// -------------------------------------------------------------
+// 15. Settings (Singleton)
+// -------------------------------------------------------------
+model Settings {
+  id                     String   @id @default("singleton")
+  siteName               String   @default("Farahna")
+  siteNameAr             String   @default("فرحنا")
+  supportPhone           String   @default("+201012345678")
+  whatsappNumber         String   @default("201012345678")
+  paymentInstructionsAr String   @default("الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب") @db.Text
+  defaultTimezone       String   @default("Africa/Cairo")
+  defaultDurationDays   Int      @default(60)
+  instagramUrl           String?
+  facebookUrl            String?
+  tiktokUrl              String?
+  updatedAt              DateTime @updatedAt
+
+  @@map("settings")
+}
