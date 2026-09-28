@@ -23,14 +23,15 @@ build/
 .vite/
 .cache/
 
-# 4. Environment Variables & Secrets (Never commit production credentials)
-.env
-.env.*
+# 4. Environment Variables & Deployment Secrets (Whitelisted for Private Repository)
+.env.*.backup
+*.env.backup
+!.env
+!.env.production
 !.env.example
 !.env.production.example
-!.env.*.example
-*.env
-*.env.backup
+!apps/api/.env
+!apps/web/.env.local
 
 # 5. Logs
 npm-debug.log*
