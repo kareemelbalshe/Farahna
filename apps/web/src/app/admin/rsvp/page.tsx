@@ -19,6 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { formatArabicDate } from '@/lib/date';
+import { AppTable, type ColumnDef } from '@/components/ui/AppTable';
 
 export default function AdminRsvpPage() {
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -123,6 +124,70 @@ export default function AdminRsvpPage() {
     link.click();
     document.body.removeChild(link);
   };
+
+  const rsvpColumns: ColumnDef<any>[] = [
+    {
+      key: 'name',
+      title: 'اسم الضيف',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="font-bold text-stone-900">{val}</span>,
+    },
+    {
+      key: 'phone',
+      title: 'رقم الهاتف',
+      align: 'right',
+      render: (val) => (
+        <span className="font-mono dir-ltr text-right text-stone-600">{val || '—'}</span>
+      ),
+    },
+    {
+      key: 'attendanceStatus',
+      title: 'الموقف من الحضور',
+      align: 'right',
+      render: (val) => (
+        <span
+          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+            val === 'attending'
+              ? 'bg-emerald-100 text-emerald-800'
+              : val === 'not_attending'
+              ? 'bg-rose-100 text-rose-800'
+              : 'bg-amber-100 text-amber-900'
+          }`}
+        >
+          {val === 'attending'
+            ? '🎉 حاضر بحول الله'
+            : val === 'not_attending'
+            ? '💌 معتذر'
+            : '⏳ ربما أحضر'}
+        </span>
+      ),
+    },
+    {
+      key: 'guestCount',
+      title: 'عدد الأفراد',
+      align: 'center',
+      sortable: true,
+      render: (_, r) => (
+        <span className="font-black text-stone-800">
+          {r.attendanceStatus === 'not_attending' ? '0' : r.guestCount}
+        </span>
+      ),
+    },
+    {
+      key: 'message',
+      title: 'رسالة التهنئة',
+      align: 'right',
+      render: (val) => <span className="text-stone-600 italic max-w-xs block">{val || '—'}</span>,
+    },
+    {
+      key: 'createdAt',
+      title: 'تاريخ الرد',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="text-stone-400 text-[11px]">{formatArabicDate(val)}</span>,
+    },
+  ];
 
   return (
     <div className="space-y-6 text-right font-cairo">
@@ -346,65 +411,25 @@ export default function AdminRsvpPage() {
         </div>
       </div>
 
-      {/* RSVPs Table */}
-      <div className="bg-white rounded-3xl border border-stone-200/90 shadow-2xs overflow-hidden">
-        {filteredRsvps.length === 0 ? (
-          <div className="py-16 text-center space-y-2">
-            <CheckSquare className="w-8 h-8 text-amber-500 mx-auto" />
-            <p className="text-sm font-bold text-stone-700">لا توجد ردود مسجلة مطابقة للبحث</p>
-            <p className="text-xs text-stone-400">
-              {rsvps.length === 0
-                ? 'لم يقم أي ضيف بتسجيل تأكيد الحضور لهذه الدعوة حتى الآن'
-                : 'جرّب تغيير فلتر البحث أو إزالة النص المكتوب'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-600 font-bold">
-                <tr>
-                  <th className="p-4">اسم الضيف</th>
-                  <th className="p-4">رقم الهاتف</th>
-                  <th className="p-4">الموقف من الحضور</th>
-                  <th className="p-4">عدد الأفراد</th>
-                  <th className="p-4">رسالة التهنئة</th>
-                  <th className="p-4">تاريخ الرد</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {filteredRsvps.map((r: any) => (
-                  <tr key={r.id} className="hover:bg-stone-50/80 transition-colors">
-                    <td className="p-4 font-bold text-stone-900">{r.name}</td>
-                    <td className="p-4 font-mono dir-ltr text-right text-stone-600">{r.phone || '—'}</td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          r.attendanceStatus === 'attending'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : r.attendanceStatus === 'not_attending'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-900'
-                        }`}
-                      >
-                        {r.attendanceStatus === 'attending'
-                          ? '🎉 حاضر بحول الله'
-                          : r.attendanceStatus === 'not_attending'
-                          ? '💌 معتذر'
-                          : '⏳ ربما أحضر'}
-                      </span>
-                    </td>
-                    <td className="p-4 font-black text-stone-800">
-                      {r.attendanceStatus === 'not_attending' ? '0' : r.guestCount}
-                    </td>
-                    <td className="p-4 text-stone-600 italic max-w-xs">{r.message || '—'}</td>
-                    <td className="p-4 text-stone-400 text-[11px]">{formatArabicDate(r.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* RSVPs Table powered by @kareemelbalshe/any-table */}
+      <AppTable
+        data={filteredRsvps}
+        columns={rsvpColumns}
+        rowKey="id"
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 25, 50],
+          showPageSizeSelector: true,
+          showTotalCount: true,
+        }}
+        emptyTitle="لا توجد ردود مسجلة مطابقة للبحث"
+        emptyDescription={
+          rsvps.length === 0
+            ? 'لم يقم أي ضيف بتسجيل تأكيد الحضور لهذه الدعوة حتى الآن'
+            : 'جرّب تغيير فلتر البحث أو إزالة النص المكتوب'
+        }
+      />
     </div>
   );
 }

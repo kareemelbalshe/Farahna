@@ -17,6 +17,7 @@ import {
 import { adminFetch } from '@/lib/api';
 import { formatArabicDate } from '@/lib/date';
 import { INVITATION_TYPE_LABELS } from '@farahna/shared';
+import { AppTable, type ColumnDef } from '@/components/ui/AppTable';
 
 export default function AdminInvitationsPage() {
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -55,6 +56,146 @@ export default function AdminInvitationsPage() {
       loadInvitations();
     }
   };
+
+  const invitationColumns: ColumnDef<any>[] = [
+    {
+      key: 'title',
+      title: 'عنوان الدعوة / العروسين',
+      align: 'right',
+      sortable: true,
+      render: (_, inv) => (
+        <div>
+          <p className="font-bold text-stone-900">{inv.title}</p>
+          <p className="text-[11px] text-stone-500">
+            {inv.coupleGroomAr} &amp; {inv.coupleBrideAr}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      title: 'النوع والثيم',
+      align: 'right',
+      render: (_, inv) => {
+        const typeLabel = (INVITATION_TYPE_LABELS as any)[inv.type]?.ar || inv.type;
+        return (
+          <div className="space-y-1">
+            <span className="inline-block px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10px] font-bold">
+              {typeLabel}
+            </span>
+            <span className="block text-[10px] text-amber-700 font-medium">
+              {inv.theme?.nameAr || 'ثيم قياسي'}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'slug',
+      title: 'الرابط المباشر',
+      align: 'right',
+      render: (slug, inv) => (
+        <a
+          href={`/invitation/${inv.type}/${slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 dir-ltr"
+        >
+          <span>/{slug}</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'الحالة',
+      align: 'right',
+      render: (status) => (
+        <span
+          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+            status === 'published'
+              ? 'bg-emerald-100 text-emerald-800'
+              : status === 'paused'
+              ? 'bg-amber-100 text-amber-900'
+              : 'bg-stone-100 text-stone-700'
+          }`}
+        >
+          {status === 'published'
+            ? 'منشورة لايف'
+            : status === 'paused'
+            ? 'متوقفة مؤقتاً'
+            : 'مسودة'}
+        </span>
+      ),
+    },
+    {
+      key: 'viewsCount',
+      title: 'المشاهدات',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="font-bold text-stone-800">{val || 0} زيارة</span>,
+    },
+    {
+      key: 'eventDate',
+      title: 'تاريخ المناسبة',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="text-stone-500 text-[11px]">{formatArabicDate(val)}</span>,
+    },
+    {
+      key: 'actions',
+      title: 'الإجراءات السريعة',
+      align: 'center',
+      render: (_, inv) => {
+        const publicUrl = `/invitation/${inv.type}/${inv.slug}`;
+        const previewUrl = `/preview/${inv.previewToken}`;
+
+        return (
+          <div className="flex items-center justify-center gap-1.5">
+            <a
+              href={inv.status === 'published' ? publicUrl : previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
+              title="معاينة الدعوة"
+            >
+              <Eye className="w-4 h-4 text-amber-600" />
+            </a>
+
+            <Link
+              href={`/admin/invitations/${inv.id}/builder`}
+              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#720925] transition-colors"
+              title="فتح المحرر المرئي"
+            >
+              <Edit className="w-4 h-4" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => handleDuplicate(inv.id)}
+              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors cursor-pointer"
+              title="نسخ الدعوة"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTogglePublish(inv.id, inv.status)}
+              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+              title={inv.status === 'published' ? 'إيقاف مؤقت' : 'نشر'}
+            >
+              {inv.status === 'published' ? (
+                <Pause className="w-4 h-4 text-amber-600" />
+              ) : (
+                <Play className="w-4 h-4 text-emerald-600" />
+              )}
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -96,143 +237,22 @@ export default function AdminInvitationsPage() {
         />
       </div>
 
-      {/* Invitations Table */}
-      <div className="bg-white rounded-3xl border border-stone-200/90 shadow-2xs overflow-hidden">
-        {loading ? (
-          <div className="py-12 text-center text-xs text-stone-500 font-bold">جاري تحميل الدعوات...</div>
-        ) : invitations.length === 0 ? (
-          <div className="py-12 text-center text-xs text-stone-400">لا توجد دعوات مطابقة للبحث</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-600 font-bold">
-                <tr>
-                  <th className="p-4">عنوان الدعوة / العروسين</th>
-                  <th className="p-4">النوع والثيم</th>
-                  <th className="p-4">الرابط المباشر</th>
-                  <th className="p-4">الحالة</th>
-                  <th className="p-4">المشاهدات</th>
-                  <th className="p-4">تاريخ المناسبة</th>
-                  <th className="p-4 text-center">الإجراءات السريعة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {invitations.map((inv) => {
-                  const typeLabel = (INVITATION_TYPE_LABELS as any)[inv.type]?.ar || inv.type;
-                  const publicUrl = `/invitation/${inv.type}/${inv.slug}`;
-                  const previewUrl = `/preview/${inv.previewToken}`;
-
-                  return (
-                    <tr key={inv.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="p-4">
-                        <p className="font-bold text-stone-900">{inv.title}</p>
-                        <p className="text-[11px] text-stone-500">
-                          {inv.coupleGroomAr} &amp; {inv.coupleBrideAr}
-                        </p>
-                      </td>
-
-                      <td className="p-4 space-y-1">
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10px] font-bold">
-                          {typeLabel}
-                        </span>
-                        <span className="block text-[10px] text-amber-700 font-medium">
-                          {inv.theme?.nameAr || 'ثيم قياسي'}
-                        </span>
-                      </td>
-
-                      <td className="p-4 font-mono text-[11px] text-blue-600 dir-ltr text-right">
-                        <a
-                          href={publicUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline inline-flex items-center gap-1"
-                        >
-                          <span>/{inv.slug}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </td>
-
-                      <td className="p-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            inv.status === 'published'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : inv.status === 'paused'
-                              ? 'bg-amber-100 text-amber-900'
-                              : 'bg-stone-100 text-stone-700'
-                          }`}
-                        >
-                          {inv.status === 'published'
-                            ? 'منشورة لايف'
-                            : inv.status === 'paused'
-                            ? 'متوقفة مؤقتاً'
-                            : 'مسودة'}
-                        </span>
-                      </td>
-
-                      <td className="p-4 font-bold text-stone-800">
-                        {inv.viewsCount} زيارة
-                      </td>
-
-                      <td className="p-4 text-stone-500 text-[11px]">
-                        {formatArabicDate(inv.eventDate)}
-                      </td>
-
-                      <td className="p-4">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Live Preview Button */}
-                          <a
-                            href={inv.status === 'published' ? publicUrl : previewUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
-                            title="معاينة الدعوة"
-                          >
-                            <Eye className="w-4 h-4 text-amber-600" />
-                          </a>
-
-                          {/* Builder Button */}
-                          <Link
-                            href={`/admin/invitations/${inv.id}/builder`}
-                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#720925] transition-colors"
-                            title="فتح المحرر المرئي"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
-
-                          {/* Duplicate */}
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicate(inv.id)}
-                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
-                            title="نسخ الدعوة"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-
-                          {/* Toggle Publish / Pause */}
-                          <button
-                            type="button"
-                            onClick={() => handleTogglePublish(inv.id, inv.status)}
-                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
-                            title={inv.status === 'published' ? 'إيقاف مؤقت' : 'نشر'}
-                          >
-                            {inv.status === 'published' ? (
-                              <Pause className="w-4 h-4 text-amber-600" />
-                            ) : (
-                              <Play className="w-4 h-4 text-emerald-600" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Invitations Table powered by @kareemelbalshe/any-table */}
+      <AppTable
+        data={invitations}
+        columns={invitationColumns}
+        rowKey="id"
+        loading={loading}
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 25, 50],
+          showPageSizeSelector: true,
+          showTotalCount: true,
+        }}
+        emptyTitle="لا توجد دعوات مطابقة للبحث"
+        emptyDescription="جرّب تغيير كلمات البحث أو أنشئ دعوة جديدة"
+      />
     </div>
   );
 }

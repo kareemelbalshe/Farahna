@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import Link from 'next/link';
+import { AppTable, type ColumnDef, type TableAction } from '@/components/ui/AppTable';
 
 const ORDER_STATUS_LIST = [
   { key: 'new', label: 'طلب جديد', color: 'bg-blue-100 text-blue-900 border-blue-300' },
@@ -173,6 +174,131 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const orderColumns: ColumnDef<any>[] = [
+    {
+      key: 'orderNumber',
+      title: 'رقم الطلب',
+      align: 'right',
+      sortable: true,
+      render: (_, o) => (
+        <button
+          type="button"
+          onClick={() => openOrderDetails(o)}
+          className="font-mono font-black text-stone-900 hover:text-[#720925] hover:underline cursor-pointer"
+        >
+          #{o.orderNumber}
+        </button>
+      ),
+    },
+    {
+      key: 'customer',
+      title: 'العميل',
+      align: 'right',
+      render: (_, o) => {
+        const whatsappChatUrl = o.customer?.phone
+          ? getWhatsAppUrl(o.customer.phone, `مرحباً أستاذ ${o.customer.name} بخصوص طلبكم #${o.orderNumber} من فرحنا ❤️`)
+          : null;
+        return (
+          <div className="space-y-0.5">
+            <span className="font-bold text-stone-900 block">{o.customer?.name || 'عميل'}</span>
+            <div className="flex items-center gap-1.5 text-stone-500 font-mono text-[11px]">
+              <span>{o.customer?.phone}</span>
+              {whatsappChatUrl && (
+                <a
+                  href={whatsappChatUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-600 hover:text-emerald-700 p-0.5"
+                  title="محادثة واتساب"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'invitation',
+      title: 'الدعوة المرتبطة',
+      align: 'right',
+      render: (_, o) =>
+        o.invitation ? (
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-stone-800">{o.invitation.title}</span>
+            <a
+              href={`/invitation/${o.invitation.type || 'wedding'}/${o.invitation.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#720925] hover:underline flex items-center gap-0.5 font-bold"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ) : (
+          <span className="text-stone-400">بانتظار الربط بدعوة</span>
+        ),
+    },
+    {
+      key: 'amount',
+      title: 'المبلغ',
+      align: 'right',
+      sortable: true,
+      render: (val) => (
+        <span className="font-black font-mono text-stone-900">
+          {Number(val).toLocaleString('ar-EG')} ج.م
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'حالة المسار',
+      align: 'right',
+      render: (_, o) => {
+        const statusInfo =
+          ORDER_STATUS_LIST.find((s) => s.key === o.status) || ORDER_STATUS_LIST[0];
+        return (
+          <select
+            value={o.status}
+            onChange={(e) => handleQuickStatusChange(o.id, e.target.value)}
+            className={`text-[11px] font-bold p-1.5 rounded-xl border ${statusInfo.color} focus:outline-hidden cursor-pointer`}
+          >
+            {ORDER_STATUS_LIST.map((s) => (
+              <option key={s.key} value={s.key}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        );
+      },
+    },
+    {
+      key: 'createdAt',
+      title: 'تاريخ الإنشاء',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="text-stone-500">{formatArabicDate(val)}</span>,
+    },
+  ];
+
+  const orderActions: TableAction<any>[] = [
+    {
+      id: 'view',
+      tooltip: 'عرض تفاصيل الطلب والمدفوعات',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      className: '!p-1.5 !text-stone-500 hover:!text-[#720925] hover:!bg-stone-100 !rounded-lg transition-colors cursor-pointer !bg-transparent !border-0 shadow-none',
+      onClick: (o) => openOrderDetails(o),
+    },
+    {
+      id: 'delete',
+      tooltip: 'حذف الطلب',
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      className: '!p-1.5 !text-stone-500 hover:!text-rose-600 hover:!bg-stone-100 !rounded-lg transition-colors cursor-pointer !bg-transparent !border-0 shadow-none',
+      onClick: (o) => handleDeleteOrder(o.id, o.orderNumber),
+    },
+  ];
+
   return (
     <div className="space-y-6 font-cairo text-right">
       {/* Toast Notification */}
@@ -253,139 +379,23 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-2xs overflow-hidden">
-        {loading ? (
-          <div className="py-16 text-center text-xs text-stone-500 font-bold space-y-2">
-            <div className="w-8 h-8 border-3 border-[#720925] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p>جاري تحميل قائمة الطلبات...</p>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <ShoppingBag className="w-10 h-10 text-stone-300 mx-auto" />
-            <p className="text-sm font-bold text-stone-700">لا توجد طلبات مطابقة للبحث</p>
-            <p className="text-xs text-stone-400">أنشئ طلباً جديداً أو حوّل أحد العملاء المحتملين إلى طلب</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-600 font-bold">
-                <tr>
-                  <th className="p-4">رقم الطلب</th>
-                  <th className="p-4">العميل</th>
-                  <th className="p-4">الدعوة المرتبطة</th>
-                  <th className="p-4">المبلغ</th>
-                  <th className="p-4">حالة المسار</th>
-                  <th className="p-4">تاريخ الإنشاء</th>
-                  <th className="p-4 text-center">إجراءات سريعة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {orders.map((o) => {
-                  const statusInfo =
-                    ORDER_STATUS_LIST.find((s) => s.key === o.status) || ORDER_STATUS_LIST[0];
-                  const whatsappChatUrl = o.customer?.phone
-                    ? getWhatsAppUrl(o.customer.phone, `مرحباً أستاذ ${o.customer.name} بخصوص طلبكم #${o.orderNumber} من فرحنا ❤️`)
-                    : null;
-
-                  return (
-                    <tr key={o.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="p-4 font-mono font-black text-stone-900">
-                        <button
-                          type="button"
-                          onClick={() => openOrderDetails(o)}
-                          className="hover:text-[#720925] hover:underline cursor-pointer"
-                        >
-                          #{o.orderNumber}
-                        </button>
-                      </td>
-
-                      <td className="p-4">
-                        <div className="space-y-0.5">
-                          <span className="font-bold text-stone-900 block">{o.customer?.name || 'عميل'}</span>
-                          <div className="flex items-center gap-1.5 text-stone-500 font-mono text-[11px]">
-                            <span>{o.customer?.phone}</span>
-                            {whatsappChatUrl && (
-                              <a
-                                href={whatsappChatUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-emerald-600 hover:text-emerald-700"
-                                title="محادثة واتساب"
-                              >
-                                <MessageCircle className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="p-4">
-                        {o.invitation ? (
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-stone-800">{o.invitation.title}</span>
-                            <a
-                              href={`/invitation/${o.invitation.type || 'wedding'}/${o.invitation.slug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#720925] hover:underline flex items-center gap-0.5 font-bold"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        ) : (
-                          <span className="text-stone-400">بانتظار الربط بدعوة</span>
-                        )}
-                      </td>
-
-                      <td className="p-4 font-black text-stone-900">
-                        {Number(o.amount).toLocaleString('ar-EG')} ج.م
-                      </td>
-
-                      <td className="p-4">
-                        <select
-                          value={o.status}
-                          onChange={(e) => handleQuickStatusChange(o.id, e.target.value)}
-                          className={`text-[11px] font-bold p-1.5 rounded-xl border ${statusInfo.color} focus:outline-hidden cursor-pointer`}
-                        >
-                          {ORDER_STATUS_LIST.map((s) => (
-                            <option key={s.key} value={s.key}>
-                              {s.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-
-                      <td className="p-4 text-stone-500">{formatArabicDate(o.createdAt)}</td>
-
-                      <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openOrderDetails(o)}
-                            className="p-1.5 text-stone-500 hover:text-[#720925] hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="عرض تفاصيل الطلب والمدفوعات"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteOrder(o.id, o.orderNumber)}
-                            className="p-1.5 text-stone-500 hover:text-rose-600 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="حذف الطلب"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Orders Table powered by @kareemelbalshe/any-table */}
+      <AppTable
+        data={orders}
+        columns={orderColumns}
+        actions={orderActions}
+        rowKey="id"
+        loading={loading}
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 25, 50],
+          showPageSizeSelector: true,
+          showTotalCount: true,
+        }}
+        emptyTitle="لا توجد طلبات مطابقة للبحث"
+        emptyDescription="أنشئ طلباً جديداً أو حوّل أحد العملاء المحتملين إلى طلب"
+      />
 
       {/* Create Order Modal */}
       {showCreateModal && (

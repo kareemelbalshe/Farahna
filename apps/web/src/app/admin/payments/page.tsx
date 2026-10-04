@@ -27,6 +27,7 @@ import { PAYMENT_STATUS_LABELS } from '@farahna/shared';
 import { formatArabicDate } from '@/lib/date';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import Link from 'next/link';
+import { AppTable, type ColumnDef } from '@/components/ui/AppTable';
 
 const PAYMENT_STATUS_PILLS: Record<string, { label: string; color: string }> = {
   pending: { label: 'بانتظار التحويل', color: 'bg-stone-100 text-stone-700 border-stone-300' },
@@ -236,6 +237,185 @@ export default function AdminPaymentsPage() {
     .filter((p) => p.status === 'verified')
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
+  const paymentColumns: ColumnDef<any>[] = [
+    {
+      key: 'order',
+      title: 'الطلب / العميل',
+      align: 'right',
+      render: (_, p) => {
+        const whatsappUrl = p.customer?.phone
+          ? getWhatsAppUrl(
+              p.customer.phone,
+              `أهلاً أستاذ ${p.customer.name} بخصوص تحويل إنستاباي للطلب #${p.order?.orderNumber || ''}`
+            )
+          : null;
+        return (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="text-stone-900 font-mono">
+                #{p.order?.orderNumber || 'طلب'}
+              </span>
+              <span className="text-stone-400 text-[10px]">({p.order?.status})</span>
+            </div>
+            <div className="flex items-center gap-2 text-stone-600">
+              <span className="font-medium">{p.customer?.name}</span>
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-600 hover:text-emerald-700"
+                  title="محادثة واتساب"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'amount',
+      title: 'المبلغ',
+      align: 'right',
+      sortable: true,
+      render: (val) => (
+        <span className="font-mono font-black text-stone-900 text-sm">
+          {Number(val).toLocaleString('ar-EG')} ج.م
+        </span>
+      ),
+    },
+    {
+      key: 'method',
+      title: 'طريقة التحويل',
+      align: 'right',
+      render: (method) =>
+        method === 'vodafone_cash' ? (
+          <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-900 border border-rose-200 font-bold text-[11px] inline-flex items-center gap-1">
+            <span>فودافون كاش</span>
+            <span>📱</span>
+          </span>
+        ) : (
+          <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 font-bold text-[11px] inline-flex items-center gap-1">
+            <span>InstaPay</span>
+            <span>📲</span>
+          </span>
+        ),
+    },
+    {
+      key: 'status',
+      title: 'الحالة',
+      align: 'right',
+      render: (status) => {
+        const statusInfo =
+          PAYMENT_STATUS_PILLS[status] || {
+            label: status,
+            color: 'bg-stone-100 text-stone-700',
+          };
+        return (
+          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.color}`}>
+            {statusInfo.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'referenceNumber',
+      title: 'رقم المرجع (Ref #)',
+      align: 'right',
+      render: (ref) =>
+        ref ? (
+          <span className="font-bold font-mono text-stone-700 text-xs">{ref}</span>
+        ) : (
+          <span className="text-stone-400 italic text-xs">بدون مرجع</span>
+        ),
+    },
+    {
+      key: 'paymentProofUrl',
+      title: 'إيصال التحويل (Proof)',
+      align: 'center',
+      render: (proofUrl) =>
+        proofUrl ? (
+          <button
+            type="button"
+            onClick={() => setSelectedProofUrl(proofUrl)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer"
+            title="عرض صورة الإيصال المحمية"
+          >
+            <FileImage className="w-3.5 h-3.5 text-amber-700" />
+            <span>عرض الإيصال 📸</span>
+          </button>
+        ) : (
+          <span className="text-[11px] text-stone-400">لا يوجد إيصال</span>
+        ),
+    },
+    {
+      key: 'createdAt',
+      title: 'التاريخ والاعتماد',
+      align: 'right',
+      sortable: true,
+      render: (_, p) => (
+        <div className="text-[11px] text-stone-500">
+          <div>التسجيل: {formatArabicDate(p.createdAt)}</div>
+          {p.verifiedAt && (
+            <div className="text-emerald-700 font-semibold mt-0.5">
+              اعتمد: {formatArabicDate(p.verifiedAt)}
+              {p.verifiedBy?.name && ` (${p.verifiedBy.name})`}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'إجراءات المراجعة',
+      align: 'center',
+      render: (_, p) => (
+        <div className="flex items-center justify-center gap-1.5">
+          {p.status !== 'verified' && (
+            <button
+              type="button"
+              onClick={() => {
+                setVerifyingPayment(p);
+                setVerifyRef(p.referenceNumber || '');
+                setVerifyNotes(p.notes || '');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+              title="اعتماد وتأكيد الدفع"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>اعتماد</span>
+            </button>
+          )}
+
+          {p.status !== 'rejected' && p.status !== 'verified' && (
+            <button
+              type="button"
+              onClick={() => {
+                setRejectingPayment(p);
+                setRejectReason('عدم مطابقة بيانات التحويل أو عدم وضوح الإيصال');
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-colors cursor-pointer"
+              title="رفض التحويل"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setEditingPayment(p)}
+            className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+            title="تعديل المرجع والملاحظات"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6 font-cairo text-right">
       {/* Toast */}
@@ -338,193 +518,22 @@ export default function AdminPaymentsPage() {
         ))}
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-2xs overflow-hidden">
-        {loading ? (
-          <div className="py-16 text-center text-xs text-stone-500 font-bold space-y-2">
-            <div className="w-8 h-8 border-3 border-[#720925] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p>جاري تحميل سجل المدفوعات...</p>
-          </div>
-        ) : payments.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <CreditCard className="w-10 h-10 text-stone-300 mx-auto" />
-            <p className="text-sm font-bold text-stone-700">لا توجد عمليات تحويل في هذا القسم حالياً</p>
-            <p className="text-xs text-stone-400">أي تحويل يسجله العميل أو المشرف سيظهر هنا فورياً</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-600 font-bold">
-                <tr>
-                  <th className="p-4">الطلب / العميل</th>
-                  <th className="p-4">المبلغ</th>
-                  <th className="p-4">طريقة التحويل</th>
-                  <th className="p-4">الحالة</th>
-                  <th className="p-4">رقم المرجع (Ref #)</th>
-                  <th className="p-4 text-center">إيصال التحويل (Proof)</th>
-                  <th className="p-4">التاريخ والاعتماد</th>
-                  <th className="p-4 text-center">إجراءات المراجعة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {payments.map((p) => {
-                  const statusInfo =
-                    PAYMENT_STATUS_PILLS[p.status] || {
-                      label: p.status,
-                      color: 'bg-stone-100 text-stone-700',
-                    };
-                  const whatsappUrl = p.customer?.phone
-                    ? getWhatsAppUrl(
-                        p.customer.phone,
-                        `أهلاً أستاذ ${p.customer.name} بخصوص تحويل إنستاباي للطلب #${p.order?.orderNumber || ''}`
-                      )
-                    : null;
-
-                  return (
-                    <tr key={p.id} className="hover:bg-stone-50/80 transition-colors">
-                      {/* Order & Customer */}
-                      <td className="p-4">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 font-bold">
-                            <span className="text-stone-900 font-mono">
-                              #{p.order?.orderNumber || 'طلب'}
-                            </span>
-                            <span className="text-stone-400 text-[10px]">({p.order?.status})</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-stone-600">
-                            <span className="font-medium">{p.customer?.name}</span>
-                            {whatsappUrl && (
-                              <a
-                                href={whatsappUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-emerald-600 hover:text-emerald-700"
-                                title="محادثة واتساب"
-                              >
-                                <MessageCircle className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Amount */}
-                      <td className="p-4 font-mono font-black text-stone-900 text-sm">
-                        {Number(p.amount).toLocaleString('ar-EG')} ج.م
-                      </td>
-
-                      {/* Method */}
-                      <td className="p-4">
-                        {p.method === 'vodafone_cash' ? (
-                          <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-900 border border-rose-200 font-bold text-[11px] inline-flex items-center gap-1">
-                            <span>فودافون كاش</span>
-                            <span>📱</span>
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 font-bold text-[11px] inline-flex items-center gap-1">
-                            <span>InstaPay</span>
-                            <span>📲</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="p-4">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.color}`}
-                        >
-                          {statusInfo.label}
-                        </span>
-                      </td>
-
-                      {/* Reference Number */}
-                      <td className="p-4 font-mono text-stone-700 text-xs">
-                        {p.referenceNumber ? (
-                          <span className="font-bold">{p.referenceNumber}</span>
-                        ) : (
-                          <span className="text-stone-400 italic">بدون مرجع</span>
-                        )}
-                      </td>
-
-                      {/* Payment Proof Thumbnail (Protected Admin View) */}
-                      <td className="p-4 text-center">
-                        {p.paymentProofUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedProofUrl(p.paymentProofUrl)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer"
-                            title="عرض صورة الإيصال المحمية"
-                          >
-                            <FileImage className="w-3.5 h-3.5 text-amber-700" />
-                            <span>عرض الإيصال 📸</span>
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-stone-400">لا يوجد إيصال</span>
-                        )}
-                      </td>
-
-                      {/* Dates & Verified By */}
-                      <td className="p-4 text-[11px] text-stone-500">
-                        <div>التسجيل: {formatArabicDate(p.createdAt)}</div>
-                        {p.verifiedAt && (
-                          <div className="text-emerald-700 font-semibold mt-0.5">
-                            اعتمد: {formatArabicDate(p.verifiedAt)}
-                            {p.verifiedBy?.name && ` (${p.verifiedBy.name})`}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {p.status !== 'verified' && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVerifyingPayment(p);
-                                setVerifyRef(p.referenceNumber || '');
-                                setVerifyNotes(p.notes || '');
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                              title="اعتماد وتأكيد الدفع"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>اعتماد</span>
-                            </button>
-                          )}
-
-                          {p.status !== 'rejected' && p.status !== 'verified' && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRejectingPayment(p);
-                                setRejectReason('عدم مطابقة بيانات التحويل أو عدم وضوح الإيصال');
-                              }}
-                              className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-colors cursor-pointer"
-                              title="رفض التحويل"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => setEditingPayment(p)}
-                            className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="تعديل المرجع والملاحظات"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Payments Table powered by @kareemelbalshe/any-table */}
+      <AppTable
+        data={payments}
+        columns={paymentColumns}
+        rowKey="id"
+        loading={loading}
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 25, 50],
+          showPageSizeSelector: true,
+          showTotalCount: true,
+        }}
+        emptyTitle="لا توجد عمليات تحويل في هذا القسم حالياً"
+        emptyDescription="أي تحويل يسجله العميل أو المشرف سيظهر هنا فورياً"
+      />
 
       {/* High-Resolution Protected Proof Modal */}
       {selectedProofUrl && (

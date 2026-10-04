@@ -11,6 +11,16 @@
   --font-amiri: 'Amiri', serif;
   --font-ibm-plex: 'IBM Plex Sans Arabic', sans-serif;
   --font-noto-kufi: 'Noto Kufi Arabic', sans-serif;
+
+  /* Farahna AnyTable Theme Variables */
+  --any-table-primary: #720925;
+  --any-table-primary-hover: #5a071d;
+  --any-table-primary-soft: #8f0c2f;
+  --any-table-secondary: #BF953F;
+  --any-table-success: #10B981;
+  --any-table-warning: #F59E0B;
+  --any-table-danger: #EF4444;
+  --any-table-font: var(--font-cairo), 'Cairo', system-ui, sans-serif;
 }
 
 html {
@@ -132,4 +142,45 @@ body {
 
 .leaflet-popup-tip {
   background: #ffffff !important;
+}
+
+/* AnyTable Styling & Animations */
+.any-table-wrapper {
+  font-family: var(--any-table-font, var(--font-cairo));
+}
+
+@keyframes anyTableFadeIn {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes anyTablePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.any-table-fade-in {
+  animation: 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards anyTableFadeIn;
+}
+
+.any-table-pulse {
+  animation: 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite anyTablePulse;
+}
+
+.any-table-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.any-table-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.any-table-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.any-table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
 }

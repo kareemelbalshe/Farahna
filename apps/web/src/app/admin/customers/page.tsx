@@ -23,6 +23,7 @@ import {
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import { formatArabicDate } from '@/lib/date';
 import Link from 'next/link';
+import { AppTable, type ColumnDef, type TableAction } from '@/components/ui/AppTable';
 
 const SOURCE_LABELS: Record<string, { ar: string; color: string }> = {
   whatsapp: { ar: 'واتساب', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
@@ -175,6 +176,115 @@ export default function AdminCustomersPage() {
     }
   };
 
+  const customerColumns: ColumnDef<any>[] = [
+    {
+      key: 'name',
+      title: 'اسم العميل',
+      align: 'right',
+      sortable: true,
+      render: (_, c) => (
+        <button
+          type="button"
+          onClick={() => openCustomerDetails(c)}
+          className="font-black text-stone-900 hover:text-[#720925] hover:underline cursor-pointer text-right"
+        >
+          {c.name}
+        </button>
+      ),
+    },
+    {
+      key: 'phone',
+      title: 'الهاتف / واتساب',
+      align: 'right',
+      render: (_, c) => {
+        const whatsappUrl = getWhatsAppUrl(c.phone, `مرحباً أستاذ ${c.name} من منصة فرحنا ❤️`);
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-stone-800">{c.phone}</span>
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-600 hover:text-emerald-700 p-1 hover:bg-emerald-50 rounded-lg transition-colors"
+                title="محادثة واتساب"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'source',
+      title: 'المصدر',
+      align: 'right',
+      render: (source) => {
+        const sourceInfo = SOURCE_LABELS[source] || { ar: source, color: 'bg-stone-100 text-stone-700' };
+        return (
+          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${sourceInfo.color}`}>
+            {sourceInfo.ar}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      title: 'الحالة',
+      align: 'right',
+      render: (status) => {
+        const statusInfo = STATUS_LABELS[status] || { ar: status, color: 'bg-stone-100 text-stone-700' };
+        return (
+          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.color}`}>
+            {statusInfo.ar}
+          </span>
+        );
+      },
+    },
+    {
+      key: '_count',
+      title: 'الطلبات / الدعوات',
+      align: 'center',
+      render: (_, c) => (
+        <span className="font-bold text-stone-700">
+          {c._count?.orders || 0} طلب • {c._count?.invitations || 0} دعوة
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      title: 'تاريخ التسجيل',
+      align: 'right',
+      sortable: true,
+      render: (val) => <span className="text-stone-500">{formatArabicDate(val)}</span>,
+    },
+  ];
+
+  const customerActions: TableAction<any>[] = [
+    {
+      id: 'view',
+      tooltip: 'عرض التفاصيل والطلبات',
+      icon: <ExternalLink className="w-3.5 h-3.5" />,
+      className: '!p-1.5 !text-stone-500 hover:!text-[#720925] hover:!bg-stone-100 !rounded-lg transition-colors cursor-pointer !bg-transparent !border-0 shadow-none',
+      onClick: (c) => openCustomerDetails(c),
+    },
+    {
+      id: 'edit',
+      tooltip: 'تعديل بيانات العميل',
+      icon: <Edit2 className="w-3.5 h-3.5" />,
+      className: '!p-1.5 !text-stone-500 hover:!text-blue-600 hover:!bg-stone-100 !rounded-lg transition-colors cursor-pointer !bg-transparent !border-0 shadow-none',
+      onClick: (c) => openEditModal(c),
+    },
+    {
+      id: 'delete',
+      tooltip: 'حذف العميل',
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      className: '!p-1.5 !text-stone-500 hover:!text-rose-600 hover:!bg-stone-100 !rounded-lg transition-colors cursor-pointer !bg-transparent !border-0 shadow-none',
+      onClick: (c) => handleDelete(c.id, c.name),
+    },
+  ];
+
   return (
     <div className="space-y-6 font-cairo text-right">
       {/* Toast Notification */}
@@ -250,118 +360,23 @@ export default function AdminCustomersPage() {
         </div>
       </div>
 
-      {/* Customers Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-2xs overflow-hidden">
-        {loading ? (
-          <div className="py-16 text-center text-xs text-stone-500 font-bold space-y-2">
-            <div className="w-8 h-8 border-3 border-[#720925] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p>جاري تحميل سجل العملاء...</p>
-          </div>
-        ) : customers.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <Users className="w-10 h-10 text-stone-300 mx-auto" />
-            <p className="text-sm font-bold text-stone-700">لا يوجد عملاء مطابقين للبحث</p>
-            <p className="text-xs text-stone-400">جرّب تغيير كلمات البحث أو أضف عميلاً جديداً</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-600 font-bold">
-                <tr>
-                  <th className="p-4">اسم العميل</th>
-                  <th className="p-4">الهاتف / واتساب</th>
-                  <th className="p-4">المصدر</th>
-                  <th className="p-4">الحالة</th>
-                  <th className="p-4 text-center">الطلبات / الدعوات</th>
-                  <th className="p-4">تاريخ التسجيل</th>
-                  <th className="p-4 text-center">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {customers.map((c) => {
-                  const sourceInfo = SOURCE_LABELS[c.source] || { ar: c.source, color: 'bg-stone-100 text-stone-700' };
-                  const statusInfo = STATUS_LABELS[c.status] || { ar: c.status, color: 'bg-stone-100 text-stone-700' };
-                  const whatsappUrl = getWhatsAppUrl(c.phone, `مرحباً أستاذ ${c.name} من منصة فرحنا ❤️`);
-
-                  return (
-                    <tr key={c.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="p-4 font-black text-stone-900">
-                        <button
-                          type="button"
-                          onClick={() => openCustomerDetails(c)}
-                          className="hover:text-[#720925] hover:underline cursor-pointer text-right"
-                        >
-                          {c.name}
-                        </button>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-stone-800">{c.phone}</span>
-                          {whatsappUrl && (
-                            <a
-                              href={whatsappUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-emerald-600 hover:text-emerald-700 p-1 hover:bg-emerald-50 rounded-lg"
-                              title="محادثة واتساب"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${sourceInfo.color}`}>
-                          {sourceInfo.ar}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.color}`}>
-                          {statusInfo.ar}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="font-bold text-stone-700">
-                          {c._count?.orders || 0} طلب • {c._count?.invitations || 0} دعوة
-                        </span>
-                      </td>
-                      <td className="p-4 text-stone-500">{formatArabicDate(c.createdAt)}</td>
-                      <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openCustomerDetails(c)}
-                            className="p-1.5 text-stone-500 hover:text-[#720925] hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="عرض التفاصيل والطلبات"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(c)}
-                            className="p-1.5 text-stone-500 hover:text-blue-600 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="تعديل بيانات العميل"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(c.id, c.name)}
-                            className="p-1.5 text-stone-500 hover:text-rose-600 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
-                            title="حذف العميل"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Customers Table powered by @kareemelbalshe/any-table */}
+      <AppTable
+        data={customers}
+        columns={customerColumns}
+        actions={customerActions}
+        rowKey="id"
+        loading={loading}
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 25, 50],
+          showPageSizeSelector: true,
+          showTotalCount: true,
+        }}
+        emptyTitle="لا يوجد عملاء مطابقين للبحث"
+        emptyDescription="جرّب تغيير كلمات البحث أو أضف عميلاً جديداً"
+      />
 
       {/* Create / Edit Customer Modal */}
       {showModal && (

@@ -29,6 +29,7 @@ import {
   UserCheck,
   Palette,
 } from 'lucide-react';
+import { AppTable, type ColumnDef } from '@/components/ui/AppTable';
 
 interface FunnelStage {
   key: string;
@@ -163,6 +164,66 @@ export default function AdminAnalyticsPage() {
   const attendingRsvp = rsvpList.find((r: any) => r.attendanceStatus === 'attending');
   const declinedRsvp = rsvpList.find((r: any) => r.attendanceStatus === 'not_attending');
   const maybeRsvp = rsvpList.find((r: any) => r.attendanceStatus === 'maybe');
+
+  const recentEventColumns: ColumnDef<any>[] = [
+    {
+      key: 'eventType',
+      title: 'نوع الحدث',
+      align: 'right',
+      render: (type) => {
+        const eventLabel =
+          type === 'page_view'
+            ? 'مشاهدة صفحة (Page View)'
+            : type === 'whatsapp_click'
+            ? 'نقرة واتساب (WhatsApp Click)'
+            : type === 'map_click'
+            ? 'فتح الخريطة (Map Click)'
+            : type === 'calendar_click'
+            ? 'إضافة للتقويم (Calendar Add)'
+            : type === 'share_click'
+            ? 'مشاركة الرابط (Share Click)'
+            : type === 'envelope_open'
+            ? 'فتح الظرف (Envelope Open)'
+            : type === 'rsvp_submission'
+            ? 'تأكيد الحضور (RSVP Submitted)'
+            : type;
+        return (
+          <span className="inline-flex items-center gap-1.5 font-bold text-stone-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+            {eventLabel}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'browser',
+      title: 'المتصفح',
+      align: 'right',
+      render: (val) => <span className="font-mono text-stone-600">{val || 'Chrome'}</span>,
+    },
+    {
+      key: 'deviceType',
+      title: 'الجهاز',
+      align: 'right',
+      render: (val) => <span className="text-stone-600">{val || 'mobile'}</span>,
+    },
+    {
+      key: 'country',
+      title: 'البلد',
+      align: 'right',
+      render: (val) => <span className="text-stone-600">{val || 'EG (مصر)'}</span>,
+    },
+    {
+      key: 'createdAt',
+      title: 'الوقت',
+      align: 'right',
+      render: (val) => (
+        <span className="font-mono text-[11px] text-stone-400" dir="ltr">
+          {new Date(val).toLocaleTimeString('ar-EG')}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6 text-right font-cairo">
@@ -684,60 +745,17 @@ export default function AdminAnalyticsPage() {
                   <span className="text-xs text-stone-400">Privacy-Conscious Logging</span>
                 </div>
 
-                {(!invitationAnalytics.recentEvents || invitationAnalytics.recentEvents.length === 0) ? (
-                  <p className="text-xs text-stone-400 py-6 text-center">لا توجد أحداث مسجلة لهذه الدعوة حتى الآن</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-right text-xs">
-                      <thead>
-                        <tr className="border-b border-stone-200 text-stone-500">
-                          <th className="py-2.5 px-3 font-bold">نوع الحدث</th>
-                          <th className="py-2.5 px-3 font-bold">المتصفح</th>
-                          <th className="py-2.5 px-3 font-bold">الجهاز</th>
-                          <th className="py-2.5 px-3 font-bold">البلد</th>
-                          <th className="py-2.5 px-3 font-bold">الوقت</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100">
-                        {invitationAnalytics.recentEvents.map((ev: any) => {
-                          const eventLabel =
-                            ev.eventType === 'page_view'
-                              ? 'مشاهدة صفحة (Page View)'
-                              : ev.eventType === 'whatsapp_click'
-                              ? 'نقرة واتساب (WhatsApp Click)'
-                              : ev.eventType === 'map_click'
-                              ? 'فتح الخريطة (Map Click)'
-                              : ev.eventType === 'calendar_click'
-                              ? 'إضافة للتقويم (Calendar Add)'
-                              : ev.eventType === 'share_click'
-                              ? 'مشاركة الرابط (Share Click)'
-                              : ev.eventType === 'envelope_open'
-                              ? 'فتح الظرف (Envelope Open)'
-                              : ev.eventType === 'rsvp_submission'
-                              ? 'تأكيد الحضور (RSVP Submitted)'
-                              : ev.eventType;
-
-                          return (
-                            <tr key={ev.id} className="hover:bg-stone-50/70 transition-colors">
-                              <td className="py-2.5 px-3 font-bold text-stone-800">
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                                  {eventLabel}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 text-stone-600 font-mono">{ev.browser || 'Chrome'}</td>
-                              <td className="py-2.5 px-3 text-stone-600">{ev.deviceType || 'mobile'}</td>
-                              <td className="py-2.5 px-3 text-stone-600">{ev.country || 'EG (مصر)'}</td>
-                              <td className="py-2.5 px-3 text-stone-400 font-mono text-[11px]" dir="ltr">
-                                {new Date(ev.createdAt).toLocaleTimeString('ar-EG')}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <div className="mt-3">
+                  <AppTable
+                    data={invitationAnalytics.recentEvents || []}
+                    columns={recentEventColumns}
+                    rowKey="id"
+                    search={false}
+                    pagination={false}
+                    emptyTitle="لا توجد أحداث مسجلة لهذه الدعوة حتى الآن"
+                    emptyDescription="سيتم تسجيل تفاعلات الضيوف فورياً بمجرد فتح الدعوة"
+                  />
+                </div>
               </div>
             </>
           ) : (
