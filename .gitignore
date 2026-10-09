@@ -47,12 +47,16 @@ prisma/*.sqlite-journal
 prisma/*.db
 
 # 7. Local Media Storage & Database Backups
-storage/
-**/storage/*
-!**/storage/.gitkeep
+/storage/
+apps/api/storage/*
+!apps/api/storage/.gitkeep
 backups/
-*.sql
-*.sql.gz
+backups/*.sql
+backups/*.sql.gz
+
+# Allow Prisma migration SQL files and services
+!apps/api/prisma/migrations/**/*.sql
+!apps/api/src/services/**
 
 # 8. SSL Keys & Certbot Certificates (Secrets)
 infra/certbot/conf/*
