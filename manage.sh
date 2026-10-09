@@ -72,6 +72,7 @@ show_help() {
     echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BOLD}Production Commands (on VPS):${NC}"
+    echo -e "  ${GREEN}prod${NC}                         Deploy on isolated port 9420 (farahna.menuflowx.com)"
     echo -e "  ${GREEN}prod-ip <ip[:port]>${NC}       Deploy with raw IP (HTTP only via Nginx)"
     echo -e "  ${GREEN}prod-domain <domain>${NC}      Deploy with domain + auto HTTPS (Nginx + Certbot)"
     echo -e "  ${GREEN}prod-cloudflare <domain[:port]>${NC} Deploy via Cloudflare proxy (custom port, SSL on CF)"
@@ -255,6 +256,13 @@ run_production() {
 # ── Command Router ───────────────────────────────────────────────────────────
 
 case "${1:-}" in
+
+    # ─────────────────────────────────────────────────────────────────────────
+    prod)
+        echo -e "${YELLOW}${BOLD}Deploying Farahna on isolated port 9420 (farahna.menuflowx.com)...${NC}"
+        FULL_URL=$(grep "^NEXT_PUBLIC_APP_URL=" .env.production 2>/dev/null | cut -d= -f2 || echo "https://farahna.menuflowx.com")
+        run_production
+        ;;
 
     # ─────────────────────────────────────────────────────────────────────────
     prod-ip)
