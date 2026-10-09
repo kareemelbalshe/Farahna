@@ -234,9 +234,12 @@ run_production() {
     wait_for_healthy "nginx"    120
 
     echo ""
-    echo -e "${CYAN}${BOLD}[4/4] Syncing database schema (prisma migrate deploy)...${NC}"
+    echo -e "${CYAN}${BOLD}[4/4] Syncing database schema (prisma migrate deploy & db push)...${NC}"
     $COMPOSE_PROD exec -T api \
-        npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+        npx prisma migrate deploy --schema apps/api/prisma/schema.prisma || true
+    $COMPOSE_PROD exec -T api \
+        npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate
+
 
     echo ""
     echo -e "${GREEN}${BOLD}══════════════════════════════════════════════════════${NC}"
@@ -387,7 +390,9 @@ case "${1:-}" in
 
     # ─────────────────────────────────────────────────────────────────────────
     db-seed)
-        echo -e "${YELLOW}Seeding Farahna Egyptian Wedding Database (Admin, Themes, Demo Data)...${NC}"
+        echo -e "${YELLOW}Syncing database schema & seeding Farahna Egyptian Wedding Database...${NC}"
+        $COMPOSE_PROD exec -T api \
+            npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate || true
         $COMPOSE_PROD exec -T api npm run db:seed
         echo ""
         echo -e "${GREEN}${BOLD}✓ Database seeding completed successfully!${NC}"
