@@ -1,7 +1,6 @@
 # =============================================================================
 # Farahna Platform — Production Orchestration Stack (Nginx + API + Web + Postgres + Certbot)
 # =============================================================================
-version: '3.8'
 
 services:
   # 1. PostgreSQL Database Service
