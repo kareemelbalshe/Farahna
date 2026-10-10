@@ -33,14 +33,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="theme-color" content="#720925" />
       </head>
-      <body className="min-h-screen bg-[#FAF7F2] text-[#1A1819] antialiased selection:bg-[#720925] selection:text-white">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-[#FAF7F2] text-[#1A1819] antialiased selection:bg-[#720925] selection:text-white"
+      >
         {children}
       </body>
     </html>

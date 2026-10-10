@@ -72,6 +72,7 @@ export function ShareSheet({
       <div className="flex flex-wrap items-center justify-center gap-3">
         {/* WhatsApp Share */}
         <a
+          suppressHydrationWarning
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -83,6 +84,7 @@ export function ShareSheet({
 
         {/* Facebook Share */}
         <a
+          suppressHydrationWarning
           href={facebookUrl}
           target="_blank"
           rel="noopener noreferrer"

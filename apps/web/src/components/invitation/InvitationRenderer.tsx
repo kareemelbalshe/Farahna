@@ -26,7 +26,6 @@ import { AddToCalendar } from './AddToCalendar';
 import { ShareSheet } from './ShareSheet';
 import { WhatsAppContactSection } from './WhatsAppContactSection';
 import { ClosingMessageSection } from './ClosingMessageSection';
-import { Sparkles, X } from 'lucide-react';
 import { recordPublicAnalytics } from '@/lib/api';
 
 export interface InvitationRendererProps {
@@ -52,7 +51,6 @@ export function InvitationRenderer({
   // If envelopeAnimationEnabled is true, start closed
   const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(!safeInv.envelopeAnimationEnabled);
   const [audioTriggered, setAudioTriggered] = useState(false);
-  const [isBadgeDismissed, setIsBadgeDismissed] = useState(false);
 
   // Extract theme colors with fallback to theme config or sensible defaults
   const primaryColor =
@@ -131,10 +129,14 @@ export function InvitationRenderer({
     }
   };
 
-  const currentUrl =
-    typeof window !== 'undefined'
-      ? window.location.href
-      : `https://farahna.menuflowx.com/invitation/${safeInv.type || 'wedding'}/${safeInv.slug || ''}`;
+  const defaultUrl = `https://farahna.menuflowx.com/invitation/${safeInv.type || 'wedding'}/${safeInv.slug || ''}`;
+  const [currentUrl, setCurrentUrl] = useState(defaultUrl);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentUrl(window.location.href);
+    }
+  }, []);
 
   return (
     <div
@@ -169,6 +171,9 @@ export function InvitationRenderer({
           onOpen={handleOpenEnvelope}
           isOpen={isEnvelopeOpen}
           primaryColor={primaryColor}
+          secondaryColor={secondaryColor}
+          backgroundColor={backgroundColor}
+          textColor={textColor}
           themeSlug={theme?.slug}
         />
       )}
@@ -382,37 +387,6 @@ export function InvitationRenderer({
           />
         )}
       </main>
-
-      {/* ✨ Discreet Floating Luxury CTA Pill (Quick reach-out without disrupting page beauty) */}
-      {isEnvelopeOpen && !isBadgeDismissed && (
-        <div className="fixed bottom-5 left-4 z-40 flex items-center gap-1 group animate-fade-in-up">
-          <a
-            href={`https://wa.me/${((safeInv as any)?.settings?.whatsappNumber || '201019262075').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-              'السلام عليكم ورحمة الله وبركاته ❤️\nعجبني تصميم بطاقة الدعوة على منصة فرحنا وحابب استفسر وأصمم بطاقة خاصة لمناسبتي القادمة 💍'
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-stone-950/85 hover:bg-stone-900 text-white shadow-xl backdrop-blur-md border border-amber-400/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            title="صمّم بطاقة دعوتك الخاصة مع فرحنا"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-            </span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span className="text-[11px] font-bold tracking-tight">صمّم دعوتك الخاصة ✨</span>
-          </a>
-
-          <button
-            type="button"
-            onClick={() => setIsBadgeDismissed(true)}
-            className="w-6 h-6 rounded-full bg-stone-900/60 hover:bg-stone-900 text-stone-300 hover:text-white flex items-center justify-center text-xs backdrop-blur-md transition-all shadow-md opacity-0 group-hover:opacity-100 sm:opacity-75 cursor-pointer"
-            title="إغلاق التنبيه"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

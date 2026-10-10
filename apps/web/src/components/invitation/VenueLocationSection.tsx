@@ -48,7 +48,7 @@ export function VenueLocationSection({
           <div className="space-y-1 text-right sm:text-left self-start sm:self-auto">
             <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
               <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>{formatArabicDate(primaryEvent.date) || 'الموعد يُحدد لاحقاً'}</span>
+              <span suppressHydrationWarning>{formatArabicDate(primaryEvent.date) || 'الموعد يُحدد لاحقاً'}</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-stone-600">
               <Clock className="w-4 h-4 text-stone-400 shrink-0" />

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCountdown, formatArabicDate } from '@/lib/date';
-import { Calendar, Sparkles } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface CountdownTimerProps {
   eventDate: string | Date;
@@ -38,7 +38,10 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
     <section className="py-8 px-4 max-w-3xl mx-auto text-center space-y-6">
       <div className="space-y-1">
         {formattedDate && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700">
+          <span
+            suppressHydrationWarning
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700"
+          >
             <Calendar className="w-3.5 h-3.5" />
             {formattedDate}
           </span>
@@ -57,6 +60,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
           {/* Days */}
           <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
             <span
+              suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
               style={{ color: primaryColor }}
             >
@@ -68,6 +72,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
           {/* Hours */}
           <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
             <span
+              suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
               style={{ color: primaryColor }}
             >
@@ -79,6 +84,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
           {/* Minutes */}
           <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
             <span
+              suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
               style={{ color: primaryColor }}
             >
@@ -90,6 +96,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
           {/* Seconds */}
           <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
             <span
+              suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
               style={{ color: primaryColor }}
             >

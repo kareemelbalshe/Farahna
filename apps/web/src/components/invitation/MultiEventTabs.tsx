@@ -161,7 +161,7 @@ function SingleEventCard({
         <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-stone-200/80 space-y-1.5 sm:text-left">
           <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
             <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{formatArabicDate(event.date) || 'الموعد يُحدد لاحقاً'}</span>
+            <span suppressHydrationWarning>{formatArabicDate(event.date) || 'الموعد يُحدد لاحقاً'}</span>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-stone-700">
             <Clock className="w-4 h-4 text-rose-800 shrink-0" />

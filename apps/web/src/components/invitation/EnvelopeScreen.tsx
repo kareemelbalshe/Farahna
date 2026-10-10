@@ -9,6 +9,9 @@ interface EnvelopeScreenProps {
   onOpen: () => void;
   isOpen: boolean;
   primaryColor?: string;
+  secondaryColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
   themeSlug?: string;
 }
 
@@ -17,11 +20,19 @@ export function EnvelopeScreen({
   onOpen,
   isOpen,
   primaryColor = '#720925',
+  secondaryColor = '#D4AF37',
+  backgroundColor = '#FAF7F2',
+  textColor = '#1A1819',
   themeSlug = 'royal-burgundy',
 }: EnvelopeScreenProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
   if (isOpen) return null;
+
+  const isDark = Boolean(
+    backgroundColor &&
+      ['#0', '#1', '#2', 'black'].some((p) => backgroundColor.toLowerCase().startsWith(p))
+  );
 
   const handleOpenClick = () => {
     const prefersReducedMotion =
@@ -41,7 +52,7 @@ export function EnvelopeScreen({
         particleCount: 60,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#D4AF37', '#720925', '#FAF7F2'],
+        colors: [secondaryColor || '#D4AF37', primaryColor || '#720925', backgroundColor || '#FAF7F2'],
       });
     } catch (e) {
       // safe fallback
@@ -54,25 +65,41 @@ export function EnvelopeScreen({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FAF7F2] transition-opacity duration-500 motion-reduce:transition-none ${
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-500 motion-reduce:transition-none ${
         isAnimating ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{
-        backgroundImage: 'radial-gradient(#d4af37 0.75px, #FAF7F2 0.75px)',
+        backgroundColor: backgroundColor || '#FAF7F2',
+        backgroundImage: `radial-gradient(${secondaryColor || '#d4af37'} 0.75px, ${backgroundColor || '#FAF7F2'} 0.75px)`,
         backgroundSize: '24px 24px',
       }}
     >
       <div className="relative w-full max-w-md mx-auto text-center space-y-8">
         {/* Top welcome text */}
         <div className="space-y-2 animate-fade-in-up motion-reduce:animate-none">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+          <span
+            className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full border text-xs font-bold"
+            style={{
+              backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(212, 175, 55, 0.15)',
+              borderColor: secondaryColor || '#D4AF37',
+              color: isDark ? '#F5E6C8' : '#78350F',
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5" style={{ color: secondaryColor }} />
             إلى من يهمهم فرحتنا ❤️
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-900 font-cairo">
+          <h2
+            className="text-3xl sm:text-4xl font-black font-cairo"
+            style={{ color: isDark ? '#FFFFFF' : '#1A1819' }}
+          >
             دعوة خاصة لحضور فرحتنا
           </h2>
-          <p className="text-stone-600 text-base font-amiri font-bold">{coupleNames || 'العروسين'}</p>
+          <p
+            className="text-base font-amiri font-bold"
+            style={{ color: isDark ? '#E5D5B8' : '#57534E' }}
+          >
+            {coupleNames || 'العروسين'}
+          </p>
         </div>
 
         {/* Realistic Envelope Graphic */}

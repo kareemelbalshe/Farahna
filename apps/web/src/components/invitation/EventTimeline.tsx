@@ -113,7 +113,10 @@ export function EventTimeline({
                     </div>
                   </div>
 
-                  <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-full self-start sm:self-auto shadow-xs">
+                  <span
+                    suppressHydrationWarning
+                    className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-full self-start sm:self-auto shadow-xs"
+                  >
                     {formatArabicDate(ev.date) || 'الموعد قريباً'}
                   </span>
                 </div>

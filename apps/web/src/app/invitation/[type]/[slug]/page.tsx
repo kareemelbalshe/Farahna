@@ -25,13 +25,30 @@ interface PageProps {
     hideEvent?: string;
     theme?: string;
     themeOverride?: string;
+    primary?: string;
+    secondary?: string;
+    bg?: string;
+    text?: string;
+    font?: string;
+    envelope?: string;
   };
 }
 
 function getMockData(slug: string, searchParams?: PageProps['searchParams']) {
+  const overrides = searchParams
+    ? {
+        ...(searchParams.primary ? { primaryColor: searchParams.primary } : {}),
+        ...(searchParams.secondary ? { secondaryColor: searchParams.secondary } : {}),
+        ...(searchParams.bg ? { backgroundColor: searchParams.bg } : {}),
+        ...(searchParams.text ? { textColor: searchParams.text } : {}),
+        ...(searchParams.font ? { fontFamily: searchParams.font } : {}),
+        ...(searchParams.envelope ? { envelopeStyle: searchParams.envelope } : {}),
+      }
+    : undefined;
+
   // If specific theme is queried via URL param ?theme=...
   if (searchParams?.theme) {
-    return createAhmedSaraWithTheme(searchParams.theme);
+    return createAhmedSaraWithTheme(searchParams.theme, overrides);
   }
 
   // If themeOverride is explicitly tested
@@ -46,6 +63,16 @@ function getMockData(slug: string, searchParams?: PageProps['searchParams']) {
   if (slug === 'ahmed-sara-romantic-floral') return MOCK_AHMED_SARA_ROMANTIC_FLORAL;
   if (slug === 'ahmed-sara-egyptian-oriental') return MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL;
 
+  // If custom theme slug like ahmed-sara-[any-slug]
+  if (
+    slug.startsWith('ahmed-sara-') &&
+    slug !== 'ahmed-sara-4events' &&
+    slug !== 'ahmed-sara-hidden-engagement'
+  ) {
+    const customThemeSlug = slug.replace('ahmed-sara-', '');
+    return createAhmedSaraWithTheme(customThemeSlug, overrides);
+  }
+
   // Multi-event test slugs
   if (slug === 'ahmed-sara' || slug === 'ahmed-sara-4events') {
     if (searchParams?.hideEvent === 'engagement') {
@@ -56,7 +83,7 @@ function getMockData(slug: string, searchParams?: PageProps['searchParams']) {
         ),
       };
     }
-    return MOCK_AHMED_SARA;
+    return overrides ? createAhmedSaraWithTheme('royal-burgundy', overrides) : MOCK_AHMED_SARA;
   }
 
   if (slug === 'ahmed-sara-hidden-engagement') {
@@ -155,11 +182,11 @@ export default async function PublicInvitationPage({ params, searchParams }: Pag
 
   // If a mock-specific testing slug or searchParam is set, prioritize mock
   const isMockOnlyTest =
-    slug.startsWith('ahmed-sara-') ||
-    slug === 'ahmed-sara-4events' ||
-    searchParams?.hideEvent ||
-    searchParams?.theme ||
-    searchParams?.themeOverride;
+    slug.startsWith('ahmed-sara') ||
+    Boolean(searchParams?.hideEvent) ||
+    Boolean(searchParams?.theme) ||
+    Boolean(searchParams?.themeOverride) ||
+    Boolean(searchParams?.primary);
 
   let data = null;
   let res = null;

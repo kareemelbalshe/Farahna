@@ -139,11 +139,41 @@ const BASE_SECTIONS: InvitationSectionDTO[] = [
   { id: 's18', invitationId: 'inv-ahmed-sara-001', sectionKey: 'footer', isEnabled: true, sortOrder: 18 },
 ];
 
+export interface ThemeConfigOverrides {
+  primaryColor?: string;
+  secondaryColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  fontFamily?: string;
+  envelopeStyle?: string;
+  cardStyle?: string;
+}
+
 /**
- * Creates Ahmed & Sara invitation with any specified theme slug
+ * Creates Ahmed & Sara invitation with any specified theme slug and optional custom overrides
  */
-export function createAhmedSaraWithTheme(themeSlug: string): FullInvitationMock {
-  const theme = getThemeBySlug(themeSlug);
+export function createAhmedSaraWithTheme(
+  themeSlug: string,
+  overrides?: ThemeConfigOverrides
+): FullInvitationMock {
+  const baseTheme = getThemeBySlug(themeSlug);
+
+  const mergedConfig = {
+    ...baseTheme.config,
+    ...(overrides?.primaryColor ? { primaryColor: overrides.primaryColor } : {}),
+    ...(overrides?.secondaryColor ? { secondaryColor: overrides.secondaryColor } : {}),
+    ...(overrides?.backgroundColor ? { backgroundColor: overrides.backgroundColor } : {}),
+    ...(overrides?.textColor ? { textColor: overrides.textColor } : {}),
+    ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : {}),
+    ...(overrides?.envelopeStyle ? { envelopeStyle: overrides.envelopeStyle } : {}),
+    ...(overrides?.cardStyle ? { cardStyle: overrides.cardStyle } : {}),
+  };
+
+  const theme: ThemeDTO = {
+    ...baseTheme,
+    nameAr: baseTheme.nameAr || themeSlug,
+    config: mergedConfig,
+  };
 
   return {
     theme,
@@ -182,7 +212,7 @@ export function createAhmedSaraWithTheme(themeSlug: string): FullInvitationMock 
       musicTitle: 'موسيقى ليلة العمر الهادئة',
 
       themeId: theme.id,
-      themeConfig: theme.config,
+      themeConfig: mergedConfig,
 
       isMultiEvent: true,
       rsvpEnabled: true,
