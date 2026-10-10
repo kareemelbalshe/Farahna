@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Heart, Sparkles } from 'lucide-react';
 
 interface CoverHeroSectionProps {
@@ -16,6 +18,8 @@ export function CoverHeroSection({
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
 }: CoverHeroSectionProps) {
+  const [imageError, setImageError] = useState(false);
+
   const getBadgeText = (type: string) => {
     switch (type) {
       case 'wedding':
@@ -31,16 +35,19 @@ export function CoverHeroSection({
     }
   };
 
+  const hasValidCover = Boolean(coverImageUrl && !imageError);
+
   return (
     <section className="relative text-center pt-8 pb-4 px-4 max-w-4xl mx-auto space-y-6">
-      {/* Cover Image banner if provided */}
-      {coverImageUrl && (
+      {/* Cover Image banner if provided and loaded successfully */}
+      {hasValidCover && (
         <div className="relative w-full h-48 sm:h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl mb-6">
           <img
-            src={coverImageUrl}
+            src={coverImageUrl!}
             alt={invitationTitle || 'غلاف الدعوة'}
             className="w-full h-full object-cover"
             loading="eager"
+            onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
           <div className="absolute bottom-4 inset-x-0 text-center">
@@ -57,7 +64,7 @@ export function CoverHeroSection({
           بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
         </span>
 
-        {!coverImageUrl && (
+        {!hasValidCover && (
           <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-xs">
             {getBadgeText(invitationType)}
           </span>

@@ -63,7 +63,7 @@ const REASONS = [
   },
 ];
 
-export function WhyFarahna({ whatsappNumber = '201012345678' }: WhyFarahnaProps) {
+export function WhyFarahna({ whatsappNumber = '201019262075' }: WhyFarahnaProps) {
   const whatsappUrl = getWhatsAppUrl(
     whatsappNumber,
     createInquiryWhatsAppMessage(undefined, 'استفسار عن مميزات فرحنا')

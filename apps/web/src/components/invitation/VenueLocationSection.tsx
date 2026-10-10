@@ -38,7 +38,7 @@ export function VenueLocationSection({
               className="text-2xl font-black font-cairo"
               style={{ color: primaryColor }}
             >
-              {primaryEvent.venueNameAr}
+              {primaryEvent.venueNameAr || 'قاعة الفرح'}
             </h3>
             {primaryEvent.subtitleAr && (
               <p className="text-xs text-stone-500 mt-0.5">{primaryEvent.subtitleAr}</p>
@@ -48,11 +48,15 @@ export function VenueLocationSection({
           <div className="space-y-1 text-right sm:text-left self-start sm:self-auto">
             <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
               <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>{formatArabicDate(primaryEvent.date)}</span>
+              <span>{formatArabicDate(primaryEvent.date) || 'الموعد يُحدد لاحقاً'}</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-stone-600">
               <Clock className="w-4 h-4 text-stone-400 shrink-0" />
-              <span>من {primaryEvent.startTime} {primaryEvent.endTime ? `إلى ${primaryEvent.endTime}` : ''}</span>
+              <span>
+                {primaryEvent.startTime
+                  ? `من ${primaryEvent.startTime} ${primaryEvent.endTime ? `إلى ${primaryEvent.endTime}` : ''}`
+                  : 'التوقيت سيُحدد لاحقاً'}
+              </span>
             </div>
           </div>
         </div>
@@ -62,7 +66,7 @@ export function VenueLocationSection({
             <MapPin className="w-4 h-4 text-[#720925] shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-stone-800">العنوان:</p>
-              <p className="text-stone-600 mt-0.5">{primaryEvent.addressAr}</p>
+              <p className="text-stone-600 mt-0.5">{primaryEvent.addressAr || 'القاهرة، مصر'}</p>
             </div>
           </div>
 

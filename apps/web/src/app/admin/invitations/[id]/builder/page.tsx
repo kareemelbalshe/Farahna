@@ -16,7 +16,18 @@ import {
   Heart,
   Palette,
   ExternalLink,
+  Crown,
+  UploadCloud,
+  Image as ImageIcon,
+  Info,
+  PlusCircle,
+  Clock,
+  Layers,
+  Copy,
+  FolderOpen,
+  Type,
 } from 'lucide-react';
+import { ARABIC_WEDDING_FONTS, WeddingFontOption, isValidSafeUrl, normalizeWebUrl } from '@farahna/shared';
 import { adminFetch } from '@/lib/api';
 import { InvitationRenderer } from '@/components/invitation/InvitationRenderer';
 
@@ -33,19 +44,51 @@ export default function VisualInvitationBuilderPage() {
   const [previewTokenCopied, setPreviewTokenCopied] = useState(false);
   const [successNotice, setSuccessNotice] = useState('');
 
-  useEffect(() => {
-    Promise.all([
-      adminFetch(`/invitations/${invitationId}`),
-      adminFetch('/themes'),
-    ]).then(([invRes, themesRes]) => {
+  // Media upload & library state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [mediaUploadSuccess, setMediaUploadSuccess] = useState('');
+  const [mediaUploadError, setMediaUploadError] = useState('');
+  const [savedMediaList, setSavedMediaList] = useState<any[]>([]);
+
+  // Custom Theme Save Modal
+  const [showSaveThemeModal, setShowSaveThemeModal] = useState(false);
+  const [newThemeNameAr, setNewThemeNameAr] = useState('');
+  const [newThemeSlug, setNewThemeSlug] = useState('');
+  const [savingNewTheme, setSavingNewTheme] = useState(false);
+
+  // VIP Font Custom Input
+  const [customFontInput, setCustomFontInput] = useState('');
+
+  const fetchInvitationData = async () => {
+    try {
+      const [invRes, themesRes, mediaRes] = await Promise.all([
+        adminFetch(`/invitations/${invitationId}`),
+        adminFetch('/themes'),
+        adminFetch('/media'),
+      ]);
       if (invRes.success) {
         setInvitation(invRes.data);
+        const savedFont = invRes.data.themeConfig?.fontFamily;
+        if (savedFont) {
+          const cleanName = savedFont.split(',')[0].replace(/['"]/g, '').trim();
+          setCustomFontInput(cleanName);
+        }
       }
       if (themesRes.success) {
         setThemes(themesRes.data);
       }
+      if (mediaRes?.success && Array.isArray(mediaRes.data?.media)) {
+        setSavedMediaList(mediaRes.data.media);
+      }
+    } catch (e) {
+      // error handling
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchInvitationData();
   }, [invitationId]);
 
   if (loading || !invitation) {
@@ -64,28 +107,174 @@ export default function VisualInvitationBuilderPage() {
     }));
   };
 
+  const handleNestedThemeConfigChange = (key: string, value: any) => {
+    setInvitation((prev: any) => ({
+      ...prev,
+      themeConfig: {
+        ...(prev.themeConfig || {}),
+        [key]: value,
+      },
+    }));
+  };
+
   const handleSave = async () => {
+    if (invitation.slug) {
+      const cleanSlug = invitation.slug.toLowerCase().trim();
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cleanSlug)) {
+        alert('الرابط المختصر يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام وشُرط فقط وبدون تكرار للشُرط');
+        return;
+      }
+      if (['admin', 'api', 'auth', 'login', 'preview', 'settings', 'static', 'storage', 'health', 'media'].includes(cleanSlug)) {
+        alert('هذا الرابط المختصر محجوز لصفحات النظام، يرجى اختيار اسم آخر');
+        return;
+      }
+    }
+
+    // Normalize and validate URLs
+    const sanitizedInv = { ...invitation };
+    if (sanitizedInv.musicUrl) sanitizedInv.musicUrl = normalizeWebUrl(sanitizedInv.musicUrl);
+    if (sanitizedInv.coverImageUrl) sanitizedInv.coverImageUrl = normalizeWebUrl(sanitizedInv.coverImageUrl);
+    if (sanitizedInv.coupleImageUrl) sanitizedInv.coupleImageUrl = normalizeWebUrl(sanitizedInv.coupleImageUrl);
+    if (Array.isArray(sanitizedInv.galleryImages)) {
+      sanitizedInv.galleryImages = sanitizedInv.galleryImages
+        .map((img: string) => normalizeWebUrl(img))
+        .filter((img: string | null) => Boolean(img));
+    }
+
+    if (
+      (invitation.musicUrl && !isValidSafeUrl(invitation.musicUrl)) ||
+      (invitation.coverImageUrl && !isValidSafeUrl(invitation.coverImageUrl)) ||
+      (invitation.coupleImageUrl && !isValidSafeUrl(invitation.coupleImageUrl))
+    ) {
+      alert('أحد الروابط المدخلة في الدعوة غير صالح أو غير آمن');
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await adminFetch(`/invitations/${invitationId}`, {
         method: 'PATCH',
-        body: JSON.stringify(invitation),
+        body: JSON.stringify(sanitizedInv),
       });
 
       if (res.success) {
-        setSuccessNotice('تم حفظ التعديلات بنجاح!');
+        setSuccessNotice('تم حفظ التعديلات بنجاح! ✨');
         setTimeout(() => setSuccessNotice(''), 3000);
       } else {
         alert(res.message || 'حدث خطأ أثناء الحفظ');
       }
     } catch (e) {
-      alert('خطأ في الاتصال');
+      alert('خطأ في الاتصال بالخادم');
     } finally {
       setSaving(false);
     }
   };
 
-  const previewUrl = `${window.location.origin}/preview/${invitation.previewToken}`;
+  // Upload an image directly into local media storage & update invitation
+  const handleDirectImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetType: 'cover' | 'couple' | 'gallery'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setMediaUploadSuccess('');
+    setMediaUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', targetType);
+      formData.append('invitationId', invitationId);
+
+      const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiBase}/media/upload`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const uploadedUrl = data.data.url;
+        setMediaUploadSuccess('تم رفع وتخزين الصورة محلياً بنجاح!');
+        setSavedMediaList((prev) => [data.data, ...prev]);
+
+        if (targetType === 'cover') {
+          handleChange('coverImageUrl', uploadedUrl);
+        } else if (targetType === 'couple') {
+          handleChange('coupleImageUrl', uploadedUrl);
+        } else if (targetType === 'gallery') {
+          const currentGallery = Array.isArray(invitation.galleryImages)
+            ? invitation.galleryImages
+            : [];
+          handleChange('galleryImages', [...currentGallery, uploadedUrl]);
+        }
+      } else {
+        setMediaUploadError(data.message || 'فشل رفع الملف');
+      }
+    } catch (err: any) {
+      setMediaUploadError(err.message || 'حدث خطأ في رفع الصورة');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Save current colors as a new system theme permanently
+  const handleSaveAsNewTheme = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newThemeNameAr || !newThemeSlug) return;
+    setSavingNewTheme(true);
+
+    try {
+      const pColor = invitation.themeConfig?.primaryColor || invitation.theme?.config?.primaryColor || '#720925';
+      const sColor = invitation.themeConfig?.secondaryColor || invitation.theme?.config?.secondaryColor || '#D4AF37';
+      const bColor = invitation.themeConfig?.backgroundColor || invitation.theme?.config?.backgroundColor || '#FAF7F2';
+      const tColor = invitation.themeConfig?.textColor || invitation.theme?.config?.textColor || '#1A1819';
+
+      const payload = {
+        name: newThemeSlug,
+        nameAr: newThemeNameAr,
+        slug: newThemeSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-'),
+        config: {
+          primaryColor: pColor,
+          secondaryColor: sColor,
+          backgroundColor: bColor,
+          textColor: tColor,
+          fontFamily:
+            invitation.themeConfig?.fontFamily ||
+            invitation.theme?.config?.fontFamily ||
+            "'Cairo', sans-serif",
+          envelopeStyle: 'wax-seal',
+        },
+      };
+
+      const res = await adminFetch('/themes', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      if (res.success) {
+        alert('تم حفظ الثيم الجديد في النظام للأبد! 🎨 أصبح متاحاً الآن في قائمة الثيمات لجميع الدعوات.');
+        setShowSaveThemeModal(false);
+        // Refresh themes
+        const themesRes = await adminFetch('/themes');
+        if (themesRes.success) setThemes(themesRes.data);
+      } else {
+        alert(res.message || 'فشل حفظ الثيم');
+      }
+    } catch (e) {
+      alert('خطأ أثناء حفظ الثيم');
+    } finally {
+      setSavingNewTheme(false);
+    }
+  };
+
+  const previewUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/preview/${invitation.previewToken}`;
 
   const copyPreviewLink = () => {
     if (navigator?.clipboard) {
@@ -95,6 +284,15 @@ export default function VisualInvitationBuilderPage() {
     }
   };
 
+  // Derive package display badge
+  const pkgId = invitation.themeConfig?.selectedPackage || invitation.order?.packageId || (invitation.isMultiEvent ? 'wedding-journey' : 'basic');
+  const packageLabel =
+    pkgId === 'luxury-vip'
+      ? { label: 'باقة VIP (150 ج.م) 💎', badgeBg: 'bg-amber-100 text-amber-900 border-amber-300' }
+      : pkgId === 'wedding-journey'
+      ? { label: 'باقة رحلة الفرح (95 ج.م) 👑', badgeBg: 'bg-rose-100 text-[#720925] border-rose-200' }
+      : { label: 'باقة المناسبة الواحدة (50 ج.م) 🌸', badgeBg: 'bg-stone-100 text-stone-800 border-stone-300' };
+
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col -m-4 sm:-m-8 bg-[#F3ECE1]/60 overflow-hidden font-cairo">
       {/* Top Builder Bar */}
@@ -103,14 +301,20 @@ export default function VisualInvitationBuilderPage() {
           <button
             type="button"
             onClick={() => router.push('/admin/invitations')}
-            className="p-2 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100"
+            className="p-2 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 cursor-pointer"
           >
             <ArrowRight className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-sm font-black text-stone-900 truncate max-w-xs">
-              محرر: {invitation.title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-black text-stone-900 truncate max-w-xs">
+                محرر: {invitation.title}
+              </h2>
+              {/* Package Badge */}
+              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${packageLabel.badgeBg}`}>
+                {packageLabel.label}
+              </span>
+            </div>
             <p className="text-[10px] text-stone-400 font-mono">
               /invitation/{invitation.type}/{invitation.slug}
             </p>
@@ -128,7 +332,7 @@ export default function VisualInvitationBuilderPage() {
           <button
             type="button"
             onClick={copyPreviewLink}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-colors shadow-2xs cursor-pointer"
           >
             {previewTokenCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
             <span>{previewTokenCopied ? 'تم نسخ الرابط!' : 'نسخ رابط معاينة للعميل'}</span>
@@ -141,14 +345,14 @@ export default function VisualInvitationBuilderPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition-colors"
           >
             <ExternalLink className="w-4 h-4 text-stone-500" />
-            <span>معاينة في نافذة كاملة</span>
+            <span>معاينة خارجية</span>
           </a>
 
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-95 transition-opacity disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-95 transition-opacity disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-4 h-4" />
             <span>{saving ? 'جاري الحفظ...' : 'حفظ التعديلات 💾'}</span>
@@ -159,12 +363,12 @@ export default function VisualInvitationBuilderPage() {
       {/* Main Workspace (Editor Panel on Right, Live Mobile on Center/Left) */}
       <div className="flex-1 flex overflow-hidden">
         {/* Editor Sidebar (Right in RTL) */}
-        <div className="w-full md:w-[480px] bg-white border-l border-stone-200 flex flex-col justify-between shrink-0 overflow-y-auto p-6 space-y-6">
-          {/* Tab Navigation */}
-          <div className="grid grid-cols-4 gap-1 p-1 bg-stone-100 rounded-2xl text-xs font-bold text-stone-600 text-center">
+        <div className="w-full md:w-[500px] bg-white border-l border-stone-200 flex flex-col justify-between shrink-0 overflow-y-auto p-6 space-y-6">
+          {/* Tab Navigation (5 Tabs) */}
+          <div className="grid grid-cols-5 gap-1 p-1 bg-stone-100 rounded-2xl text-[11px] font-bold text-stone-600 text-center">
             <button
               onClick={() => setActiveTab('couple')}
-              className={`py-2 rounded-xl transition-colors ${
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'couple' ? 'bg-white text-stone-900 shadow-xs' : 'hover:text-stone-900'
               }`}
             >
@@ -172,7 +376,7 @@ export default function VisualInvitationBuilderPage() {
             </button>
             <button
               onClick={() => setActiveTab('theme')}
-              className={`py-2 rounded-xl transition-colors ${
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'theme' ? 'bg-white text-stone-900 shadow-xs' : 'hover:text-stone-900'
               }`}
             >
@@ -180,25 +384,41 @@ export default function VisualInvitationBuilderPage() {
             </button>
             <button
               onClick={() => setActiveTab('events')}
-              className={`py-2 rounded-xl transition-colors ${
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'events' ? 'bg-white text-stone-900 shadow-xs' : 'hover:text-stone-900'
               }`}
             >
-              المناسبات ({invitation.events?.length || 0})
+              المناسبات
             </button>
             <button
               onClick={() => setActiveTab('sections')}
-              className={`py-2 rounded-xl transition-colors ${
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'sections' ? 'bg-white text-stone-900 shadow-xs' : 'hover:text-stone-900'
               }`}
             >
               الأقسام
+            </button>
+            <button
+              onClick={() => setActiveTab('media')}
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
+                activeTab === 'media' ? 'bg-white text-stone-900 shadow-xs' : 'hover:text-stone-900'
+              }`}
+            >
+              الصور والميديا
             </button>
           </div>
 
           {/* Tab 1: Couple Names & Message */}
           {activeTab === 'couple' && (
             <div className="space-y-4 text-right">
+              {/* Admin Tip */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  💡 نصيحة الأدمن: تأكد من كتابة أسماء العائلتين والآية الكريمة بدقة، وضع رابط موسيقى MP3 هادئة لتبدأ بعد فتح الظرف.
+                </span>
+              </div>
+
               <div className="space-y-1">
                 <label className="text-xs font-bold text-stone-700 block">عنوان الدعوة الرئيسي:</label>
                 <input
@@ -278,6 +498,7 @@ export default function VisualInvitationBuilderPage() {
                   type="url"
                   value={invitation.musicUrl || ''}
                   onChange={(e) => handleChange('musicUrl', e.target.value)}
+                  placeholder="https://example.com/audio.mp3"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr"
                 />
               </div>
@@ -286,48 +507,291 @@ export default function VisualInvitationBuilderPage() {
 
           {/* Tab 2: Theme & Colors */}
           {activeTab === 'theme' && (
-            <div className="space-y-4 text-right">
-              <label className="text-xs font-bold text-stone-700 block">اختر ثيم الدعوة الأساسي:</label>
+            <div className="space-y-5 text-right">
+              {/* Admin Tip */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  💡 نصيحة الأدمن: يمكنك اختيار ثيم معتمد، أو تعديل الألوان بحرية تامة لباقة VIP. بعد التعديل، يمكنك حفظها كثيم دائم في النظام بنقرة واحدة!
+                </span>
+              </div>
+
+              {/* Theme Picker */}
               <div className="space-y-2">
-                {themes.map((th) => {
-                  const isSelected = invitation.themeId === th.id;
-                  return (
-                    <div
-                      key={th.id}
-                      onClick={() => {
-                        handleChange('themeId', th.id);
-                        handleChange('theme', th);
-                      }}
-                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                        isSelected
-                          ? 'bg-rose-50 border-[#720925] shadow-xs'
-                          : 'bg-white border-stone-200 hover:bg-stone-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-7 h-7 rounded-full shadow-xs border border-white"
-                          style={{ backgroundColor: th.config?.primaryColor || '#720925' }}
-                        />
-                        <div>
-                          <p className="text-xs font-bold text-stone-900">{th.nameAr}</p>
-                          <p className="text-[10px] text-stone-400">{th.name}</p>
+                <label className="text-xs font-bold text-stone-700 block">اختر ثيم الدعوة الأساسي:</label>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {themes.map((th) => {
+                    const isSelected = invitation.themeId === th.id;
+                    return (
+                      <div
+                        key={th.id}
+                        onClick={() => {
+                          handleChange('themeId', th.id);
+                          handleChange('theme', th);
+                        }}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-rose-50 border-[#720925] shadow-xs'
+                            : 'bg-white border-stone-200 hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-6 h-6 rounded-full shadow-xs border border-white"
+                            style={{ backgroundColor: th.config?.primaryColor || '#720925' }}
+                          />
+                          <div>
+                            <p className="text-xs font-bold text-stone-900">{th.nameAr}</p>
+                            <p className="text-[10px] text-stone-400">{th.name}</p>
+                          </div>
                         </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#720925]" />}
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-[#720925]" />}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Color Overrides for VIP & Journey */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-stone-800">تخصيص ألوان الدعوة للعميل:</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">
+                    ميزة VIP 💎
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={invitation.themeConfig?.primaryColor || invitation.theme?.config?.primaryColor || '#720925'}
+                      onChange={(e) => handleNestedThemeConfigChange('primaryColor', e.target.value)}
+                      className="w-7 h-7 rounded-lg cursor-pointer border-0"
+                    />
+                    <div>
+                      <span className="font-bold block text-stone-700 text-[11px]">الرئيسي</span>
+                      <span className="font-mono text-[9px] text-stone-400">
+                        {invitation.themeConfig?.primaryColor || '#720925'}
+                      </span>
                     </div>
-                  );
-                })}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={invitation.themeConfig?.secondaryColor || invitation.theme?.config?.secondaryColor || '#D4AF37'}
+                      onChange={(e) => handleNestedThemeConfigChange('secondaryColor', e.target.value)}
+                      className="w-7 h-7 rounded-lg cursor-pointer border-0"
+                    />
+                    <div>
+                      <span className="font-bold block text-stone-700 text-[11px]">الثانوي / الذهب</span>
+                      <span className="font-mono text-[9px] text-stone-400">
+                        {invitation.themeConfig?.secondaryColor || '#D4AF37'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={invitation.themeConfig?.backgroundColor || invitation.theme?.config?.backgroundColor || '#FAF7F2'}
+                      onChange={(e) => handleNestedThemeConfigChange('backgroundColor', e.target.value)}
+                      className="w-7 h-7 rounded-lg cursor-pointer border-0"
+                    />
+                    <div>
+                      <span className="font-bold block text-stone-700 text-[11px]">الخلفية</span>
+                      <span className="font-mono text-[9px] text-stone-400">
+                        {invitation.themeConfig?.backgroundColor || '#FAF7F2'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={invitation.themeConfig?.textColor || invitation.theme?.config?.textColor || '#1A1819'}
+                      onChange={(e) => handleNestedThemeConfigChange('textColor', e.target.value)}
+                      className="w-7 h-7 rounded-lg cursor-pointer border-0"
+                    />
+                    <div>
+                      <span className="font-bold block text-stone-700 text-[11px]">النصوص</span>
+                      <span className="font-mono text-[9px] text-stone-400">
+                        {invitation.themeConfig?.textColor || '#1A1819'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Theme as Permanent System Theme */}
+                <div className="pt-2 border-t border-stone-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowSaveThemeModal(true)}
+                    className="w-full py-2.5 px-3 rounded-xl bg-white border border-stone-300 text-stone-800 font-bold text-xs hover:bg-stone-100 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                  >
+                    <Palette className="w-4 h-4 text-[#720925]" />
+                    <span>حفظ هذه الألوان كثيم دائم في النظام للأبد 💾</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* VIP Wedding Typography (Font Selection & Custom Input) */}
+              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/90 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Type className="w-4 h-4 text-amber-700" />
+                    <span className="text-xs font-black text-stone-900">
+                      خط الدعوة والأعراس (Wedding Fonts):
+                    </span>
+                  </div>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-200 to-amber-300 text-amber-950 font-black shadow-2xs">
+                    ميزة VIP 👑
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-stone-600 leading-relaxed">
+                  اختر من بين أشهر الخطوط العربية الفاخرة المعتمدة للأفراح ومصممة خصيصاً للمناسبات الراقية، أو اكتب اسم أي خط طلبه العميل ليتم تطبيقه فوراً.
+                </p>
+
+                {/* Active Font Status Pill */}
+                <div className="p-2.5 rounded-xl bg-white border border-stone-200/90 flex items-center justify-between shadow-2xs">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] text-stone-400 block font-bold">الخط المطبق حالياً:</span>
+                    <span
+                      className="text-xs font-black text-[#720925]"
+                      style={{
+                        fontFamily:
+                          invitation.themeConfig?.fontFamily ||
+                          invitation.theme?.config?.fontFamily ||
+                          "'Cairo', sans-serif",
+                      }}
+                    >
+                      {ARABIC_WEDDING_FONTS.find(
+                        (f: WeddingFontOption) =>
+                          (invitation.themeConfig?.fontFamily || invitation.theme?.config?.fontFamily) === f.fontFamily ||
+                          (invitation.themeConfig?.fontFamily || invitation.theme?.config?.fontFamily || '').includes(f.name)
+                      )?.nameAr ||
+                        invitation.themeConfig?.fontFamily ||
+                        invitation.theme?.config?.fontFamily ||
+                        'خط كايرو الحديث ✨'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-stone-400 max-w-[130px] truncate" dir="ltr">
+                    {invitation.themeConfig?.fontFamily || invitation.theme?.config?.fontFamily || 'Cairo'}
+                  </span>
+                </div>
+
+                {/* Curated Wedding Fonts List */}
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {ARABIC_WEDDING_FONTS.map((font: WeddingFontOption) => {
+                    const currentVal =
+                      invitation.themeConfig?.fontFamily ||
+                      invitation.theme?.config?.fontFamily ||
+                      "'Cairo', sans-serif";
+                    const isSelected =
+                      currentVal === font.fontFamily ||
+                      currentVal.toLowerCase().includes(font.name.toLowerCase());
+
+                    return (
+                      <div
+                        key={font.id}
+                        onClick={() => handleNestedThemeConfigChange('fontFamily', font.fontFamily)}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-white border-[#720925] ring-2 ring-[#720925]/20 shadow-xs'
+                            : 'bg-white/80 border-stone-200 hover:bg-white hover:border-amber-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-stone-900">{font.nameAr}</span>
+                            <span className="text-[9px] font-mono text-stone-400">({font.name})</span>
+                          </div>
+                          {isSelected ? (
+                            <span className="text-[10px] font-bold text-[#720925] flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5" />
+                              مُعتمد
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium">
+                              {font.category === 'royal'
+                                ? 'ملكي'
+                                : font.category === 'heritage'
+                                ? 'تراثي'
+                                : font.category === 'soft'
+                                ? 'ناعم'
+                                : 'عصري'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Live Calligraphy Preview Sample */}
+                        <div
+                          className="text-xs sm:text-sm text-stone-800 leading-snug py-1.5 px-2.5 rounded-xl bg-stone-50/80 border border-stone-100"
+                          style={{ fontFamily: font.fontFamily }}
+                        >
+                          بارك الله لهما وبارك عليهما وجمع بينهما في خير
+                        </div>
+
+                        <p className="text-[10px] text-stone-500 mt-1 leading-snug">
+                          {font.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Font Text Input for Client Choice */}
+                <div className="pt-2 border-t border-amber-200/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-stone-800 block">
+                      أو اكتب اسم خط مخصص يطلبه العميل (Google Font):
+                    </label>
+                    <span className="text-[9px] text-stone-400">مثال: Reem Kufi, Lateef</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customFontInput}
+                      onChange={(e) => setCustomFontInput(e.target.value)}
+                      placeholder="اسم الخط (مثال: Reem Kufi أو Changa)"
+                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs text-left dir-ltr bg-white focus:outline-none focus:ring-1 focus:ring-[#720925]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!customFontInput.trim()) return;
+                        const cleanName = customFontInput.trim().replace(/['"]/g, '');
+                        handleNestedThemeConfigChange('fontFamily', `'${cleanName}', sans-serif`);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-stone-900 text-white font-bold text-xs hover:bg-stone-800 transition-colors cursor-pointer shrink-0"
+                    >
+                      تطبيق الخط ✨
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-stone-500">
+                    💡 يتم تحميل أي خط من Google Fonts تلقائياً وبأقصى سرعة فور كتابة اسمه وتطبيقه.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Tab 3: Events list */}
+          {/* Tab 3: Events list & Henna Ladies Only */}
           {activeTab === 'events' && (
             <div className="space-y-4 text-right">
+              {/* Admin Tip */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  💡 نصيحة الأدمن: في باقة رحلة الفرح أو VIP، يمكنك إضافة مناسبات منفصلة، وتفعيل خيار "ليلة الحنة للسيدات فقط" لإظهار شارة الخصوصية المصرية.
+                </span>
+              </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-stone-700">مناسبات رحلة الفرح:</span>
-                <span className="text-[11px] text-stone-400">
+                <span className="text-[11px] font-bold text-stone-500">
                   {invitation.events?.length || 0} مناسبات
                 </span>
               </div>
@@ -336,16 +800,42 @@ export default function VisualInvitationBuilderPage() {
                 {invitation.events?.map((ev: any, idx: number) => (
                   <div
                     key={ev.id || idx}
-                    className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-2 text-xs"
+                    className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-stone-900">{ev.titleAr}</span>
-                      <span className="text-[10px] font-mono text-stone-500">{ev.type}</span>
+                      <span className="font-black text-stone-900 text-sm">{ev.titleAr}</span>
+                      <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-full border border-stone-200">
+                        {ev.type}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-stone-600">
-                      <MapPin className="w-3.5 h-3.5 text-[#720925]" />
-                      <span>{ev.venueNameAr}</span>
+
+                    <div className="space-y-1 text-stone-600">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-[#720925]" />
+                        <span>{ev.venueNameAr} ({ev.addressAr})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-stone-400" />
+                        <span>الساعة: {ev.startTime} {ev.endTime ? `حتى ${ev.endTime}` : ''}</span>
+                      </div>
                     </div>
+
+                    {/* Henna Privacy Checkbox for this event */}
+                    {ev.type === 'henna' && (
+                      <label className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 font-bold text-[11px] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={ev.isHennaFemaleOnly || false}
+                          onChange={(e) => {
+                            const updatedEvents = [...(invitation.events || [])];
+                            updatedEvents[idx].isHennaFemaleOnly = e.target.checked;
+                            handleChange('events', updatedEvents);
+                          }}
+                          className="w-4 h-4 rounded text-emerald-700"
+                        />
+                        <span>🌿 مناسبة مخصصة للسيدات فقط (تنبيه الخصوصية وعدم التصوير)</span>
+                      </label>
+                    )}
                   </div>
                 ))}
               </div>
@@ -354,14 +844,21 @@ export default function VisualInvitationBuilderPage() {
 
           {/* Tab 4: Sections Toggles */}
           {activeTab === 'sections' && (
-            <div className="space-y-3 text-right">
-              <label className="text-xs font-bold text-stone-700 block">
-                تفعيل وإلغاء أقسام الدعوة:
-              </label>
+            <div className="space-y-4 text-right">
+              {/* Admin Tip */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  💡 نصيحة الأدمن: يمكنك تخصيص الأقسام التي تظهر للضيوف حسب طلب العميل، وإلغاء أي قسم غير مطلوب بنقرة واحدة.
+                </span>
+              </div>
 
               <div className="space-y-2">
-                <label className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <span className="text-xs font-bold text-stone-800">تجربة فتح الظرف التفاعلي</span>
+                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-stone-800 block">تجربة فتح الظرف التفاعلي</span>
+                    <span className="text-[10px] text-stone-400">إظهار ختم الشمع وفتح الظرف قبل الدخول</span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={invitation.envelopeAnimationEnabled}
@@ -370,8 +867,11 @@ export default function VisualInvitationBuilderPage() {
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <span className="text-xs font-bold text-stone-800">العد التنازلي لموعد الفرح</span>
+                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-stone-800 block">العد التنازلي لموعد الفرح</span>
+                    <span className="text-[10px] text-stone-400">عداد الأيام والساعات والدقائق</span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={invitation.countdownEnabled}
@@ -380,8 +880,11 @@ export default function VisualInvitationBuilderPage() {
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <span className="text-xs font-bold text-stone-800">تأكيد الحضور (RSVP)</span>
+                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-stone-800 block">نموذج تأكيد الحضور (RSVP)</span>
+                    <span className="text-[10px] text-stone-400">حصر عدد الضيوف واعتذارات الحضور</span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={invitation.rsvpEnabled}
@@ -389,7 +892,155 @@ export default function VisualInvitationBuilderPage() {
                     className="w-4 h-4 rounded text-[#720925]"
                   />
                 </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-stone-800 block">رحلة الفرح المتعددة (Multi-Event Tabs)</span>
+                    <span className="text-[10px] text-stone-400">تنقل ذكي بين المناسبات (باقة 95 ج.م أو VIP)</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={invitation.isMultiEvent}
+                    onChange={(e) => handleChange('isMultiEvent', e.target.checked)}
+                    className="w-4 h-4 rounded text-[#720925]"
+                  />
+                </label>
               </div>
+            </div>
+          )}
+
+          {/* Tab 5: Media & Photos Management */}
+          {activeTab === 'media' && (
+            <div className="space-y-5 text-right text-xs">
+              {/* Admin Tip */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  💡 نصيحة الأدمن: ارفع الصور هنا لتخزينها محلياً في مجلد المشروع الآمن (/storage/)، وستظل محفوظة في المكتبة لتستدعيها في أي دعوة أخرى!
+                </span>
+              </div>
+
+              {mediaUploadSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
+                  {mediaUploadSuccess}
+                </div>
+              )}
+              {mediaUploadError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-bold">
+                  {mediaUploadError}
+                </div>
+              )}
+
+              {/* 1. Cover Image Upload */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <span className="font-bold text-stone-800 block">١. صورة غلاف الدعوة (Cover Image):</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={invitation.coverImageUrl || ''}
+                    onChange={(e) => handleChange('coverImageUrl', e.target.value)}
+                    placeholder="رابط الصورة أو اضغط رفع صورة جديدة"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-left dir-ltr bg-white"
+                  />
+                  <label className="shrink-0 px-3 py-2 rounded-xl bg-[#720925] text-white font-bold cursor-pointer hover:opacity-90 flex items-center gap-1.5">
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{uploadingImage ? 'جاري الرفع...' : 'رفع'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleDirectImageUpload(e, 'cover')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 2. Couple Portrait Photo */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <span className="font-bold text-stone-800 block">٢. صورة العروسين الدائرية (Couple Portrait):</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={invitation.coupleImageUrl || ''}
+                    onChange={(e) => handleChange('coupleImageUrl', e.target.value)}
+                    placeholder="رابط صورة العروسين أو اضغط رفع"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-left dir-ltr bg-white"
+                  />
+                  <label className="shrink-0 px-3 py-2 rounded-xl bg-[#720925] text-white font-bold cursor-pointer hover:opacity-90 flex items-center gap-1.5">
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{uploadingImage ? 'جاري الرفع...' : 'رفع'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleDirectImageUpload(e, 'couple')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 3. Gallery Images (VIP & Journey) */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-stone-800">٣. ألبوم صور جلسة التصوير (Gallery):</span>
+                  <label className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer hover:opacity-90 flex items-center gap-1">
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>إضافة صورة للألبوم</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleDirectImageUpload(e, 'gallery')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {(invitation.galleryImages || []).map((imgUrl: string, idx: number) => (
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-stone-200 h-20 bg-white">
+                      <img src={imgUrl} alt={`gallery-${idx}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...invitation.galleryImages];
+                          updated.splice(idx, 1);
+                          handleChange('galleryImages', updated);
+                        }}
+                        className="absolute inset-0 bg-red-950/70 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center font-bold text-[10px] transition-opacity cursor-pointer"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Reusable Media from Project Library */}
+              {savedMediaList.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-stone-200">
+                  <span className="font-bold text-stone-700 block">
+                    صور سابقة محفوظة في مكتبة السيرفر (يمكن استدعاؤها بنقرة زر):
+                  </span>
+                  <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto p-1 bg-stone-100 rounded-2xl">
+                    {savedMediaList.map((m: any) => (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          handleChange('coverImageUrl', m.url);
+                          alert('تم اختيار الصورة كغلاف للدعوة بنجاح!');
+                        }}
+                        className="h-16 rounded-xl overflow-hidden border border-stone-300 relative group cursor-pointer hover:scale-105 transition-transform"
+                        title="انقر لتعيينها كغلاف للدعوة"
+                      >
+                        <img src={m.url} alt={m.originalName || 'media'} className="w-full h-full object-cover" />
+                        <span className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[8px] text-center truncate px-1">
+                          اختر
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -415,6 +1066,63 @@ export default function VisualInvitationBuilderPage() {
           </div>
         </div>
       </div>
+
+      {/* Save Theme Modal */}
+      {showSaveThemeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-stone-200 text-right">
+            <h3 className="font-black text-sm text-stone-900">
+              حفظ هذا التنسيق كثيم جديد في النظام للأبد 🎨
+            </h3>
+            <p className="text-xs text-stone-500">
+              سيتم حفظ الألوان الحالية للعروسين في قاعدة البيانات ليصبح ثيماً معتمداً يمكن استخدامه في أي فرح آخر!
+            </p>
+
+            <form onSubmit={handleSaveAsNewTheme} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-stone-700 block">اسم الثيم بالعربي: *</label>
+                <input
+                  type="text"
+                  required
+                  value={newThemeNameAr}
+                  onChange={(e) => setNewThemeNameAr(e.target.value)}
+                  placeholder="مثال: الذهبي العاجي الفاخر"
+                  className="w-full p-2.5 rounded-xl border border-stone-300"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-stone-700 block">الاسم المختصر بالإنجليزية (Slug): *</label>
+                <input
+                  type="text"
+                  required
+                  value={newThemeSlug}
+                  onChange={(e) => setNewThemeSlug(e.target.value)}
+                  placeholder="ivory-gold"
+                  className="w-full p-2.5 rounded-xl border border-stone-300 font-mono text-left dir-ltr"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSaveThemeModal(false)}
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 font-bold"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingNewTheme}
+                  className="px-5 py-2 rounded-xl burgundy-gradient-bg text-white font-bold shadow-md"
+                >
+                  {savingNewTheme ? 'جاري الحفظ...' : 'حفظ الثيم للأبد 💾'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

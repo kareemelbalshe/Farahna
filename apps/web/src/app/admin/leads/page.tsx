@@ -46,7 +46,7 @@ export default function AdminLeadsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [convertingLead, setConvertingLead] = useState<any>(null);
   const [convertPackage, setConvertPackage] = useState('wedding-journey');
-  const [convertAmount, setConvertAmount] = useState('650');
+  const [convertAmount, setConvertAmount] = useState('95');
   const [convertSaving, setConvertSaving] = useState(false);
 
   // Form State
@@ -338,7 +338,7 @@ export default function AdminLeadsPage() {
                         type="button"
                         onClick={() => {
                           setConvertingLead(lead);
-                          setConvertAmount('650');
+                          setConvertAmount('95');
                           setConvertPackage('wedding-journey');
                         }}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
@@ -417,15 +417,15 @@ export default function AdminLeadsPage() {
                   value={convertPackage}
                   onChange={(e) => {
                     setConvertPackage(e.target.value);
-                    if (e.target.value === 'basic') setConvertAmount('350');
-                    if (e.target.value === 'wedding-journey') setConvertAmount('650');
-                    if (e.target.value === 'luxury-vip') setConvertAmount('1100');
+                    if (e.target.value === 'basic') setConvertAmount('50');
+                    if (e.target.value === 'wedding-journey') setConvertAmount('95');
+                    if (e.target.value === 'luxury-vip') setConvertAmount('150');
                   }}
                   className="w-full p-2.5 rounded-xl border border-stone-300 focus:border-[#720925] focus:outline-hidden bg-white"
                 >
-                  <option value="wedding-journey">باقة رحلة الفرح الشاملة (650 ج.م) — الأكثر طلباً 👑</option>
-                  <option value="basic">باقة المناسبة الواحدة (350 ج.م)</option>
-                  <option value="luxury-vip">باقة التصميم الخاص VIP (1100 ج.م)</option>
+                  <option value="wedding-journey">باقة رحلة الفرح الشاملة (95 ج.م) — الأكثر طلباً 👑</option>
+                  <option value="basic">باقة المناسبة الواحدة (50 ج.م)</option>
+                  <option value="luxury-vip">باقة التصميم الخاص VIP (150 ج.م)</option>
                 </select>
               </div>
 

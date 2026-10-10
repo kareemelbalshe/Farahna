@@ -11,8 +11,8 @@ interface FooterProps {
 }
 
 export function Footer({
-  whatsappNumber = '201012345678',
-  supportPhone = '+201012345678',
+  whatsappNumber = '201019262075',
+  supportPhone = '+201019262075',
 }: FooterProps) {
   const whatsappUrl = getWhatsAppUrl(whatsappNumber, createInquiryWhatsAppMessage());
 

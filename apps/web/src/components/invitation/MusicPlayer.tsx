@@ -16,22 +16,33 @@ export function MusicPlayer({
 }: MusicPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!musicUrl) return;
+    setAudioFailed(false);
 
-    audioRef.current = new Audio(musicUrl);
-    audioRef.current.loop = true;
+    try {
+      const audio = new Audio(musicUrl);
+      audio.loop = true;
+      audio.onerror = () => {
+        setIsPlaying(false);
+        setAudioFailed(true);
+      };
+      audioRef.current = audio;
 
-    if (shouldAutoTrigger) {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {
-          // Browser prevented autoplay before interaction
-          setIsPlaying(false);
-        });
+      if (shouldAutoTrigger) {
+        audio
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            // Browser prevented autoplay before interaction
+            setIsPlaying(false);
+          });
+      }
+    } catch (e) {
+      setAudioFailed(true);
     }
 
     return () => {
@@ -42,7 +53,7 @@ export function MusicPlayer({
     };
   }, [musicUrl, shouldAutoTrigger]);
 
-  if (!musicUrl) return null;
+  if (!musicUrl || audioFailed) return null;
 
   const togglePlay = () => {
     if (!audioRef.current) return;

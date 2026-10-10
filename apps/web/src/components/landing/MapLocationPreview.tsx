@@ -19,7 +19,7 @@ interface MapLocationPreviewProps {
 }
 
 export function MapLocationPreview({
-  whatsappNumber = '201012345678',
+  whatsappNumber = '201019262075',
 }: MapLocationPreviewProps) {
   const [copied, setCopied] = useState(false);
 

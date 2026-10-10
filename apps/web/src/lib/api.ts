@@ -89,8 +89,8 @@ export async function fetchSiteSettings() {
   } catch (e) {
     return {
       siteNameAr: 'فرحنا',
-      whatsappNumber: '201012345678',
-      supportPhone: '+201012345678',
+      whatsappNumber: '201019262075',
+      supportPhone: '+201019262075',
       paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
     };
   }

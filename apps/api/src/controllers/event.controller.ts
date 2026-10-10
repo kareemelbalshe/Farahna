@@ -1,9 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
+import { isValidSafeUrl, normalizeWebUrl } from '@farahna/shared';
 
 export async function createEvent(req: Request, res: Response, next: NextFunction) {
   try {
     const { date, ...rest } = req.body;
+
+    if (
+      !isValidSafeUrl(rest.googleMapsUrl) ||
+      !isValidSafeUrl(rest.openStreetMapUrl) ||
+      !isValidSafeUrl(rest.imageUrl)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'رابط الموقع أو الخريطة غير صالح أو يحتوي على بروتوكول غير آمن',
+      });
+    }
+
+    if (rest.googleMapsUrl) rest.googleMapsUrl = normalizeWebUrl(rest.googleMapsUrl);
+    if (rest.openStreetMapUrl) rest.openStreetMapUrl = normalizeWebUrl(rest.openStreetMapUrl);
+    if (rest.imageUrl) rest.imageUrl = normalizeWebUrl(rest.imageUrl);
+
     const event = await prisma.invitationEvent.create({
       data: {
         ...rest,
@@ -25,7 +42,7 @@ export async function createEvent(req: Request, res: Response, next: NextFunctio
     return res.status(201).json({
       success: true,
       data: event,
-      message: 'تم إضافة المناسبة بنجاح إلى رحلة الفرح',
+      message: 'تم إضافة المناسبة بنجاح إلى خطة الحفل',
     });
   } catch (error) {
     next(error);
@@ -36,6 +53,21 @@ export async function updateEvent(req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params;
     const { date, ...rest } = req.body;
+
+    if (
+      (rest.googleMapsUrl !== undefined && !isValidSafeUrl(rest.googleMapsUrl)) ||
+      (rest.openStreetMapUrl !== undefined && !isValidSafeUrl(rest.openStreetMapUrl)) ||
+      (rest.imageUrl !== undefined && !isValidSafeUrl(rest.imageUrl))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'رابط الموقع أو الخريطة غير صالح أو يحتوي على بروتوكول غير آمن',
+      });
+    }
+
+    if (rest.googleMapsUrl !== undefined) rest.googleMapsUrl = normalizeWebUrl(rest.googleMapsUrl);
+    if (rest.openStreetMapUrl !== undefined) rest.openStreetMapUrl = normalizeWebUrl(rest.openStreetMapUrl);
+    if (rest.imageUrl !== undefined) rest.imageUrl = normalizeWebUrl(rest.imageUrl);
 
     const event = await prisma.invitationEvent.update({
       where: { id },
@@ -75,7 +107,7 @@ export async function deleteEvent(req: Request, res: Response, next: NextFunctio
 
     return res.json({
       success: true,
-      message: 'تم حذف المناسبة من رحلة الفرح بنجاح',
+      message: 'تم حذف المناسبة من خطة الحفل بنجاح',
     });
   } catch (error) {
     next(error);

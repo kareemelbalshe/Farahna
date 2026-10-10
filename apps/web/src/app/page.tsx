@@ -22,9 +22,9 @@ export const revalidate = 60; // Revalidate every minute
 export default async function LandingPage() {
   const settings = await fetchSiteSettings();
   const whatsappNumber =
-    settings?.whatsappNumber || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '201012345678';
+    settings?.whatsappNumber || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '201019262075';
   const supportPhone =
-    settings?.supportPhone || process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+201012345678';
+    settings?.supportPhone || process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+201019262075';
 
   return (
     <main className="min-h-screen flex flex-col justify-between bg-[#FAF7F2] text-stone-900 selection:bg-rose-100 selection:text-[#720925]">

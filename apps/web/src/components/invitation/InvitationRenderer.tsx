@@ -26,6 +26,7 @@ import { AddToCalendar } from './AddToCalendar';
 import { ShareSheet } from './ShareSheet';
 import { WhatsAppContactSection } from './WhatsAppContactSection';
 import { ClosingMessageSection } from './ClosingMessageSection';
+import { Sparkles, X } from 'lucide-react';
 import { recordPublicAnalytics } from '@/lib/api';
 
 export interface InvitationRendererProps {
@@ -45,23 +46,58 @@ export function InvitationRenderer({
   isPreview = false,
   initialEventId,
 }: InvitationRendererProps) {
+  // Safe invitation reference
+  const safeInv = invitation || ({} as InvitationDTO);
+
   // If envelopeAnimationEnabled is true, start closed
-  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(!invitation.envelopeAnimationEnabled);
+  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(!safeInv.envelopeAnimationEnabled);
   const [audioTriggered, setAudioTriggered] = useState(false);
+  const [isBadgeDismissed, setIsBadgeDismissed] = useState(false);
 
   // Extract theme colors with fallback to theme config or sensible defaults
   const primaryColor =
-    invitation.themeConfig?.primaryColor || theme?.config?.primaryColor || '#720925';
+    safeInv.themeConfig?.primaryColor || theme?.config?.primaryColor || '#720925';
   const secondaryColor =
-    invitation.themeConfig?.secondaryColor || theme?.config?.secondaryColor || '#D4AF37';
+    safeInv.themeConfig?.secondaryColor || theme?.config?.secondaryColor || '#D4AF37';
   const backgroundColor =
-    invitation.themeConfig?.backgroundColor || theme?.config?.backgroundColor || '#FAF7F2';
+    safeInv.themeConfig?.backgroundColor || theme?.config?.backgroundColor || '#FAF7F2';
   const textColor =
-    invitation.themeConfig?.textColor || theme?.config?.textColor || '#1A1819';
+    safeInv.themeConfig?.textColor || theme?.config?.textColor || '#1A1819';
+  const fontFamily =
+    safeInv.themeConfig?.fontFamily || theme?.config?.fontFamily || "'Cairo', sans-serif";
 
-  const coupleNames = `${invitation.coupleGroomAr} & ${invitation.coupleBrideAr}`;
-  const visibleEvents = (events || []).filter((e) => e.isVisible !== false);
-  const primaryEvent = visibleEvents[0] || events[0];
+  // If a custom or curated Google Font is selected, ensure it's loaded
+  const primaryFontName = fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+  const shouldLoadGoogleFont =
+    primaryFontName &&
+    !['sans-serif', 'serif', 'monospace', 'cursive', 'system-ui', 'arial', 'tahoma'].includes(
+      primaryFontName.toLowerCase()
+    );
+
+  const groom = safeInv.coupleGroomAr?.trim() || '';
+  const bride = safeInv.coupleBrideAr?.trim() || '';
+  const coupleNames =
+    groom && bride
+      ? `${groom} & ${bride}`
+      : groom || bride || 'العروسين';
+
+  const visibleEvents = (events || []).filter((e) => e && e.isVisible !== false);
+  const primaryEvent = visibleEvents[0] || (events && events[0]) || null;
+
+  // Resolve effective event date
+  const effectiveEventDate = safeInv.eventDate || primaryEvent?.date || null;
+  const hasValidEventDate = Boolean(
+    effectiveEventDate && !isNaN(new Date(effectiveEventDate).getTime())
+  );
+
+  // Check if primary event has meaningful location details
+  const hasLocationDetails = Boolean(
+    primaryEvent &&
+      (Boolean(primaryEvent.latitude && primaryEvent.longitude) ||
+        Boolean(primaryEvent.googleMapsUrl?.trim()) ||
+        Boolean(primaryEvent.venueNameAr?.trim()) ||
+        Boolean(primaryEvent.addressAr?.trim()))
+  );
 
   // Helper function to check if a section is enabled
   const isSectionEnabled = (key: string): boolean => {
@@ -72,24 +108,24 @@ export function InvitationRenderer({
 
   // Record page view analytics
   useEffect(() => {
-    if (!isPreview && invitation.id) {
+    if (!isPreview && safeInv.id) {
       recordPublicAnalytics({
-        invitationId: invitation.id,
+        invitationId: safeInv.id,
         eventType: 'page_view',
         deviceType:
           typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop',
         referrer: typeof document !== 'undefined' ? document.referrer : '',
       });
     }
-  }, [invitation.id, isPreview]);
+  }, [safeInv.id, isPreview]);
 
   const handleOpenEnvelope = () => {
     setIsEnvelopeOpen(true);
     setAudioTriggered(true);
 
-    if (!isPreview && invitation.id) {
+    if (!isPreview && safeInv.id) {
       recordPublicAnalytics({
-        invitationId: invitation.id,
+        invitationId: safeInv.id,
         eventType: 'envelope_open',
       });
     }
@@ -98,22 +134,36 @@ export function InvitationRenderer({
   const currentUrl =
     typeof window !== 'undefined'
       ? window.location.href
-      : `https://farahna.menuflowx.com/invitation/${invitation.type}/${invitation.slug}`;
+      : `https://farahna.menuflowx.com/invitation/${safeInv.type || 'wedding'}/${safeInv.slug || ''}`;
 
   return (
     <div
       className="min-h-screen transition-colors selection:bg-[#720925] selection:text-white"
-      style={{ backgroundColor, color: textColor }}
+      style={{
+        backgroundColor,
+        color: textColor,
+        fontFamily,
+        ['--font-cairo' as any]: fontFamily,
+        ['--font-tajawal' as any]: fontFamily,
+      }}
     >
-      {/* ⚠️ Preview Banner if in admin preview mode */}
+      {shouldLoadGoogleFont && (
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(
+            primaryFontName
+          )}:wght@300;400;600;700;800&display=swap`}
+        />
+      )}
+      {/* 👑 Preview Banner if in admin preview mode */}
       {isPreview && (
         <div className="sticky top-0 z-50 bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-black shadow-md flex items-center justify-center gap-2">
-          <span>⚠️ وضع المعاينة الآمنة — هذه النسخة غير معتمدة أو منشورة رسمياً بعد</span>
+          <span>👑 وضع المعاينة الآمنة — هذه النسخة غير معتمدة أو منشورة رسمياً بعد</span>
         </div>
       )}
 
       {/* 💌 Envelope Opening Overlay */}
-      {invitation.envelopeAnimationEnabled && !isEnvelopeOpen && (
+      {safeInv.envelopeAnimationEnabled && !isEnvelopeOpen && (
         <EnvelopeScreen
           coupleNames={coupleNames}
           onOpen={handleOpenEnvelope}
@@ -123,11 +173,11 @@ export function InvitationRenderer({
         />
       )}
 
-      {/* 🎵 Music Player (strictly plays only after user envelope interaction or manual click) */}
-      {invitation.musicUrl && (
+      {/* 🎵 Music Player (plays safely if url is provided) */}
+      {safeInv.musicUrl && typeof safeInv.musicUrl === 'string' && safeInv.musicUrl.trim() && (
         <MusicPlayer
-          musicUrl={invitation.musicUrl}
-          musicTitle={invitation.musicTitle || 'موسيقى ليلة العمر'}
+          musicUrl={safeInv.musicUrl.trim()}
+          musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}
           shouldAutoTrigger={audioTriggered}
         />
       )}
@@ -137,9 +187,9 @@ export function InvitationRenderer({
         {/* 1. الغلاف (Cover / Hero) */}
         {isSectionEnabled('cover') && (
           <CoverHeroSection
-            coverImageUrl={invitation.coverImageUrl}
-            invitationTitle={invitation.title}
-            invitationType={invitation.type}
+            coverImageUrl={safeInv.coverImageUrl}
+            invitationTitle={safeInv.title}
+            invitationType={safeInv.type}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
           />
@@ -148,35 +198,35 @@ export function InvitationRenderer({
         {/* 2. أسماء العروسين (Couple Names) */}
         {isSectionEnabled('couple') && (
           <CoupleNamesSection
-            coupleGroomAr={invitation.coupleGroomAr}
-            coupleBrideAr={invitation.coupleBrideAr}
-            coupleGroomEn={invitation.coupleGroomEn}
-            coupleBrideEn={invitation.coupleBrideEn}
+            coupleGroomAr={safeInv.coupleGroomAr}
+            coupleBrideAr={safeInv.coupleBrideAr}
+            coupleGroomEn={safeInv.coupleGroomEn}
+            coupleBrideEn={safeInv.coupleBrideEn}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
           />
         )}
 
         {/* 3. رسالة الفرح (Wedding Message / Verse) */}
-        {isSectionEnabled('message') && invitation.weddingMessageAr && (
+        {isSectionEnabled('message') && safeInv.weddingMessageAr?.trim() && (
           <WeddingMessageSection
-            weddingMessageAr={invitation.weddingMessageAr}
+            weddingMessageAr={safeInv.weddingMessageAr}
             secondaryColor={secondaryColor}
           />
         )}
 
-        {/* 4. Countdown Timer */}
-        {isSectionEnabled('countdown') && invitation.countdownEnabled && (
+        {/* 4. العداد التنازلي (Countdown Timer - Only if valid date exists) */}
+        {isSectionEnabled('countdown') && safeInv.countdownEnabled && hasValidEventDate && (
           <CountdownTimer
-            eventDate={invitation.eventDate}
+            eventDate={effectiveEventDate!}
             primaryColor={primaryColor}
           />
         )}
 
-        {/* 5. تنقل بين المناسبات (Multi-Event Navigation Tabs - if multiple events) */}
+        {/* 5. التنقل بين المناسبات (Multi-Event Navigation Tabs - if multiple events) */}
         {isSectionEnabled('events') && visibleEvents.length > 1 && (
           <MultiEventTabs
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
             events={visibleEvents}
             coupleNames={coupleNames}
             primaryColor={primaryColor}
@@ -188,103 +238,114 @@ export function InvitationRenderer({
         {/* 6. Timeline المناسبات (Events Timeline - if multiple events) */}
         {isSectionEnabled('timeline') && visibleEvents.length > 1 && (
           <EventTimeline
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
             events={visibleEvents}
             coupleNames={coupleNames}
             primaryColor={primaryColor}
           />
         )}
 
-        {/* 7. الأهل (Parents & Family Greetings) */}
-        {isSectionEnabled('parents') && (
-          <ParentsSection
-            parentsGroomAr={invitation.parentsGroomAr}
-            parentsBrideAr={invitation.parentsBrideAr}
-            primaryColor={primaryColor}
-            secondaryColor={secondaryColor}
-          />
-        )}
+        {/* 7. الأهل (Parents & Family Greetings - Only if at least one parent name exists) */}
+        {isSectionEnabled('parents') &&
+          (safeInv.parentsGroomAr?.trim() || safeInv.parentsBrideAr?.trim()) && (
+            <ParentsSection
+              parentsGroomAr={safeInv.parentsGroomAr}
+              parentsBrideAr={safeInv.parentsBrideAr}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+            />
+          )}
 
-        {/* 8. صور العروسين (Couple Portrait Photo) */}
-        {isSectionEnabled('couple_photo') && invitation.coupleImageUrl && (
-          <CouplePhotoSection
-            coupleImageUrl={invitation.coupleImageUrl}
-            coupleNames={coupleNames}
-            primaryColor={primaryColor}
-            secondaryColor={secondaryColor}
-          />
-        )}
+        {/* 8. صورة العروسين (Couple Portrait Photo - Only if valid image URL exists) */}
+        {isSectionEnabled('couple_photo') &&
+          safeInv.coupleImageUrl &&
+          typeof safeInv.coupleImageUrl === 'string' &&
+          safeInv.coupleImageUrl.trim() && (
+            <CouplePhotoSection
+              coupleImageUrl={safeInv.coupleImageUrl.trim()}
+              coupleNames={coupleNames}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+            />
+          )}
 
-        {/* 9. الجاليري (Photo Session Gallery) */}
+        {/* 9. الجاليري (Photo Session Gallery - Only if displayable images exist) */}
         {isSectionEnabled('gallery') &&
-          invitation.galleryImages &&
-          invitation.galleryImages.length > 0 && (
+          Array.isArray(safeInv.galleryImages) &&
+          safeInv.galleryImages.filter((img) => typeof img === 'string' && img.trim().length > 0).length > 0 && (
             <PhotoGallery
-              images={invitation.galleryImages}
+              images={safeInv.galleryImages.filter((img) => typeof img === 'string' && img.trim().length > 0)}
               coupleName={coupleNames}
             />
           )}
 
         {/* 10. مكان المناسبة (Venue & Location Details) */}
-        {isSectionEnabled('venue') && primaryEvent && (
-          <VenueLocationSection
-            primaryEvent={primaryEvent}
-            primaryColor={primaryColor}
-            secondaryColor={secondaryColor}
-          />
-        )}
+        {isSectionEnabled('venue') &&
+          primaryEvent &&
+          (primaryEvent.venueNameAr?.trim() || primaryEvent.addressAr?.trim() || primaryEvent.date) && (
+            <VenueLocationSection
+              primaryEvent={primaryEvent}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+            />
+          )}
 
-        {/* 11. الخريطة (Interactive Map & Directions) */}
-        {isSectionEnabled('map') && primaryEvent && (
+        {/* 11. الخريطة (Interactive Map & Directions - Only if meaningful location info exists) */}
+        {isSectionEnabled('map') && primaryEvent && hasLocationDetails && (
           <InteractiveMapSection
-            venueName={primaryEvent.venueNameAr}
-            address={primaryEvent.addressAr}
+            venueName={primaryEvent.venueNameAr || undefined}
+            address={primaryEvent.addressAr || undefined}
             latitude={primaryEvent.latitude}
             longitude={primaryEvent.longitude}
             googleMapsUrl={primaryEvent.googleMapsUrl}
             openStreetMapUrl={primaryEvent.openStreetMapUrl}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
           />
         )}
 
-        {/* 12. الـ Dress Code (Dress Code & Henna Notes) */}
-        {isSectionEnabled('dresscode') && primaryEvent && (
-          <DressCodeSection
-            dressCodeAr={primaryEvent.dressCodeAr}
-            isHennaFemaleOnly={primaryEvent.isHennaFemaleOnly}
-            secondaryColor={secondaryColor}
-          />
-        )}
+        {/* 12. الزي Dress Code (Dress Code & Henna Notes - Only if dresscode or henna note exists) */}
+        {isSectionEnabled('dresscode') &&
+          primaryEvent &&
+          (primaryEvent.dressCodeAr?.trim() || primaryEvent.isHennaFemaleOnly) && (
+            <DressCodeSection
+              dressCodeAr={primaryEvent.dressCodeAr}
+              isHennaFemaleOnly={primaryEvent.isHennaFemaleOnly}
+              secondaryColor={secondaryColor}
+            />
+          )}
 
         {/* 13. RSVP (Attendance Form) */}
-        {isSectionEnabled('rsvp') && invitation.rsvpEnabled && (
+        {isSectionEnabled('rsvp') && safeInv.rsvpEnabled && (
           <RsvpModal
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
             primaryColor={primaryColor}
           />
         )}
 
-        {/* 14. إضافة للتقويم (Add to Calendar) */}
-        {isSectionEnabled('calendar') && primaryEvent && (
-          <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
-            <h4 className="text-sm font-bold text-stone-800 font-cairo">
-              احفظ موعد الفرح في تقويم هاتفك 📅
-            </h4>
-            <div className="flex justify-center">
-              <AddToCalendar
-                invitationId={invitation.id}
-                eventTitle={`حفل زفاف ${coupleNames}`}
-                eventDate={primaryEvent.date}
-                startTime={primaryEvent.startTime}
-                endTime={primaryEvent.endTime}
-                venueName={primaryEvent.venueNameAr}
-                address={primaryEvent.addressAr}
-              />
-            </div>
-          </section>
-        )}
+        {/* 14. إضافة للتقويم (Add to Calendar - Only if a valid event date exists) */}
+        {isSectionEnabled('calendar') &&
+          primaryEvent &&
+          primaryEvent.date &&
+          !isNaN(new Date(primaryEvent.date).getTime()) && (
+            <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
+              <h4 className="text-sm font-bold text-stone-800 font-cairo">
+                احفظ موعد الفرح في تقويم هاتفك 📅
+              </h4>
+              <div className="flex justify-center">
+                <AddToCalendar
+                  invitationId={safeInv.id}
+                  eventTitle={`حفل زفاف ${coupleNames}`}
+                  eventDate={primaryEvent.date}
+                  startTime={primaryEvent.startTime}
+                  endTime={primaryEvent.endTime}
+                  venueName={primaryEvent.venueNameAr}
+                  address={primaryEvent.addressAr}
+                />
+              </div>
+            </section>
+          )}
 
         {/* 15. مشاركة الدعوة (Share Invitation) */}
         {isSectionEnabled('share') && (
@@ -292,16 +353,23 @@ export function InvitationRenderer({
             coupleNames={coupleNames}
             invitationUrl={currentUrl}
             primaryColor={primaryColor}
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
           />
         )}
 
-        {/* 16. زرار واتساب (WhatsApp Direct Contact) */}
+        {/* 16. تواصل واتساب (WhatsApp Direct Contact) */}
         {isSectionEnabled('whatsapp') && (
           <WhatsAppContactSection
             coupleNames={coupleNames}
+            whatsappPhone={
+              (safeInv as any).whatsappPhone ||
+              (safeInv.themeConfig as any)?.whatsappPhone ||
+              (safeInv as any).customer?.whatsapp ||
+              (safeInv as any).customer?.phone ||
+              '201019262075'
+            }
             primaryColor={primaryColor}
-            invitationId={invitation.id}
+            invitationId={safeInv.id}
           />
         )}
 
@@ -310,9 +378,41 @@ export function InvitationRenderer({
           <ClosingMessageSection
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
+            supportPhone={(safeInv as any)?.settings?.whatsappNumber || '201019262075'}
           />
         )}
       </main>
+
+      {/* ✨ Discreet Floating Luxury CTA Pill (Quick reach-out without disrupting page beauty) */}
+      {isEnvelopeOpen && !isBadgeDismissed && (
+        <div className="fixed bottom-5 left-4 z-40 flex items-center gap-1 group animate-fade-in-up">
+          <a
+            href={`https://wa.me/${((safeInv as any)?.settings?.whatsappNumber || '201019262075').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+              'السلام عليكم ورحمة الله وبركاته ❤️\nعجبني تصميم بطاقة الدعوة على منصة فرحنا وحابب استفسر وأصمم بطاقة خاصة لمناسبتي القادمة 💍'
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-stone-950/85 hover:bg-stone-900 text-white shadow-xl backdrop-blur-md border border-amber-400/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="صمّم بطاقة دعوتك الخاصة مع فرحنا"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span className="text-[11px] font-bold tracking-tight">صمّم دعوتك الخاصة ✨</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setIsBadgeDismissed(true)}
+            className="w-6 h-6 rounded-full bg-stone-900/60 hover:bg-stone-900 text-stone-300 hover:text-white flex items-center justify-center text-xs backdrop-blur-md transition-all shadow-md opacity-0 group-hover:opacity-100 sm:opacity-75 cursor-pointer"
+            title="إغلاق التنبيه"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

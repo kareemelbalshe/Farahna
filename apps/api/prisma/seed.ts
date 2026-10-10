@@ -51,13 +51,16 @@ async function main() {
   // 2. Settings (Singleton)
   const settings = await prisma.settings.upsert({
     where: { id: 'singleton' },
-    update: {},
+    update: {
+      supportPhone: '+201019262075',
+      whatsappNumber: '201019262075',
+    },
     create: {
       id: 'singleton',
       siteName: 'Farahna',
       siteNameAr: 'فرحنا',
-      supportPhone: '+201012345678',
-      whatsappNumber: '201012345678',
+      supportPhone: '+201019262075',
+      whatsappNumber: '201019262075',
       paymentInstructionsAr:
         'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
       defaultTimezone: 'Africa/Cairo',
@@ -97,7 +100,7 @@ async function main() {
       name: 'Basic Event',
       nameAr: 'باقة المناسبة الواحدة',
       slug: 'basic',
-      price: 350.0,
+      price: 50.0,
       currency: 'EGP',
       durationDays: 30,
       features: ['One Main Event', 'Custom Couple Names', 'Location & Map', 'WhatsApp Direct Sharing', 'Countdown Timer'],
@@ -116,7 +119,7 @@ async function main() {
       name: 'Wedding Journey',
       nameAr: 'باقة رحلة الفرح الشاملة',
       slug: 'wedding-journey',
-      price: 650.0,
+      price: 95.0,
       currency: 'EGP',
       durationDays: 90,
       features: [
@@ -143,7 +146,7 @@ async function main() {
       name: 'Luxury Custom VIP',
       nameAr: 'باقة التصميم الخاص VIP',
       slug: 'luxury-vip',
-      price: 1100.0,
+      price: 150.0,
       currency: 'EGP',
       durationDays: 180,
       features: [
@@ -391,7 +394,7 @@ async function main() {
       orderNumber: 'FARAH-100201',
       customerId: customer1.id,
       invitationId: inv1.id,
-      amount: 650.0,
+      amount: 95.0,
       currency: 'EGP',
       status: 'published',
       notes: 'تم الدفع عبر إنستاباي بنجاح واعتماد نشر الدعوة مباشرة',
@@ -402,7 +405,7 @@ async function main() {
     data: {
       orderId: order1.id,
       customerId: customer1.id,
-      amount: 650.0,
+      amount: 95.0,
       currency: 'EGP',
       method: 'instapay',
       status: 'verified',

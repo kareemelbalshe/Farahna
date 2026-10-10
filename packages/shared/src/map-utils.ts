@@ -21,15 +21,78 @@ export function isValidCoordinates(lat?: number | null, lng?: number | null): bo
 }
 
 /**
+ * Validates whether a URL is safe and valid.
+ * Rejects malicious schemes like javascript:, vbscript:, data:, file:
+ */
+export function isValidSafeUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return true;
+  const trimmed = url.trim();
+  if (trimmed === '') return true;
+
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('vbscript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('file:')
+  ) {
+    return false;
+  }
+
+  if (lower.startsWith('/storage/') || lower.startsWith('/')) {
+    return true;
+  }
+
+  if (lower.startsWith('http://') || lower.startsWith('https://')) {
+    try {
+      new URL(trimmed);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Bare domains like maps.google.com/xyz or cdn.site.com/image.png
+  if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/.*)?$/.test(trimmed)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Normalizes a URL to ensure it has a proper scheme (https://)
+ * and won't be interpreted as a relative path by browsers.
+ */
+export function normalizeWebUrl(url?: string | null): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('vbscript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('file:')
+  ) {
+    return null;
+  }
+
+  if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('/')) {
+    return trimmed;
+  }
+
+  // Bare domain without protocol -> prepend https://
+  if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/.*)?$/.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  return null;
+}
+
+/**
  * Extracts latitude and longitude from Google Maps URLs or direct coordinate strings.
- * Supports:
- * - Direct coordinate string: "30.0571, 31.2248" or "30.0571 31.2248"
- * - Place with @lat,lng: https://www.google.com/maps/place/Marriott/@30.0571,31.2248,17z/...
- * - Query param q=lat,lng: https://maps.google.com/?q=30.0571,31.2248 or ?q=loc:30.0571,31.2248
- * - Param ll=lat,lng: https://www.google.com/maps?ll=30.0571,31.2248
- * - Search API: https://www.google.com/maps/search/?api=1&query=30.0571,31.2248
- * - Directions API destination: destination=30.0571,31.2248
- * - Protobuf coordinates: !3d30.0571!4d31.2248
  */
 export function extractCoordinatesFromUrl(urlOrText: string): Coordinates | null {
   if (!urlOrText || typeof urlOrText !== 'string') {
@@ -98,11 +161,14 @@ export function getGoogleMapsDirectionsUrl(options: {
     return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
   }
 
-  if (googleMapsUrl && googleMapsUrl.startsWith('http')) {
-    return googleMapsUrl;
+  const normalizedGoogleUrl = normalizeWebUrl(googleMapsUrl);
+  if (normalizedGoogleUrl) {
+    return normalizedGoogleUrl;
   }
 
-  const queryParts = [venueName, address].filter(Boolean).join(' ');
+  const cleanVenue = venueName && venueName !== 'مكان الحفل' ? venueName.trim() : '';
+  const cleanAddress = address && address !== 'العنوان هنا' ? address.trim() : '';
+  const queryParts = [cleanVenue, cleanAddress].filter(Boolean).join(' ');
   if (queryParts) {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(queryParts)}`;
   }

@@ -72,7 +72,7 @@ export function EnvelopeScreen({
           <h2 className="text-3xl sm:text-4xl font-black text-stone-900 font-cairo">
             دعوة خاصة لحضور فرحتنا
           </h2>
-          <p className="text-stone-600 text-base font-amiri font-bold">{coupleNames}</p>
+          <p className="text-stone-600 text-base font-amiri font-bold">{coupleNames || 'العروسين'}</p>
         </div>
 
         {/* Realistic Envelope Graphic */}

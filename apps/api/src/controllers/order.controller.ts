@@ -132,7 +132,7 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         customerId,
         invitationId: invitationId || null,
         packageId: packageId || 'wedding-journey',
-        amount: Number(amount) || 650,
+        amount: Number(amount) || 95,
         currency: 'EGP',
         status: status || 'new',
         notes: notes || null,

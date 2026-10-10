@@ -451,7 +451,7 @@ export default function AdminPaymentsPage() {
               setCreateData({
                 orderId: orders[0].id,
                 customerId: orders[0].customerId,
-                amount: orders[0].amount || '650',
+                amount: orders[0].amount || '95',
                 method: 'instapay',
                 referenceNumber: '',
                 paymentProofUrl: '',
@@ -750,7 +750,7 @@ export default function AdminPaymentsPage() {
                       ...createData,
                       orderId: e.target.value,
                       customerId: ord?.customerId || '',
-                      amount: ord?.amount || '650',
+                      amount: ord?.amount || '95',
                     });
                   }}
                   className="w-full p-2.5 rounded-xl border border-stone-300 focus:border-[#720925] focus:outline-hidden bg-white"

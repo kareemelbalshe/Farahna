@@ -9,7 +9,7 @@ interface NavbarProps {
   whatsappNumber?: string;
 }
 
-export function Navbar({ whatsappNumber = '201012345678' }: NavbarProps) {
+export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
   const whatsappUrl = getWhatsAppUrl(whatsappNumber, createInquiryWhatsAppMessage());
 
   return (
@@ -17,8 +17,8 @@ export function Navbar({ whatsappNumber = '201012345678' }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-12 h-12 rounded-2xl burgundy-gradient-bg flex items-center justify-center text-white shadow-md shadow-rose-950/20 group-hover:scale-105 transition-transform">
-            <Heart className="w-6 h-6 fill-rose-300 text-rose-300 animate-pulse" />
+          <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shadow-rose-950/20 border border-amber-300/40 group-hover:scale-105 transition-transform">
+            <img src="/favicon.png" alt="فرحنا - Farahna" className="w-full h-full object-cover" />
           </div>
           <div>
             <span className="text-2xl font-black tracking-tight text-[#720925] flex items-center gap-1.5 font-cairo">

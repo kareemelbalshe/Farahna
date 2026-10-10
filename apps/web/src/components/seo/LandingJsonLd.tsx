@@ -2,7 +2,7 @@ import React from 'react';
 
 export function LandingJsonLd({
   siteUrl = 'https://farahna.menuflowx.com',
-  whatsappNumber = '201012345678',
+  whatsappNumber = '201019262075',
 }: {
   siteUrl?: string;
   whatsappNumber?: string;

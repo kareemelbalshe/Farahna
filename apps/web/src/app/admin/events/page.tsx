@@ -21,6 +21,8 @@ import {
   EVENT_TYPE_LABELS,
   extractCoordinatesFromUrl,
   isValidCoordinates,
+  isValidSafeUrl,
+  normalizeWebUrl,
 } from '@farahna/shared';
 import { formatArabicDate } from '@/lib/date';
 import { FarahnaMap } from '@/components/map/FarahnaMap';
@@ -111,6 +113,12 @@ export default function AdminEventsPage() {
       const lat = formLatitude ? parseFloat(formLatitude) : null;
       const lng = formLongitude ? parseFloat(formLongitude) : null;
 
+      if (formGoogleMapsUrl && !isValidSafeUrl(formGoogleMapsUrl)) {
+        alert('رابط خرائط جوجل المدخل غير صالح أو يحتوي على بروتوكول غير آمن');
+        setSaving(false);
+        return;
+      }
+
       const res = await adminFetch(`/events/${selectedEvent.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -118,7 +126,7 @@ export default function AdminEventsPage() {
           addressAr: formAddress,
           latitude: lat,
           longitude: lng,
-          googleMapsUrl: formGoogleMapsUrl || null,
+          googleMapsUrl: formGoogleMapsUrl ? normalizeWebUrl(formGoogleMapsUrl) : null,
         }),
       });
 

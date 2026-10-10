@@ -99,3 +99,50 @@ export async function verifyTokenValidity(req: Request, res: Response) {
     },
   });
 }
+
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'غير مصرح' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'كلمة المرور الجديدة يجب ألا تقل عن 8 خانات',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'كلمة المرور الحالية غير صحيحة',
+      });
+    }
+
+    const { hashPassword } = await import('../utils/auth');
+    const newHashed = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: newHashed },
+    });
+
+    return res.json({
+      success: true,
+      message: 'تم تحديث كلمة المرور بنجاح لحسابك',
+    });
+  } catch (error) {
+    next(error);
+  }
+}

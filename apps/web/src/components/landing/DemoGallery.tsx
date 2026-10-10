@@ -116,7 +116,7 @@ interface DemoGalleryProps {
 
 export function DemoGallery({
   demos = DEFAULT_DEMOS,
-  whatsappNumber = '201012345678',
+  whatsappNumber = '201019262075',
 }: DemoGalleryProps) {
   const [activeFilter, setActiveFilter] = useState<string>('all');
 

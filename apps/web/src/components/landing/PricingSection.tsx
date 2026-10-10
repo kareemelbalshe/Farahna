@@ -12,7 +12,7 @@ const PACKAGES = [
   {
     name: 'باقة المناسبة الواحدة',
     slug: 'basic',
-    price: 350,
+    price: 50,
     currency: 'ج.م',
     duration: 'صلاحية شهر كامل',
     badge: 'مثالية للخطوبة أو كتب الكتاب',
@@ -29,7 +29,7 @@ const PACKAGES = [
   {
     name: 'باقة رحلة الفرح الشاملة',
     slug: 'wedding-journey',
-    price: 650,
+    price: 95,
     currency: 'ج.م',
     duration: 'صلاحية ٣ شهور',
     badge: 'الأكثر طلباً والأفضل قيمة 👑',
@@ -48,7 +48,7 @@ const PACKAGES = [
   {
     name: 'باقة التصميم الخاص VIP',
     slug: 'luxury-vip',
-    price: 1100,
+    price: 150,
     currency: 'ج.م',
     duration: 'صلاحية ٦ شهور',
     badge: 'فخامة ملكية وتخصيص كامل',
@@ -64,7 +64,7 @@ const PACKAGES = [
   },
 ];
 
-export function PricingSection({ whatsappNumber = '201012345678' }: PricingSectionProps) {
+export function PricingSection({ whatsappNumber = '201019262075' }: PricingSectionProps) {
   return (
     <section id="pricing" className="py-20 lg:py-28 bg-white border-b border-stone-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

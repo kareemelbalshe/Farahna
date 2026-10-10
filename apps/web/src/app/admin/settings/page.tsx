@@ -7,8 +7,8 @@ import { Settings, Save, Check, ShieldCheck, Smartphone } from 'lucide-react';
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<any>({
     siteNameAr: 'فرحنا',
-    whatsappNumber: '201012345678',
-    supportPhone: '+201012345678',
+    whatsappNumber: '201019262075',
+    supportPhone: '+201019262075',
     paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
     defaultTimezone: 'Africa/Cairo',
     defaultDurationDays: 60,
@@ -91,7 +91,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.whatsappNumber || ''}
                 onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
-                placeholder="201012345678"
+                placeholder="201019262075"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr"
               />
             </div>
@@ -101,7 +101,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.supportPhone || ''}
                 onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
-                placeholder="+201012345678"
+                placeholder="+201019262075"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr"
               />
             </div>

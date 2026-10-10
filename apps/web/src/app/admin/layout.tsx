@@ -261,8 +261,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-6 space-y-6">
           {/* Logo */}
           <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl burgundy-gradient-bg flex items-center justify-center text-white shadow-md shadow-rose-950/20">
-              <Heart className="w-5 h-5 fill-rose-300 text-rose-300" />
+            <div className="relative w-11 h-11 rounded-2xl overflow-hidden border border-amber-300/40 shadow-md shadow-rose-950/20 shrink-0">
+              <img src="/favicon.png" alt="فرحنا - Farahna" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-xl font-black text-[#720925] flex items-center gap-1.5">

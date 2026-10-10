@@ -56,7 +56,7 @@ export default function AdminOrdersPage() {
   const [formData, setFormData] = useState({
     customerId: '',
     packageId: 'wedding-journey',
-    amount: '650',
+    amount: '95',
     currency: 'EGP',
     status: 'new',
     createStarterInvitation: true,
@@ -138,7 +138,7 @@ export default function AdminOrdersPage() {
         setFormData({
           customerId: '',
           packageId: 'wedding-journey',
-          amount: '650',
+          amount: '95',
           currency: 'EGP',
           status: 'new',
           createStarterInvitation: true,
@@ -441,17 +441,17 @@ export default function AdminOrdersPage() {
                         packageId: e.target.value,
                         amount:
                           e.target.value === 'basic'
-                            ? '350'
+                            ? '50'
                             : e.target.value === 'luxury-vip'
-                            ? '1100'
-                            : '650',
+                            ? '150'
+                            : '95',
                       });
                     }}
                     className="w-full p-2.5 rounded-xl border border-stone-300 focus:border-[#720925] focus:outline-hidden bg-white"
                   >
-                    <option value="wedding-journey">باقة رحلة الفرح الشاملة (650 ج.م)</option>
-                    <option value="basic">باقة المناسبة الواحدة (350 ج.م)</option>
-                    <option value="luxury-vip">باقة التصميم الخاص VIP (1100 ج.م)</option>
+                    <option value="wedding-journey">باقة رحلة الفرح الشاملة (95 ج.م)</option>
+                    <option value="basic">باقة المناسبة الواحدة (50 ج.م)</option>
+                    <option value="luxury-vip">باقة التصميم الخاص VIP (150 ج.م)</option>
                   </select>
                 </div>
 

@@ -40,3 +40,46 @@ export async function updateTheme(req: Request, res: Response, next: NextFunctio
     next(error);
   }
 }
+
+export async function createTheme(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { name, nameAr, slug, config, previewImage, sortOrder = 10 } = req.body;
+
+    if (!name || !nameAr || !slug || !config) {
+      return res.status(400).json({
+        success: false,
+        message: 'يرجى تقديم كافة البيانات الأساسية للثيم (الاسم، الاسم بالعربي، الرابط المختصر، وإعدادات الألوان)',
+      });
+    }
+
+    const cleanSlug = slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-');
+    const existing = await prisma.theme.findUnique({ where: { slug: cleanSlug } });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'اسم الرابط المختصر لهذا الثيم مستخدم بالفعل، يرجى اختيار اسم آخر',
+      });
+    }
+
+    const theme = await prisma.theme.create({
+      data: {
+        name,
+        nameAr,
+        slug: cleanSlug,
+        config,
+        previewImage: previewImage || null,
+        sortOrder: Number(sortOrder) || 10,
+        isActive: true,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: theme,
+      message: 'تم حفظ الثيم الجديد في النظام بنجاح وأصبح متاحاً لكافة الدعوات 🎨',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

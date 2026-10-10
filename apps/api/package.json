@@ -14,11 +14,13 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "set-password": "tsx src/scripts/setPassword.ts"
   },
   "dependencies": {
     "@farahna/shared": "*",
     "@prisma/client": "^5.20.0",
+    "@types/hpp": "^0.2.7",
     "@types/multer": "^2.2.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -26,6 +28,7 @@
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.4.0",

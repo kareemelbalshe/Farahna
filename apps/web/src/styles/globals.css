@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@400;600;700&family=Tajawal:wght@300;400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Marhey:wght@300;400;600;700&family=Noto+Kufi+Arabic:wght@400;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;600;700&family=Tajawal:wght@300;400;500;700;800&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
@@ -9,6 +9,11 @@
   --font-cairo: 'Cairo', sans-serif;
   --font-tajawal: 'Tajawal', sans-serif;
   --font-amiri: 'Amiri', serif;
+  --font-aref-ruqaa: 'Aref Ruqaa', serif;
+  --font-almarai: 'Almarai', sans-serif;
+  --font-scheherazade: 'Scheherazade New', serif;
+  --font-noto-naskh: 'Noto Naskh Arabic', serif;
+  --font-marhey: 'Marhey', cursive;
   --font-ibm-plex: 'IBM Plex Sans Arabic', sans-serif;
   --font-noto-kufi: 'Noto Kufi Arabic', sans-serif;
 
@@ -63,6 +68,62 @@ body {
 
 .burgundy-gradient-bg {
   background: linear-gradient(135deg, #720925 0%, #4A0E17 100%);
+}
+
+/* Wax Seal & Theme Luxury Effects */
+.wax-seal-3d {
+  box-shadow:
+    0 4px 8px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -2px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.wax-seal-burgundy {
+  background: radial-gradient(circle at 35% 35%, #9b1335 0%, #720925 55%, #460616 100%);
+  border: 1.5px solid rgba(212, 175, 55, 0.7);
+}
+
+.wax-seal-gold {
+  background: radial-gradient(circle at 35% 35%, #2a2a2c 0%, #151516 60%, #0a0a0c 100%);
+  border: 1.5px solid #d4af37;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.35);
+}
+
+.wax-seal-white {
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f3eee6 60%, #e2dcd2 100%);
+  border: 1.5px solid #dcd4c7;
+}
+
+.wax-seal-floral {
+  background: radial-gradient(circle at 35% 35%, #be6d80 0%, #9c5162 60%, #68303d 100%);
+  border: 1.5px solid #e8ccd7;
+}
+
+.wax-seal-oriental {
+  background: radial-gradient(circle at 35% 35%, #2a528a 0%, #1a365d 60%, #0f2038 100%);
+  border: 1.5px solid #c69214;
+}
+
+/* Sound Wave Equalizer Animations */
+@keyframes soundEqualizer {
+  0%, 100% { height: 5px; }
+  50% { height: 18px; }
+}
+
+.sound-bar-1 { animation: soundEqualizer 0.75s ease-in-out infinite; }
+.sound-bar-2 { animation: soundEqualizer 0.55s ease-in-out infinite 0.15s; }
+.sound-bar-3 { animation: soundEqualizer 0.85s ease-in-out infinite 0.3s; }
+.sound-bar-4 { animation: soundEqualizer 0.65s ease-in-out infinite 0.45s; }
+
+/* Subtle Gold Shimmer Animation */
+@keyframes goldShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-gold-shimmer {
+  animation: goldShimmer 3s ease-in-out infinite;
 }
 
 /* Custom scrollbars */

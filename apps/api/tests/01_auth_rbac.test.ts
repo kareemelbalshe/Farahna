@@ -94,4 +94,63 @@ describe('1. Authentication & RBAC Test Suite', () => {
     expect(res.body.success).toBe(false);
     expect(res.body.message).toContain('صلاحية');
   });
+
+  it('1.10 should reject password change with incorrect current password (400 Bad Request)', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        currentPassword: 'WrongPassword123!',
+        newPassword: 'BrandNewSecure@2026!',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('غير صحيحة');
+  });
+
+  it('1.11 should reject password change with too short new password (400 Bad Request)', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        currentPassword: 'Moderator@2026!',
+        newPassword: 'short',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('1.12 should successfully change password and verify login with new password', async () => {
+    // 1. Change password
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        currentPassword: 'Moderator@2026!',
+        newPassword: 'NewModSecure@2026!',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // 2. Login with new password
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'moderator@farahna.com', password: 'NewModSecure@2026!' });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+
+    // 3. Reset back for future test consistency
+    const resetRes = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${loginRes.body.data.token}`)
+      .send({
+        currentPassword: 'NewModSecure@2026!',
+        newPassword: 'Moderator@2026!',
+      });
+    expect(resetRes.status).toBe(200);
+  });
 });

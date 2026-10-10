@@ -9,7 +9,7 @@ interface HeroProps {
   whatsappNumber?: string;
 }
 
-export function Hero({ whatsappNumber = '201012345678' }: HeroProps) {
+export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
   const whatsappUrl = getWhatsAppUrl(whatsappNumber, createInquiryWhatsAppMessage());
 
   return (

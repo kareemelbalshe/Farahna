@@ -97,7 +97,7 @@ export async function getPublicInvitation(req: Request, res: Response, next: Nex
       theme: invitation.theme,
       settings: {
         siteNameAr: settings?.siteNameAr || 'فرحنا',
-        whatsappNumber: settings?.whatsappNumber || '201012345678',
+        whatsappNumber: settings?.whatsappNumber || '201019262075',
       },
     };
 
@@ -143,7 +143,7 @@ export async function getPreviewInvitation(req: Request, res: Response, next: Ne
         ...invitation,
         settings: {
           siteNameAr: settings?.siteNameAr || 'فرحنا',
-          whatsappNumber: settings?.whatsappNumber || '201012345678',
+          whatsappNumber: settings?.whatsappNumber || '201019262075',
         },
       },
     });

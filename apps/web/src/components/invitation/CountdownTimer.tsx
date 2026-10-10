@@ -13,6 +13,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
   const [timeLeft, setTimeLeft] = useState(getCountdown(eventDate));
 
   useEffect(() => {
+    if (!eventDate) return;
     const timer = setInterval(() => {
       setTimeLeft(getCountdown(eventDate));
     }, 1000);
@@ -20,13 +21,28 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
     return () => clearInterval(timer);
   }, [eventDate]);
 
+  // If date is missing or invalid, don't show an ugly empty/broken countdown
+  if (!eventDate || !timeLeft.isValid) {
+    return (
+      <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-2">
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-bold text-xs sm:text-sm">
+          ✨ موعد الفرح قريباً بإذن الله... نسأل الله تمام الخير والبركة للعروسين ❤️
+        </div>
+      </section>
+    );
+  }
+
+  const formattedDate = formatArabicDate(eventDate);
+
   return (
     <section className="py-8 px-4 max-w-3xl mx-auto text-center space-y-6">
       <div className="space-y-1">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700">
-          <Calendar className="w-3.5 h-3.5" />
-          {formatArabicDate(eventDate)}
-        </span>
+        {formattedDate && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700">
+            <Calendar className="w-3.5 h-3.5" />
+            {formattedDate}
+          </span>
+        )}
         <h3 className="text-xl font-black text-stone-800 font-cairo">
           باقي على ليلة العمر ومشاركتكم فرحتنا ❤️
         </h3>

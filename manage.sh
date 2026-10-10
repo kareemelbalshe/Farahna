@@ -532,6 +532,21 @@ case "${1:-}" in
         ;;
 
     # ─────────────────────────────────────────────────────────────────────────
+    set-password)
+        check_arg "${2:-}" "set-password <email> [new_password]  (e.g. ./manage.sh set-password admin@farahna.com 'StrongPass@2026!')"
+        EMAIL="$2"
+        NEW_PASS="${3:-}"
+
+        echo -e "${CYAN}Updating password for ${EMAIL}...${NC}"
+        if $COMPOSE_PROD ps --services 2>/dev/null | grep -q api; then
+            $COMPOSE_PROD exec -T api npx tsx src/scripts/setPassword.ts "$EMAIL" "$NEW_PASS"
+        else
+            echo -e "${YELLOW}Production container not running, running via local node...${NC}"
+            npm --prefix apps/api run set-password "$EMAIL" "$NEW_PASS" 2>/dev/null || npx --prefix apps/api tsx src/scripts/setPassword.ts "$EMAIL" "$NEW_PASS"
+        fi
+        ;;
+
+    # ─────────────────────────────────────────────────────────────────────────
     *)
         show_help
         ;;

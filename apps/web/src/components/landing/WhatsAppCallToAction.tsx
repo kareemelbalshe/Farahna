@@ -9,7 +9,7 @@ interface WhatsAppCallToActionProps {
 }
 
 export function WhatsAppCallToAction({
-  whatsappNumber = '201012345678',
+  whatsappNumber = '201019262075',
 }: WhatsAppCallToActionProps) {
   const whatsappUrl = getWhatsAppUrl(
     whatsappNumber,

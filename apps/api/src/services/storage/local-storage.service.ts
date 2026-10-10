@@ -197,11 +197,29 @@ export class LocalStorageService implements IStorageService {
   }
 
   public getAbsoluteFilePath(relativePath: string): string {
-    // Prevent path traversal attack
-    const safeRelative = relativePath.replace(/^(\.\.[\/\\])+/, '');
-    const absolutePath = path.resolve(this.baseStorageDir, safeRelative);
+    if (!relativePath || typeof relativePath !== 'string') {
+      throw new Error('المسار غير صالح');
+    }
 
-    if (!absolutePath.startsWith(path.resolve(this.baseStorageDir))) {
+    // 1. Decode URI encoding to catch obfuscated %2e%2e traversal
+    let cleanRelative = relativePath;
+    try {
+      cleanRelative = decodeURIComponent(relativePath);
+    } catch {
+      // Keep original if malformed URI
+    }
+
+    // 2. Detect poison null bytes
+    if (cleanRelative.includes('\0')) {
+      throw new Error('محاولة وصول غير مصرح بها (Path Traversal Detected: Null Byte)');
+    }
+
+    // 3. Resolve path directly against base storage directory
+    const baseDirResolved = path.resolve(this.baseStorageDir);
+    const absolutePath = path.resolve(baseDirResolved, cleanRelative);
+
+    // 4. Strict directory jail boundary check
+    if (!absolutePath.startsWith(baseDirResolved + path.sep) && absolutePath !== baseDirResolved) {
       throw new Error('محاولة وصول غير مصرح بها (Path Traversal Detected)');
     }
 

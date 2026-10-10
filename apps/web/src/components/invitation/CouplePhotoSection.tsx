@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
 
 interface CouplePhotoSectionProps {
@@ -14,7 +16,9 @@ export function CouplePhotoSection({
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
 }: CouplePhotoSectionProps) {
-  if (!coupleImageUrl) return null;
+  const [imageError, setImageError] = useState(false);
+
+  if (!coupleImageUrl || imageError) return null;
 
   return (
     <section className="py-8 px-4 max-w-xl mx-auto text-center space-y-4">
@@ -25,6 +29,7 @@ export function CouplePhotoSection({
             alt={`صورة ${coupleNames}`}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={() => setImageError(true)}
           />
         </div>
 

@@ -14,15 +14,16 @@ interface WhatsAppContactSectionProps {
 
 export function WhatsAppContactSection({
   coupleNames,
-  whatsappPhone = '201012345678',
+  whatsappPhone = '201019262075',
   primaryColor = '#720925',
   invitationId,
 }: WhatsAppContactSectionProps) {
-  const phone = whatsappPhone || '201012345678';
-  const message = `السلام عليكم ❤️
-بخصوص دعوة فرح (${coupleNames})، حابب أبارك وأستفسر عن تفاصيل الحضور.`;
+  const rawPhone = whatsappPhone?.trim() || '201019262075';
+  const cleanPhone = rawPhone.replace(/[^0-9]/g, '') || '201019262075';
+  const message = `السلام عليكم ورحمة الله وبركاته 🌹
+بخصوص بطاقة دعوة الفرح (${coupleNames})، حابب استفسر عن بعض التفاصيل.`;
 
-  const waUrl = getWhatsAppUrl(phone, message);
+  const waUrl = getWhatsAppUrl(cleanPhone, message);
 
   const handleClick = () => {
     if (invitationId) {
@@ -33,7 +34,7 @@ export function WhatsAppContactSection({
   return (
     <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
       <p className="text-xs text-stone-500 font-medium">
-        لديك استفسار أو ترغب بتهنئة العروسين مباشرة؟
+        لأي استفسار أو تواصل مباشر مع أصحاب الفرح
       </p>
 
       <a
@@ -45,7 +46,7 @@ export function WhatsAppContactSection({
         style={{ backgroundColor: '#25D366' }}
       >
         <MessageCircle className="w-4 h-4 fill-current" />
-        <span>تواصل مع العروسين عبر واتساب ❤️</span>
+        <span>تواصل عبر واتساب مع أصحاب الدعوة 💬</span>
       </a>
     </section>
   );

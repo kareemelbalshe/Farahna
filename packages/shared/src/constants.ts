@@ -180,3 +180,96 @@ ${theme ? `الثيم اللي عجبني: ${theme}` : ''}
 ${invitationUrl}
 مستنيينكم تنورونا ✨`,
 };
+
+export interface WeddingFontOption {
+  id: string;
+  name: string;
+  nameAr: string;
+  fontFamily: string;
+  description: string;
+  category: 'royal' | 'modern' | 'heritage' | 'soft' | 'custom';
+}
+
+export const ARABIC_WEDDING_FONTS: WeddingFontOption[] = [
+  {
+    id: 'amiri',
+    name: 'Amiri',
+    nameAr: 'خط أميري الملكي 👑',
+    fontFamily: "'Amiri', serif",
+    description: 'خط كلاسيكي ملكي عريق بأسلوب النسخ والقصور الفاخرة',
+    category: 'royal',
+  },
+  {
+    id: 'aref-ruqaa',
+    name: 'Aref Ruqaa',
+    nameAr: 'خط رقعة تراثي (عارف رقعة) 📜',
+    fontFamily: "'Aref Ruqaa', serif",
+    description: 'خط رقعة عربي أصيل ذو طابع فني مميز لكتب الكتاب والأعراس التراثية',
+    category: 'heritage',
+  },
+  {
+    id: 'cairo',
+    name: 'Cairo',
+    nameAr: 'خط كايرو الحديث ✨',
+    fontFamily: "'Cairo', sans-serif",
+    description: 'خط عصري أنيق وفائق الوضوح ومثالي لجميع شاشات الهواتف',
+    category: 'modern',
+  },
+  {
+    id: 'tajawal',
+    name: 'Tajawal',
+    nameAr: 'خط تجوال الانسيابي 🕊️',
+    fontFamily: "'Tajawal', sans-serif",
+    description: 'خط انسيابي هادئ وناعم للمناسبات العصرية وحفلات الخطوبة',
+    category: 'soft',
+  },
+  {
+    id: 'almarai',
+    name: 'Almarai',
+    nameAr: 'خط المراعي المعاصر 🌿',
+    fontFamily: "'Almarai', sans-serif",
+    description: 'خط عربي حديث بهندسة متزنة ومريحة جداً للقراءة السريعة',
+    category: 'modern',
+  },
+  {
+    id: 'scheherazade',
+    name: 'Scheherazade New',
+    nameAr: 'خط شهرزاد الملكي 🏰',
+    fontFamily: "'Scheherazade New', serif",
+    description: 'طابع المخطوطات والزخارف الشرقية وأجواء الليالي العربية الكبرى',
+    category: 'royal',
+  },
+  {
+    id: 'noto-naskh',
+    name: 'Noto Naskh Arabic',
+    nameAr: 'خط النسخ الملكي المتقن 🖋️',
+    fontFamily: "'Noto Naskh Arabic', serif",
+    description: 'قمة الرصانة والوقار لحفلات كتب الكتاب والزفاف الكلاسيكي',
+    category: 'royal',
+  },
+  {
+    id: 'marhey',
+    name: 'Marhey',
+    nameAr: 'خط مَرحي المبهج 🎉',
+    fontFamily: "'Marhey', cursive",
+    description: 'طابع شبابي مرح واحتفالي مبهج للخطوبة وليالي الحنة والأفراح المعاصرة',
+    category: 'soft',
+  },
+  {
+    id: 'ibm-plex',
+    name: 'IBM Plex Sans Arabic',
+    nameAr: 'خط آي بي إم الأنيق 💎',
+    fontFamily: "'IBM Plex Sans Arabic', sans-serif",
+    description: 'تصميم راقٍ بطابع تقني رفيع ومحترف',
+    category: 'modern',
+  },
+  {
+    id: 'noto-kufi',
+    name: 'Noto Kufi Arabic',
+    nameAr: 'خط كوفي حديث 🏛️',
+    fontFamily: "'Noto Kufi Arabic', sans-serif",
+    description: 'هندسة كوفية واضحة ومميزة للعناوين البارزة',
+    category: 'heritage',
+  },
+];
+

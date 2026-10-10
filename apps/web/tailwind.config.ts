@@ -29,6 +29,13 @@ const config: Config = {
         cairo: ['var(--font-cairo)', 'Cairo', 'sans-serif'],
         tajawal: ['var(--font-tajawal)', 'Tajawal', 'sans-serif'],
         amiri: ['var(--font-amiri)', 'Amiri', 'serif'],
+        aref: ['var(--font-aref-ruqaa)', 'Aref Ruqaa', 'serif'],
+        almarai: ['var(--font-almarai)', 'Almarai', 'sans-serif'],
+        scheherazade: ['var(--font-scheherazade)', 'Scheherazade New', 'serif'],
+        naskh: ['var(--font-noto-naskh)', 'Noto Naskh Arabic', 'serif'],
+        marhey: ['var(--font-marhey)', 'Marhey', 'cursive'],
+        ibm: ['var(--font-ibm-plex)', 'IBM Plex Sans Arabic', 'sans-serif'],
+        kufi: ['var(--font-noto-kufi)', 'Noto Kufi Arabic', 'sans-serif'],
       },
       keyframes: {
         'envelope-open': {

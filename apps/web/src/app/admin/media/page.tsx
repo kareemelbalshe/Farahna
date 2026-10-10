@@ -50,7 +50,8 @@ export default function AdminMediaPage() {
 
       // Call API upload endpoint
       const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
-      const res = await fetch('http://localhost:5000/api/media/upload', {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiBase}/media/upload`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

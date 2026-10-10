@@ -9,8 +9,8 @@ export async function getSettings(req: Request, res: Response, next: NextFunctio
         data: {
           siteName: 'Farahna',
           siteNameAr: 'فرحنا',
-          supportPhone: '+201012345678',
-          whatsappNumber: '201012345678',
+          supportPhone: '+201019262075',
+          whatsappNumber: '201019262075',
           paymentInstructionsAr:
             'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
           defaultTimezone: 'Africa/Cairo',

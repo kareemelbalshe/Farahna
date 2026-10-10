@@ -83,7 +83,7 @@ const TYPES = [
   },
 ];
 
-export function InvitationTypes({ whatsappNumber = '201012345678' }: InvitationTypesProps) {
+export function InvitationTypes({ whatsappNumber = '201019262075' }: InvitationTypesProps) {
   return (
     <section id="types" className="py-20 lg:py-28 bg-[#FAF7F2] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -113,7 +113,7 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
 export async function convertLeadToCustomer(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { packageId, amount = 650, notes } = req.body;
+    const { packageId, amount = 95, notes } = req.body;
 
     const lead = await prisma.lead.findUnique({ where: { id } });
     if (!lead) {

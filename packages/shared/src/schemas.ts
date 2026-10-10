@@ -1,17 +1,18 @@
 // Zod Schemas for Farahna input validation across frontend & backend
 
 import { z } from 'zod';
+import { isValidSafeUrl } from './map-utils';
 
 export const loginSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صالح'),
+  email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
 });
 
 export const customerSchema = z.object({
   name: z.string().min(2, 'الاسم مطلوب'),
-  phone: z.string().min(10, 'رقم الهاتف غير صالح'),
+  phone: z.string().min(10, 'رقم الهاتف غير صحيح'),
   whatsapp: z.string().optional().nullable(),
-  email: z.string().email('البريد غير صالح').optional().nullable().or(z.literal('')),
+  email: z.string().email('البريد غير صحيح').optional().nullable().or(z.literal('')),
   notes: z.string().optional().nullable(),
   source: z.enum(['whatsapp', 'facebook', 'instagram', 'tiktok', 'google', 'referral', 'website', 'other']).default('whatsapp'),
   status: z.enum(['active', 'vip', 'inactive', 'lead', 'archived']).default('active'),
@@ -19,7 +20,7 @@ export const customerSchema = z.object({
 
 export const leadSchema = z.object({
   name: z.string().min(2, 'الاسم مطلوب'),
-  phone: z.string().min(10, 'رقم الهاتف غير صالح'),
+  phone: z.string().min(10, 'رقم الهاتف غير صحيح'),
   whatsapp: z.string().optional().nullable(),
   source: z.enum(['whatsapp', 'facebook', 'instagram', 'tiktok', 'google', 'referral', 'website', 'other']).default('whatsapp'),
   campaign: z.string().optional().nullable(),
@@ -41,7 +42,7 @@ export const leadSchema = z.object({
 });
 
 export const orderSchema = z.object({
-  customerId: z.string().uuid('معرف العميل غير صالح'),
+  customerId: z.string().uuid('معرف العميل غير صحيح'),
   invitationId: z.string().uuid().optional().nullable(),
   packageId: z.string().optional().nullable(),
   amount: z.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
@@ -63,14 +64,16 @@ export const orderSchema = z.object({
 });
 
 export const paymentSchema = z.object({
-  orderId: z.string().uuid('معرف الطلب غير صالح'),
-  customerId: z.string().uuid('معرف العميل غير صالح'),
+  orderId: z.string().uuid('معرف الطلب غير صحيح'),
+  customerId: z.string().uuid('معرف العميل غير صحيح'),
   amount: z.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   currency: z.string().default('EGP'),
   method: z.enum(['instapay', 'vodafone_cash']).default('instapay'),
   status: z.enum(['pending', 'proof_received', 'verified', 'rejected', 'refunded']).default('pending'),
   referenceNumber: z.string().optional().nullable(),
-  paymentProofUrl: z.string().url().optional().nullable().or(z.literal('')),
+  paymentProofUrl: z.string().optional().nullable().or(z.literal('')).refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط إيصال الدفع غير صالح أو غير آمن',
+  }),
   notes: z.string().optional().nullable(),
 });
 
@@ -81,9 +84,9 @@ export const verifyPaymentSchema = z.object({
 });
 
 export const invitationSchema = z.object({
-  customerId: z.string().uuid('معرف العميل غير صالح'),
+  customerId: z.string().uuid('معرف العميل غير صحيح'),
   orderId: z.string().uuid().optional().nullable(),
-  slug: z.string().min(3, 'الرابط المختصر يجب أن يكون 3 أحرف على الأقل').regex(/^[a-z0-9-]+$/, 'الرابط يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام وشُرط فقط'),
+  slug: z.string().min(3, 'الرابط المخصص يجب أن يكون 3 أحرف على الأقل').regex(/^[a-z0-9-]+$/, 'الرابط يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطات فقط'),
   title: z.string().min(2, 'عنوان الدعوة مطلوب'),
   type: z.enum(['wedding', 'engagement', 'henna', 'katb_ketab', 'custom']).default('wedding'),
   status: z.enum(['draft', 'preview', 'published', 'paused', 'expired', 'archived']).default('draft'),
@@ -100,14 +103,20 @@ export const invitationSchema = z.object({
   weddingMessageEn: z.string().optional().nullable(),
 
   // Media
-  coverImageUrl: z.string().optional().nullable(),
-  coupleImageUrl: z.string().optional().nullable(),
+  coverImageUrl: z.string().optional().nullable().refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط صورة الغلاف غير صالح أو غير آمن',
+  }),
+  coupleImageUrl: z.string().optional().nullable().refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط صورة العروسين غير صالح أو غير آمن',
+  }),
   galleryImages: z.array(z.string()).default([]),
-  musicUrl: z.string().optional().nullable(),
+  musicUrl: z.string().optional().nullable().refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط ملف الموسيقى غير صالح أو غير آمن',
+  }),
   musicTitle: z.string().optional().nullable(),
 
   // Theme
-  themeId: z.string().min(1, 'يرجى اختيار الثيم'),
+  themeId: z.string().min(1, 'قالب الدعوة مطلوب'),
   themeConfig: z.record(z.any()).optional().nullable(),
 
   // Features
@@ -123,7 +132,7 @@ export const invitationSchema = z.object({
 });
 
 export const invitationEventSchema = z.object({
-  invitationId: z.string().uuid('معرف الدعوة غير صالح'),
+  invitationId: z.string().uuid('معرف الدعوة غير صحيح'),
   type: z.enum(['engagement', 'henna', 'katb_ketab', 'wedding', 'reception', 'custom']).default('wedding'),
   titleAr: z.string().min(1, 'اسم المناسبة بالعربية مطلوب'),
   titleEn: z.string().optional().nullable(),
@@ -134,15 +143,21 @@ export const invitationEventSchema = z.object({
 
   venueNameAr: z.string().min(1, 'اسم القاعة أو المكان مطلوب'),
   venueNameEn: z.string().optional().nullable(),
-  addressAr: z.string().min(1, 'العنوان التفصيلي مطلوب'),
+  addressAr: z.string().min(1, 'العنوان بالعربية مطلوب'),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
-  googleMapsUrl: z.string().url('رابط جوجل مابس غير صالح').optional().nullable().or(z.literal('')),
-  openStreetMapUrl: z.string().optional().nullable(),
+  googleMapsUrl: z.string().optional().nullable().or(z.literal('')).refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط موقع جوجل ماب غير صالح أو غير آمن',
+  }),
+  openStreetMapUrl: z.string().optional().nullable().refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط خريطة OpenStreetMap غير صالح أو غير آمن',
+  }),
 
   descriptionAr: z.string().optional().nullable(),
   dressCodeAr: z.string().optional().nullable(),
-  imageUrl: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable().refine((val) => !val || isValidSafeUrl(val), {
+    message: 'رابط صورة المناسبة غير صالح أو غير آمن',
+  }),
   sortOrder: z.number().default(0),
   isVisible: z.boolean().default(true),
   isHennaFemaleOnly: z.boolean().default(false),

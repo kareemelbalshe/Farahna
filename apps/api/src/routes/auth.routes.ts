@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, getMe, verifyTokenValidity } from '../controllers/auth.controller';
+import { login, getMe, verifyTokenValidity, changePassword } from '../controllers/auth.controller';
 import { authenticateJWT, loginRateLimiter } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import { loginSchema } from '@farahna/shared';
@@ -12,5 +12,6 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), login);
 // Authenticated session checks
 router.get('/me', authenticateJWT, getMe);
 router.get('/verify', authenticateJWT, verifyTokenValidity);
+router.post('/change-password', authenticateJWT, changePassword);
 
 export default router;
