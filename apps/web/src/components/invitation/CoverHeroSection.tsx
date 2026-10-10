@@ -60,12 +60,12 @@ export function CoverHeroSection({
 
       {/* Bismillah & Ornamentation */}
       <div className="flex flex-col items-center justify-center space-y-3">
-        <span className="text-xl sm:text-2xl lg:text-3xl text-stone-800 font-amiri font-bold tracking-wider">
+        <span className="text-xl sm:text-2xl lg:text-3xl text-stone-800 font-amiri font-bold tracking-wider theme-heading">
           بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
         </span>
 
         {!hasValidCover && (
-          <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-xs">
+          <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-xs theme-badge">
             {getBadgeText(invitationType)}
           </span>
         )}

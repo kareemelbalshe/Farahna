@@ -373,3 +373,183 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     { id: 'os-18', invitationId: 'inv-omar-salma-002', sectionKey: 'footer', isEnabled: true, sortOrder: 18 },
   ],
 };
+
+/**
+ * 🌿 Invitation #3: حنة مريم (Mariam Youssef - Henna Party)
+ */
+export const MOCK_MARIAM_YOUSSEF: FullInvitationMock = {
+  theme: getThemeBySlug('romantic-floral'),
+  invitation: {
+    id: 'inv-mariam-youssef-003',
+    customerId: 'cust-demo-003',
+    slug: 'mariam-youssef',
+    title: 'سهرة الحنة المصرية — حنة مريم 🌿',
+    type: 'henna',
+    status: 'published',
+    privacy: 'public',
+    previewToken: 'preview-token-mariam-youssef',
+
+    coupleGroomAr: '',
+    coupleBrideAr: 'حنة مريم 🌸',
+    coupleGroomEn: null,
+    coupleBrideEn: 'Mariam Henna Night',
+
+    parentsGroomAr: null,
+    parentsBrideAr: 'تتشرف والدة العروس بدعوة حضراتكم',
+
+    weddingMessageAr: `يسعدنا ويشرفنا دعوتكم لحضور سهرة حنة ابنتنا مريم 🌸\nليلة نسائية خاصة مليئة بالفرح والبهجة والأغاني التراثية الأصيلة.\nحضوركم يسعدنا ويكمل فرحتنا ❤️`,
+
+    coverImageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
+    coupleImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [],
+
+    musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-113337.mp3',
+    musicTitle: 'موسيقى الحنة والبهجة الهادئة',
+
+    themeId: 'theme-romantic-floral',
+    themeConfig: getThemeBySlug('romantic-floral').config,
+
+    isMultiEvent: false,
+    rsvpEnabled: true,
+    countdownEnabled: true,
+    envelopeAnimationEnabled: true,
+
+    eventDate: '2026-11-18T18:00:00.000Z',
+    startDate: '2026-11-18T18:00:00.000Z',
+    viewsCount: 520,
+    uniqueVisitorsCount: 340,
+
+    createdAt: '2026-09-15T12:00:00.000Z',
+    updatedAt: '2026-09-25T12:00:00.000Z',
+  },
+  events: [
+    {
+      id: 'evt-henna-mariam-01',
+      invitationId: 'inv-mariam-youssef-003',
+      type: 'henna',
+      titleAr: 'سهرة الحنة المصرية 🌿',
+      subtitleAr: 'أمسية احتفالية نسائية مميزة',
+      date: '2026-11-18T18:00:00.000Z',
+      startTime: '٦:٠٠ م',
+      endTime: '١١:٠٠ م',
+      venueNameAr: 'فيلا النرجس للمناسبات الخاصة',
+      addressAr: 'التجمع الخامس، القاهرة الجديدة',
+      googleMapsUrl: 'https://maps.google.com/?q=New+Cairo+Egypt',
+      descriptionAr: 'حفل حناء خاص بالسيدات فقط. نرجو عدم اصطحاب الأطفال أو التصوير حرصاً على الخصوصية التامة.',
+      dressCodeAr: 'جلابيات حنة / فساتين سهرة نسائية أنيقة 🌸',
+      sortOrder: 1,
+      isVisible: true,
+      isHennaFemaleOnly: true,
+    },
+  ],
+  sections: [
+    { id: 'my-1', invitationId: 'inv-mariam-youssef-003', sectionKey: 'envelope', isEnabled: true, sortOrder: 1 },
+    { id: 'my-2', invitationId: 'inv-mariam-youssef-003', sectionKey: 'cover', isEnabled: true, sortOrder: 2 },
+    { id: 'my-3', invitationId: 'inv-mariam-youssef-003', sectionKey: 'couple', isEnabled: true, sortOrder: 3 },
+    { id: 'my-4', invitationId: 'inv-mariam-youssef-003', sectionKey: 'message', isEnabled: true, sortOrder: 4 },
+    { id: 'my-5', invitationId: 'inv-mariam-youssef-003', sectionKey: 'countdown', isEnabled: true, sortOrder: 5 },
+    { id: 'my-6', invitationId: 'inv-mariam-youssef-003', sectionKey: 'events', isEnabled: false, sortOrder: 6 },
+    { id: 'my-7', invitationId: 'inv-mariam-youssef-003', sectionKey: 'timeline', isEnabled: false, sortOrder: 7 },
+    { id: 'my-8', invitationId: 'inv-mariam-youssef-003', sectionKey: 'parents', isEnabled: true, sortOrder: 8 },
+    { id: 'my-9', invitationId: 'inv-mariam-youssef-003', sectionKey: 'couple_photo', isEnabled: true, sortOrder: 9 },
+    { id: 'my-10', invitationId: 'inv-mariam-youssef-003', sectionKey: 'gallery', isEnabled: false, sortOrder: 10 },
+    { id: 'my-11', invitationId: 'inv-mariam-youssef-003', sectionKey: 'venue', isEnabled: true, sortOrder: 11 },
+    { id: 'my-12', invitationId: 'inv-mariam-youssef-003', sectionKey: 'map', isEnabled: true, sortOrder: 12 },
+    { id: 'my-13', invitationId: 'inv-mariam-youssef-003', sectionKey: 'dresscode', isEnabled: true, sortOrder: 13 },
+    { id: 'my-14', invitationId: 'inv-mariam-youssef-003', sectionKey: 'rsvp', isEnabled: true, sortOrder: 14 },
+    { id: 'my-15', invitationId: 'inv-mariam-youssef-003', sectionKey: 'calendar', isEnabled: true, sortOrder: 15 },
+    { id: 'my-16', invitationId: 'inv-mariam-youssef-003', sectionKey: 'share', isEnabled: true, sortOrder: 16 },
+    { id: 'my-17', invitationId: 'inv-mariam-youssef-003', sectionKey: 'whatsapp', isEnabled: true, sortOrder: 17 },
+    { id: 'my-18', invitationId: 'inv-mariam-youssef-003', sectionKey: 'footer', isEnabled: true, sortOrder: 18 },
+  ],
+};
+
+/**
+ * 📜 Invitation #4: كريم & ندى (Karim & Nada - Katb Ketab)
+ */
+export const MOCK_KARIM_NADA: FullInvitationMock = {
+  theme: getThemeBySlug('minimal-white'),
+  invitation: {
+    id: 'inv-karim-nada-004',
+    customerId: 'cust-demo-004',
+    slug: 'karim-nada',
+    title: 'عقد قران مبارك — كريم وندى 📜',
+    type: 'katb_ketab',
+    status: 'published',
+    privacy: 'public',
+    previewToken: 'preview-token-karim-nada',
+
+    coupleGroomAr: 'كريم',
+    coupleBrideAr: 'ندى',
+    coupleGroomEn: 'Karim',
+    coupleBrideEn: 'Nada',
+
+    parentsGroomAr: 'يتشرف المستشار حسام الدين وحرمه',
+    parentsBrideAr: 'والمهندس طارق عبد الحميد وحرمه',
+
+    weddingMessageAr: `بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ\n"وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً"\n\nيسعدنا ويشرفنا حضوركم لمشاركتنا مراسم عقد القران المبارك. نسأل الله التوفيق والبركة ❤️`,
+
+    coverImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+    coupleImageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [],
+
+    musicUrl: null,
+    musicTitle: null,
+
+    themeId: 'theme-minimal-white',
+    themeConfig: getThemeBySlug('minimal-white').config,
+
+    isMultiEvent: false,
+    rsvpEnabled: true,
+    countdownEnabled: true,
+    envelopeAnimationEnabled: true,
+
+    eventDate: '2026-11-06T17:00:00.000Z',
+    startDate: '2026-11-06T17:00:00.000Z',
+    viewsCount: 480,
+    uniqueVisitorsCount: 310,
+
+    createdAt: '2026-09-18T12:00:00.000Z',
+    updatedAt: '2026-09-28T12:00:00.000Z',
+  },
+  events: [
+    {
+      id: 'evt-katb-karim-01',
+      invitationId: 'inv-karim-nada-004',
+      type: 'katb_ketab',
+      titleAr: 'مراسم عقد القران الرسمي 📜',
+      subtitleAr: 'عقد القران في رحاب المسجد',
+      date: '2026-11-06T17:00:00.000Z',
+      startTime: '٥:٠٠ م',
+      endTime: '٨:٠٠ م',
+      venueNameAr: 'قاعة الماسة — مسجد المشير طنطاوي',
+      addressAr: 'التجمع الخامس، محور المشير، القاهرة',
+      googleMapsUrl: 'https://maps.google.com/?q=El+Mosheer+Tantawy+Mosque',
+      descriptionAr: 'تبدأ مراسم عقد القران عقب صلاة المغرب مباشرة بقاعة الماسة. يسعدنا مشاركتكم فرحتنا.',
+      dressCodeAr: 'Formal / بدلة كاملة وملابس محتشمة تناسب حرم المسجد 🤍',
+      sortOrder: 1,
+      isVisible: true,
+      isHennaFemaleOnly: false,
+    },
+  ],
+  sections: [
+    { id: 'kn-1', invitationId: 'inv-karim-nada-004', sectionKey: 'envelope', isEnabled: true, sortOrder: 1 },
+    { id: 'kn-2', invitationId: 'inv-karim-nada-004', sectionKey: 'cover', isEnabled: true, sortOrder: 2 },
+    { id: 'kn-3', invitationId: 'inv-karim-nada-004', sectionKey: 'couple', isEnabled: true, sortOrder: 3 },
+    { id: 'kn-4', invitationId: 'inv-karim-nada-004', sectionKey: 'message', isEnabled: true, sortOrder: 4 },
+    { id: 'kn-5', invitationId: 'inv-karim-nada-004', sectionKey: 'countdown', isEnabled: true, sortOrder: 5 },
+    { id: 'kn-6', invitationId: 'inv-karim-nada-004', sectionKey: 'events', isEnabled: false, sortOrder: 6 },
+    { id: 'kn-7', invitationId: 'inv-karim-nada-004', sectionKey: 'timeline', isEnabled: false, sortOrder: 7 },
+    { id: 'kn-8', invitationId: 'inv-karim-nada-004', sectionKey: 'parents', isEnabled: true, sortOrder: 8 },
+    { id: 'kn-9', invitationId: 'inv-karim-nada-004', sectionKey: 'couple_photo', isEnabled: true, sortOrder: 9 },
+    { id: 'kn-10', invitationId: 'inv-karim-nada-004', sectionKey: 'gallery', isEnabled: false, sortOrder: 10 },
+    { id: 'kn-11', invitationId: 'inv-karim-nada-004', sectionKey: 'venue', isEnabled: true, sortOrder: 11 },
+    { id: 'kn-12', invitationId: 'inv-karim-nada-004', sectionKey: 'map', isEnabled: true, sortOrder: 12 },
+    { id: 'kn-13', invitationId: 'inv-karim-nada-004', sectionKey: 'dresscode', isEnabled: true, sortOrder: 13 },
+    { id: 'kn-14', invitationId: 'inv-karim-nada-004', sectionKey: 'rsvp', isEnabled: true, sortOrder: 14 },
+    { id: 'kn-15', invitationId: 'inv-karim-nada-004', sectionKey: 'calendar', isEnabled: true, sortOrder: 15 },
+    { id: 'kn-16', invitationId: 'inv-karim-nada-004', sectionKey: 'share', isEnabled: true, sortOrder: 16 },
+    { id: 'kn-17', invitationId: 'inv-karim-nada-004', sectionKey: 'whatsapp', isEnabled: true, sortOrder: 17 },
+    { id: 'kn-18', invitationId: 'inv-karim-nada-004', sectionKey: 'footer', isEnabled: true, sortOrder: 18 },
+  ],
+};

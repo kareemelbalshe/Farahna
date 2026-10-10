@@ -11,6 +11,8 @@ import {
   MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL,
   MOCK_AHMED_SARA_THEME_OVERRIDE,
   MOCK_OMAR_SALMA,
+  MOCK_MARIAM_YOUSSEF,
+  MOCK_KARIM_NADA,
   createAhmedSaraWithTheme,
 } from '@/lib/mockInvitationData';
 import { Heart, Clock, Lock, FileEdit } from 'lucide-react';
@@ -96,6 +98,8 @@ function getMockData(slug: string, searchParams?: PageProps['searchParams']) {
   }
 
   if (slug === 'omar-salma') return MOCK_OMAR_SALMA;
+  if (slug === 'mariam-youssef') return MOCK_MARIAM_YOUSSEF;
+  if (slug === 'karim-nada') return MOCK_KARIM_NADA;
   return null;
 }
 
@@ -183,6 +187,9 @@ export default async function PublicInvitationPage({ params, searchParams }: Pag
   // If a mock-specific testing slug or searchParam is set, prioritize mock
   const isMockOnlyTest =
     slug.startsWith('ahmed-sara') ||
+    slug === 'omar-salma' ||
+    slug === 'mariam-youssef' ||
+    slug === 'karim-nada' ||
     Boolean(searchParams?.hideEvent) ||
     Boolean(searchParams?.theme) ||
     Boolean(searchParams?.themeOverride) ||

@@ -49,7 +49,7 @@ export function CoupleNamesSection({
         </h1>
 
         {hasEn && (
-          <p className="text-xs sm:text-sm font-serif tracking-widest text-stone-500 uppercase">
+          <p className="text-xs sm:text-sm font-serif tracking-widest text-stone-500 uppercase theme-muted">
             {groomEn && <span>{groomEn}</span>}
             {groomEn && brideEn && <span className="mx-1.5">&</span>}
             {brideEn && <span>{brideEn}</span>}

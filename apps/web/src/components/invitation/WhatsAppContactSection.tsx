@@ -33,7 +33,7 @@ export function WhatsAppContactSection({
 
   return (
     <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
-      <p className="text-xs text-stone-500 font-medium">
+      <p className="text-xs text-stone-500 font-medium theme-muted">
         لأي استفسار أو تواصل مباشر مع أصحاب الفرح
       </p>
 

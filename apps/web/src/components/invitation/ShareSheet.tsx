@@ -61,10 +61,10 @@ export function ShareSheet({
   return (
     <section className="py-10 px-4 max-w-xl mx-auto text-center space-y-6">
       <div className="space-y-1">
-        <h3 className="text-xl font-black text-stone-900 font-cairo">
+        <h3 className="text-xl font-black text-stone-900 font-cairo theme-heading">
           شاركوا فرحتنا مع من تحبون
         </h3>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-stone-500 theme-muted">
           أرسلوا رابط الدعوة إلى الأهل والأصدقاء بلمسة واحدة
         </p>
       </div>

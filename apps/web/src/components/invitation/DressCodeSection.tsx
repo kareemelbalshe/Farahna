@@ -18,7 +18,7 @@ export function DressCodeSection({
 
   return (
     <section className="py-8 px-4 max-w-2xl mx-auto space-y-4 text-center">
-      <div className="p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-stone-200/90 shadow-sm space-y-4">
+      <div className="p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-stone-200/90 shadow-sm space-y-4 theme-card">
         {/* Henna Female Only Banner */}
         {isHennaFemaleOnly && (
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-xs mx-auto">
@@ -28,12 +28,12 @@ export function DressCodeSection({
         )}
 
         <div className="space-y-1">
-          <div className="flex items-center justify-center gap-2 text-stone-800 font-bold text-sm font-cairo">
+          <div className="flex items-center justify-center gap-2 text-stone-800 font-bold text-sm font-cairo theme-heading">
             <Shirt className="w-4 h-4 text-amber-600" />
             <span>قواعد اللباس والملاحظات الخاصة (Dress Code)</span>
           </div>
           {dressCodeAr && (
-            <p className="text-sm sm:text-base font-bold text-[#720925] pt-1">
+            <p className="text-sm sm:text-base font-bold pt-1" style={{ color: secondaryColor }}>
               {dressCodeAr}
             </p>
           )}
@@ -48,7 +48,7 @@ export function DressCodeSection({
         )}
 
         {notesAr && (
-          <p className="text-xs text-stone-500 leading-relaxed font-medium">
+          <p className="text-xs text-stone-500 leading-relaxed font-medium theme-muted">
             {notesAr}
           </p>
         )}

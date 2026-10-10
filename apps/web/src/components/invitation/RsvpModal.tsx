@@ -61,17 +61,17 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
 
   return (
     <section className="py-12 px-4 max-w-xl mx-auto">
-      <div className="rounded-3xl bg-white border border-stone-200/90 shadow-xl p-6 sm:p-8 space-y-6 text-right">
+      <div className="rounded-3xl bg-white border border-stone-200/90 shadow-xl p-6 sm:p-8 space-y-6 text-right theme-card">
         {/* Header */}
         <div className="text-center space-y-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#720925] border border-rose-200 text-xs font-bold">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#720925] border border-rose-200 text-xs font-bold theme-badge">
             <Heart className="w-3.5 h-3.5 fill-rose-600 text-rose-600" />
             تأكيد الحضور (RSVP)
           </span>
-          <h3 className="text-2xl font-black text-stone-900 font-cairo">
+          <h3 className="text-2xl font-black text-stone-900 font-cairo theme-heading">
             هل ستشاركونا فرحتنا؟
           </h3>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-stone-500 theme-muted">
             يسعدنا تأكيد حضوركم لحصر أماكن الضيوف واستقبالكم بأفضل شكل ❤️
           </p>
         </div>

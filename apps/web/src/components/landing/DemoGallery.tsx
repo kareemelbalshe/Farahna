@@ -80,7 +80,7 @@ const DEFAULT_DEMOS: DemoItem[] = [
     city: 'التجمع الخامس، القاهرة الجديدة',
     themeName: 'الزهري الرومانسي',
     themeSlug: 'romantic-floral',
-    previewUrl: '/invitation/wedding/ahmed-sara#henna',
+    previewUrl: '/invitation/henna/mariam-youssef',
     eventsCount: 1,
     eventsList: ['ليلة الحنة'],
     coverGradient: 'from-[#9C5162] via-[#7B3C4B] to-[#451C26]',
@@ -100,7 +100,7 @@ const DEFAULT_DEMOS: DemoItem[] = [
     city: 'التجمع الخامس، القاهرة',
     themeName: 'الأبيض الهادئ النقي',
     themeSlug: 'minimal-white',
-    previewUrl: '/invitation/wedding/ahmed-sara#katb_ketab',
+    previewUrl: '/invitation/katb_ketab/karim-nada',
     eventsCount: 1,
     eventsList: ['عقد القران'],
     coverGradient: 'from-[#3A4A58] via-[#2A3742] to-[#1B242C]',
@@ -238,6 +238,7 @@ export function DemoGallery({
                 <div className="p-5 pt-0 space-y-2">
                   <Link
                     href={demo.previewUrl}
+                    target="_blank"
                     className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-stone-900 text-white font-bold text-xs hover:bg-stone-800 transition-colors shadow-xs"
                   >
                     <Eye className="w-3.5 h-3.5 text-amber-400" />

@@ -46,19 +46,19 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
             {formattedDate}
           </span>
         )}
-        <h3 className="text-xl font-black text-stone-800 font-cairo">
+        <h3 className="text-xl font-black text-stone-800 font-cairo theme-heading">
           باقي على ليلة العمر ومشاركتكم فرحتنا ❤️
         </h3>
       </div>
 
       {timeLeft.isPassed ? (
-        <div className="p-6 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-lg">
+        <div className="p-6 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-lg theme-card">
           🎉 اليوم فرحتنا... مستنيينكم تنورونا وتشاركونا أجمل لحظات حياتنا!
         </div>
       ) : (
         <div className="grid grid-cols-4 gap-3 sm:gap-4 max-w-md mx-auto">
           {/* Days */}
-          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
+          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1 theme-card">
             <span
               suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
@@ -66,11 +66,11 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
             >
               {timeLeft.days}
             </span>
-            <span className="text-[11px] font-bold text-stone-500">يوم</span>
+            <span className="text-[11px] font-bold text-stone-500 theme-muted">يوم</span>
           </div>
 
           {/* Hours */}
-          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
+          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1 theme-card">
             <span
               suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
@@ -78,11 +78,11 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
             >
               {timeLeft.hours}
             </span>
-            <span className="text-[11px] font-bold text-stone-500">ساعة</span>
+            <span className="text-[11px] font-bold text-stone-500 theme-muted">ساعة</span>
           </div>
 
           {/* Minutes */}
-          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
+          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1 theme-card">
             <span
               suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
@@ -90,11 +90,11 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
             >
               {timeLeft.minutes}
             </span>
-            <span className="text-[11px] font-bold text-stone-500">دقيقة</span>
+            <span className="text-[11px] font-bold text-stone-500 theme-muted">دقيقة</span>
           </div>
 
           {/* Seconds */}
-          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1">
+          <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-sm space-y-1 theme-card">
             <span
               suppressHydrationWarning
               className="text-3xl sm:text-4xl font-black font-cairo block"
@@ -102,7 +102,7 @@ export function CountdownTimer({ eventDate, primaryColor = '#720925' }: Countdow
             >
               {timeLeft.seconds}
             </span>
-            <span className="text-[11px] font-bold text-stone-500">ثانية</span>
+            <span className="text-[11px] font-bold text-stone-500 theme-muted">ثانية</span>
           </div>
         </div>
       )}

@@ -19,19 +19,19 @@ export function VenueLocationSection({
   return (
     <section className="py-8 px-4 max-w-3xl mx-auto space-y-6 text-right">
       <div className="text-center space-y-2">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold theme-badge">
           <Building className="w-3.5 h-3.5 text-amber-600" />
           مكان وموعد الفرح
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-cairo">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-cairo theme-heading">
           تفاصيل موعد وقاعة الفرح
         </h2>
       </div>
 
-      <div className="rounded-3xl bg-white border border-stone-200/90 shadow-md p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5">
+      <div className="rounded-3xl bg-white border border-stone-200/90 shadow-md p-6 sm:p-8 space-y-6 theme-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 theme-divider pb-5">
           <div>
-            <span className="text-xs font-bold text-amber-700 block mb-1">
+            <span className="text-xs font-bold text-amber-700 block mb-1 theme-badge">
               {primaryEvent.titleAr}
             </span>
             <h3
@@ -41,16 +41,16 @@ export function VenueLocationSection({
               {primaryEvent.venueNameAr || 'قاعة الفرح'}
             </h3>
             {primaryEvent.subtitleAr && (
-              <p className="text-xs text-stone-500 mt-0.5">{primaryEvent.subtitleAr}</p>
+              <p className="text-xs text-stone-500 mt-0.5 theme-muted">{primaryEvent.subtitleAr}</p>
             )}
           </div>
 
           <div className="space-y-1 text-right sm:text-left self-start sm:self-auto">
-            <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
+            <div className="flex items-center gap-2 text-xs font-bold text-stone-800 theme-heading">
               <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
               <span suppressHydrationWarning>{formatArabicDate(primaryEvent.date) || 'الموعد يُحدد لاحقاً'}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-stone-600">
+            <div className="flex items-center gap-2 text-xs font-semibold text-stone-600 theme-muted">
               <Clock className="w-4 h-4 text-stone-400 shrink-0" />
               <span>
                 {primaryEvent.startTime
@@ -63,15 +63,15 @@ export function VenueLocationSection({
 
         <div className="space-y-2 text-xs sm:text-sm text-stone-700">
           <div className="flex items-start gap-2.5">
-            <MapPin className="w-4 h-4 text-[#720925] shrink-0 mt-0.5" />
+            <MapPin className="w-4 h-4 text-[#720925] shrink-0 mt-0.5" style={{ color: primaryColor }} />
             <div>
-              <p className="font-bold text-stone-800">العنوان:</p>
-              <p className="text-stone-600 mt-0.5">{primaryEvent.addressAr || 'القاهرة، مصر'}</p>
+              <p className="font-bold text-stone-800 theme-heading">العنوان:</p>
+              <p className="text-stone-600 mt-0.5 theme-muted">{primaryEvent.addressAr || 'القاهرة، مصر'}</p>
             </div>
           </div>
 
           {primaryEvent.descriptionAr && (
-            <p className="text-stone-500 text-xs leading-relaxed pt-2">
+            <p className="text-stone-500 text-xs leading-relaxed pt-2 theme-muted">
               {primaryEvent.descriptionAr}
             </p>
           )}
