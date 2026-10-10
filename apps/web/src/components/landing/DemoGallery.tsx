@@ -107,6 +107,26 @@ const DEFAULT_DEMOS: DemoItem[] = [
     accentColor: '#E2E8F0',
     badge: 'طابع إسلامي أصيل 📜',
   },
+  {
+    id: 'demo-5',
+    slug: 'ahmed-sara-egyptian-oriental',
+    type: 'wedding',
+    typeNameAr: 'زفاف مصري شرقي',
+    coupleNames: 'طارق & نور',
+    groomName: 'طارق فهمي',
+    brideName: 'نور الشناوي',
+    date: 'الخميس، ٢٥ ديسمبر ٢٠٢٦',
+    venue: 'فندق سوفيتيل الجزيرة — قاعة الأوبرا',
+    city: 'الزمالك، كورنيش النيل',
+    themeName: 'الأصيل الشرقي المصري',
+    themeSlug: 'egyptian-oriental',
+    previewUrl: '/invitation/wedding/ahmed-sara-egyptian-oriental',
+    eventsCount: 1,
+    eventsList: ['حفل الزفاف'],
+    coverGradient: 'from-[#2C1810] via-[#3D2314] to-[#1A0F0A]',
+    accentColor: '#E5A93C',
+    badge: 'طابع مصري شرقي أصيل 🪕',
+  },
 ];
 
 interface DemoGalleryProps {
@@ -127,6 +147,7 @@ export function DemoGallery({
 
   return (
     <section id="demos" className="py-20 lg:py-28 bg-white relative">
+      <div id="themes" className="absolute -top-24 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">

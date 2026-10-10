@@ -7,40 +7,101 @@ export function LandingJsonLd({
   siteUrl?: string;
   whatsappNumber?: string;
 }) {
-  const organizationSchema = {
+  const localBusinessSchema = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': 'LocalBusiness',
+    '@id': `${siteUrl}/#organization`,
     name: 'فرحنا — Farahna',
-    alternateName: 'منصة فرحنا لدعوات الأفراح الإلكترونية',
+    alternateName: [
+      'منصة فرحنا لدعوات الأفراح الإلكترونية',
+      'فرحنا لتصميم كروت الأفراح الرقمية في مصر',
+      'Farahna Digital Wedding Invitations Egypt',
+    ],
     url: siteUrl,
-    logo: `${siteUrl}/icon-512.png`,
+    logo: `${siteUrl}/favicon.png`,
+    image: `${siteUrl}/favicon.png`,
     description:
-      'المنصة المصرية الأولى لتصميم دعوات الأفراح والمناسبات الرقمية الفاخرة. دعوة تفاعلية تجمع كل محطات فرحتكم في رابط واحد أنيق.',
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: `+${whatsappNumber}`,
-      contactType: 'customer service',
-      areaServed: 'EG',
-      availableLanguage: ['Arabic', 'English'],
+      'المنصة المصرية الأولى لتصميم دعوات الأفراح والمناسبات الرقمية الفاخرة. دعوة تفاعلية تجمع كل محطات فرحتكم (الخطوبة، الحنة، كتب الكتاب، والفرح) في رابط واحد أنيق مع تأكيد الحضور الذكي وخريطة القاعة.',
+    telephone: `+${whatsappNumber}`,
+    priceRange: '350 - 950 EGP',
+    currenciesAccepted: 'EGP, SAR, AED, USD',
+    paymentAccepted: 'InstaPay, Vodafone Cash, Bank Transfer',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'شارع التسعين الجنوبي، التجمع الخامس',
+      addressLocality: 'القاهرة',
+      addressRegion: 'محافظة القاهرة',
+      postalCode: '11835',
+      addressCountry: 'EG',
     },
-    sameAs: ['https://instagram.com/farahna_eg', 'https://facebook.com/farahna.eg'],
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 30.0444,
+      longitude: 31.2357,
+    },
+    areaServed: [
+      { '@type': 'AdministrativeArea', name: 'القاهرة' },
+      { '@type': 'AdministrativeArea', name: 'الجيزة' },
+      { '@type': 'AdministrativeArea', name: 'الإسكندرية' },
+      { '@type': 'AdministrativeArea', name: 'التجمع الخامس' },
+      { '@type': 'AdministrativeArea', name: 'الشيخ زايد' },
+      { '@type': 'AdministrativeArea', name: 'مدينة ٦ أكتوبر' },
+      { '@type': 'AdministrativeArea', name: 'المنصورة' },
+      { '@type': 'AdministrativeArea', name: 'طنطا' },
+      { '@type': 'AdministrativeArea', name: 'بورسعيد' },
+      { '@type': 'Country', name: 'مصر (Egypt)' },
+      { '@type': 'Country', name: 'المملكة العربية السعودية' },
+      { '@type': 'Country', name: 'الإمارات العربية المتحدة' },
+    ],
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ],
+      opens: '09:00',
+      closes: '23:59',
+    },
+    sameAs: [
+      'https://instagram.com/farahna_eg',
+      'https://facebook.com/farahna.eg',
+      'https://tiktok.com/@farahna_eg',
+    ],
+  };
+
+  const webSiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    url: siteUrl,
+    name: 'فرحنا — دعوة فرحك الإلكترونية الفاخرة | Farahna',
+    description: 'المنصة المصرية المتخصصة في كروت ودعوات الأفراح الرقمية التفاعلية مع نظام تأكيد الحضور وخريطة القاعة.',
+    inLanguage: 'ar-EG',
+    publisher: {
+      '@id': `${siteUrl}/#organization`,
+    },
   };
 
   const serviceSchema = {
     '@context': 'https://schema.org',
     '@type': 'Service',
+    '@id': `${siteUrl}/#service`,
     name: 'تصميم دعوات الأفراح والمناسبات الإلكترونية التفاعلية',
     serviceType: 'Digital Wedding Invitations & Multi-Event RSVP',
     provider: {
-      '@type': 'Organization',
-      name: 'فرحنا — Farahna',
+      '@id': `${siteUrl}/#organization`,
     },
     areaServed: {
       '@type': 'Country',
       name: 'مصر (Egypt)',
     },
     description:
-      'دعوات زفاف وخطوبة وحنة وكتب كتاب تفاعلية فاخرة تشمل: نظام المناسبات المتعددة برابط واحد، خريطة تفاعلية بنقرة واحدة، تأكيد الحضور RSVP، موسيقى مخصصة، وحفظ الموعد في تقويم الهاتف.',
+      'خدمة تصميم دعوات زفاف وخطوبة وحنة وكتب كتاب تفاعلية فاخرة تشمل: نظام المناسبات المتعددة برابط واحد، خريطة تفاعلية بنقرة واحدة عبر GPS، تأكيد الحضور RSVP، موسيقى مخصصة، وحفظ الموعد في تقويم الهاتف.',
     offers: {
       '@type': 'Offer',
       price: '500',
@@ -48,6 +109,58 @@ export function LandingJsonLd({
       availability: 'https://schema.org/InStock',
       description: 'الدفع متاح عبر InstaPay أو فودافون كاش بعد المعاينة والاعتماد التام بنسبة ١٠٠٪.',
     },
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'باقات دعوات فرحنا',
+      itemListElement: [
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'دعوة زفاف أساسية — مناسبة واحدة',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'دعوة زفاف VIP — ثيمات فاخرة وتخصيص كامل',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'باقة الرحلة الشاملة — الخطوبة والحنة وكتب الكتاب والفرح في رابط واحد',
+          },
+        },
+      ],
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'الرئيسية',
+        item: siteUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'نماذج الدعوات الحية',
+        item: `${siteUrl}/#demos`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'باقات الأسعار',
+        item: `${siteUrl}/#pricing`,
+      },
+    ],
   };
 
   const faqSchema = {
@@ -99,7 +212,7 @@ export function LandingJsonLd({
         name: 'هل الدعوة سريعة وما بتسحبش باقة الموبايل؟',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'دعوات فرحنا مبنية بأحدث تقنيات الويب العالمية، والصور بتنزل بجودة عالية ومضغوطة تلقائياً بتقنية WebP عشان تفتح بسرعة البرق حتى على شبكات 3G وباقات النت الضعيفة.',
+          text: 'دعوات فرحنا مبنية بأحدث تقنيات الويب العالمية، والصور بتنزل بجودة عالية ومضغوطة تلقائياً بتقنية WebP عشان تفتح بسرعة البرق حتى على شبكات 3G وباقات النت الضعيفة في مصر.',
         },
       },
     ],
@@ -109,11 +222,19 @@ export function LandingJsonLd({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
         type="application/ld+json"

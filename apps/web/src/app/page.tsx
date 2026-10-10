@@ -1,17 +1,15 @@
 import React from 'react';
 import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero';
-import { LiveInvitationPreview } from '@/components/landing/LiveInvitationPreview';
-import { InvitationTypes } from '@/components/landing/InvitationTypes';
-import { DemoGallery } from '@/components/landing/DemoGallery';
 import { WhyFarahna } from '@/components/landing/WhyFarahna';
-import { FeaturesGrid } from '@/components/landing/FeaturesGrid';
+import { DemoGallery } from '@/components/landing/DemoGallery';
+import { InvitationTypes } from '@/components/landing/InvitationTypes';
 import { MultiEventJourneyExplainer } from '@/components/landing/MultiEventJourneyExplainer';
+import { FeaturesGrid } from '@/components/landing/FeaturesGrid';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { ThemesGallery } from '@/components/landing/ThemesGallery';
-import { MapLocationPreview } from '@/components/landing/MapLocationPreview';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { FaqSection } from '@/components/landing/FaqSection';
+import { LocalGeoSeoSection } from '@/components/landing/LocalGeoSeoSection';
 import { WhatsAppCallToAction } from '@/components/landing/WhatsAppCallToAction';
 import { Footer } from '@/components/landing/Footer';
 import { fetchSiteSettings } from '@/lib/api';
@@ -28,64 +26,46 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen flex flex-col justify-between bg-[#FAF7F2] text-stone-900 selection:bg-rose-100 selection:text-[#720925]">
-      {/* JSON-LD Structured Data (Organization, Service, FAQPage) */}
+      {/* 1. Enhanced Local SEO & Geo JSON-LD Structured Data */}
       <LandingJsonLd whatsappNumber={whatsappNumber} />
 
-      {/* Top Sticky Navigation */}
+      {/* 2. Top Sticky Navigation */}
       <Navbar whatsappNumber={whatsappNumber} />
 
-      {/* 1. Hero */}
+      {/* 3. Hero — Hook, Trust Badges & Direct CTAs */}
       <Hero whatsappNumber={whatsappNumber} />
 
-      {/* 2. Live Invitation Preview (Interactive Open Envelope Simulation) */}
-      <LiveInvitationPreview />
-
-      {/* 3. Invitation Types (Wedding, Henna, Katb Ketab, Engagement) */}
-      <InvitationTypes whatsappNumber={whatsappNumber} />
-
-      {/* 4. Demo Gallery (Realistic Egyptian Couples Showcase) */}
-      <DemoGallery whatsappNumber={whatsappNumber} />
-
-      {/* 5. Why Farahna (Value proposition & Differentiators) */}
+      {/* 4. Why Farahna — The Value Proposition & Digital vs Paper Comparison */}
       <WhyFarahna whatsappNumber={whatsappNumber} />
 
-      {/* 6. Features Grid (Rich Interactive Elements) */}
-      <FeaturesGrid />
+      {/* 5. Master Showcase — The Single Definitive Live Interactive Demos & Themes Gallery */}
+      <DemoGallery whatsappNumber={whatsappNumber} />
 
-      {/* 7. Multi-Event Journey Explainer (One Link for All Stages) */}
+      {/* 6. Invitation Types — Deep Dive into Wedding, Henna, Katb Ketab & Engagement */}
+      <InvitationTypes whatsappNumber={whatsappNumber} />
+
+      {/* 7. Multi-Event Journey Explainer — The Superpower: All Milestones in One Smart Link */}
       <MultiEventJourneyExplainer />
 
-      {/* 8. How It Works (4 Simple Steps with InstaPay Transparency) */}
+      {/* 8. Features Grid — 9 Rich Interactive Capabilities (RSVP, GPS, Music, Countdown, Privacy) */}
+      <FeaturesGrid />
+
+      {/* 9. How It Works — 4 Simple Steps with Complete Transparency */}
       <HowItWorks />
 
-      {/* 9. Themes Showcase Gallery */}
-      <ThemesGallery whatsappNumber={whatsappNumber} />
-
-      {/* 10. Map / Location Preview (GPS & One-Tap Google Maps) */}
-      <MapLocationPreview whatsappNumber={whatsappNumber} />
-
-      {/* 11. Pricing Section (Informational Only) */}
+      {/* 10. Pricing & Packages — Honest, Clear Pricing with InstaPay Guarantee */}
       <PricingSection whatsappNumber={whatsappNumber} />
 
-      {/* 12. FAQ Section */}
+      {/* 11. FAQ — Comprehensive Answers to All Egyptian & Arab Wedding Questions */}
       <FaqSection />
 
-      {/* Natural SEO Keywords & Editorial Context */}
-      <section className="py-12 bg-white/70 border-t border-stone-200/80">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3 font-cairo">
-          <h2 className="text-lg font-black text-stone-800">
-            فرحنا — المنصة المصرية الأولى لتصميم دعوات أفراح إلكترونية ورقمية فاخرة
-          </h2>
-          <p className="text-xs text-stone-600 leading-relaxed max-w-2xl mx-auto">
-            سواء كنت تستعد لطلب <strong>دعوة فرح إلكترونية</strong> أو <strong>دعوة زفاف إلكترونية</strong>، نوفر لك إمكانية تصميم <strong>دعوة خطوبة</strong>، <strong>دعوة حنة</strong>، أو <strong>دعوة كتب كتاب</strong> تحت رابط واحد أنيق. نمنحك تجربة مميزة لإرسال <strong>دعوة فرح واتساب</strong> تجمع بين روعة التصميم ودقة <strong>دعوة زفاف رقمية</strong> و<strong>دعوة فرح اونلاين</strong> تناسب أرقى <strong>دعوات أفراح مصرية</strong> مع ميزة تأكيد الحضور (RSVP) والخريطة التفاعلية.
-          </p>
-        </div>
-      </section>
+      {/* 12. Local Geo-SEO — Governorates, Hubs, Venues & Targeted Search Visibility */}
+      <LocalGeoSeoSection />
 
-      {/* 13. WhatsApp Call To Action (High-Conversion Pre-Footer Banner) */}
+      {/* 13. Pre-Footer High-Conversion WhatsApp CTA */}
       <WhatsAppCallToAction whatsappNumber={whatsappNumber} />
 
-      {/* 14. Footer */}
+      {/* 14. Footer — Corporate Info, Support Phone & Quick Links */}
       <Footer whatsappNumber={whatsappNumber} supportPhone={supportPhone} />
     </main>
   );

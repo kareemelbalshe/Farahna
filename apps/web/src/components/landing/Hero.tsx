@@ -50,13 +50,13 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
                 <span>اعمل دعوتك دلوقتي ❤️</span>
               </a>
 
-              <Link
-                href="/invitation/wedding/ahmed-sara"
+              <a
+                href="#demos"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-white text-stone-800 border-2 border-stone-200/80 font-bold text-base hover:bg-stone-50 hover:border-stone-300 shadow-sm transition-all"
               >
                 <Eye className="w-5 h-5 text-amber-600" />
-                <span>شاهد نموذج زفاف أحمد وسارة</span>
-              </Link>
+                <span>استعرض نماذج الدعوات 💌</span>
+              </a>
             </div>
 
             {/* Trust Badges */}
