@@ -111,4 +111,139 @@ describe('4. Invitation Creation, Publishing & Slug Uniqueness Test Suite', () =
     expect([409, 400]).toContain(duplicateRes.status);
     expect(duplicateRes.body.success).toBe(false);
   });
+
+  it('4.6 should create invitation in Quick Mode without customerId (auto-assigned customer)', async () => {
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        // customerId omitted!
+        themeId,
+        slug: `quick-mode-${Date.now().toString().slice(-6)}`,
+        title: 'دعوة سريعة بدون عميل مسبق',
+        type: 'wedding',
+        coupleGroomAr: 'إبراهيم',
+        coupleBrideAr: 'نوران',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBeDefined();
+    expect(res.body.data.customerId).toBeDefined();
+  });
+
+  it('4.7 should create invitation with customerId as empty string or "quick_draft"', async () => {
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        customerId: '',
+        themeId,
+        slug: `quick-draft-${Date.now().toString().slice(-6)}`,
+        title: 'دعوة وضع المسودة السريعة',
+        type: 'engagement',
+        coupleGroomAr: 'كريم',
+        coupleBrideAr: 'سلمى',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.customerId).toBeDefined();
+  });
+
+  it('4.8 should create invitation with inline customer details (auto-creating customer)', async () => {
+    const inlinePhone = `011${Date.now().toString().slice(-8)}`;
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        newCustomerName: 'سامي عبد العزيز',
+        newCustomerPhone: inlinePhone,
+        themeId,
+        slug: `inline-cust-${Date.now().toString().slice(-6)}`,
+        type: 'henna',
+        coupleGroomAr: 'سامي',
+        coupleBrideAr: 'دعاء',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+
+    // Verify customer was created
+    const custCheck = await request(app)
+      .get(`/api/customers?search=${inlinePhone}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(custCheck.body.data.customers.length).toBeGreaterThan(0);
+    expect(res.body.data.customerId).toBe(custCheck.body.data.customers[0].id);
+  });
+
+  it('4.9 should handle non-existent customerId safely without database foreign key crash', async () => {
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        customerId: '00000000-0000-0000-0000-000000000000', // Non-existent UUID
+        themeId,
+        slug: `safe-fallback-${Date.now().toString().slice(-6)}`,
+        coupleGroomAr: 'عمر',
+        coupleBrideAr: 'ندى',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.customerId).toBeDefined();
+  });
+
+  it('4.10 should auto-generate clean unique slug and title when omitted', async () => {
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        coupleGroomAr: 'أحمد',
+        coupleBrideAr: 'منى',
+        // slug and title omitted!
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.slug).toBeDefined();
+    expect(res.body.data.slug.length).toBeGreaterThanOrEqual(3);
+    expect(res.body.data.title).toContain('دعوة');
+  });
+
+  it('4.11 should handle missing or invalid themeId gracefully by falling back to default theme', async () => {
+    const res = await request(app)
+      .post('/api/invitations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        themeId: 'non-existent-theme-xyz',
+        slug: `default-theme-${Date.now().toString().slice(-6)}`,
+        coupleGroomAr: 'حسام',
+        coupleBrideAr: 'رنا',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.themeId).toBeDefined();
+  });
+
+  it('4.12 should support all invitation types (wedding, engagement, henna, katb_ketab, custom)', async () => {
+    const types = ['wedding', 'engagement', 'henna', 'katb_ketab', 'custom'] as const;
+
+    for (const t of types) {
+      const res = await request(app)
+        .post('/api/invitations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          type: t,
+          slug: `type-${t.replace(/_/g, '-')}-${Date.now().toString().slice(-6)}`,
+          coupleGroomAr: `عريس ${t}`,
+          coupleBrideAr: `عروس ${t}`,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe(t);
+    }
+  });
 });

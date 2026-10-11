@@ -84,10 +84,56 @@ export const verifyPaymentSchema = z.object({
 });
 
 export const invitationSchema = z.object({
-  customerId: z.string().uuid('معرف العميل غير صحيح'),
-  orderId: z.string().uuid().optional().nullable(),
-  slug: z.string().min(3, 'الرابط المخصص يجب أن يكون 3 أحرف على الأقل').regex(/^[a-z0-9-]+$/, 'الرابط يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطات فقط'),
-  title: z.string().min(2, 'عنوان الدعوة مطلوب'),
+  customerId: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val || val === 'quick_draft' || val === 'none' || val.trim() === '') return true;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+      },
+      {
+        message: 'معرف العميل غير صحيح',
+      }
+    ),
+  customer: z
+    .object({
+      name: z.string().optional().nullable(),
+      phone: z.string().optional().nullable(),
+      whatsapp: z.string().optional().nullable(),
+    })
+    .optional()
+    .nullable(),
+  newCustomerName: z.string().optional().nullable(),
+  newCustomerPhone: z.string().optional().nullable(),
+  orderId: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === '') return true;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+      },
+      {
+        message: 'معرف الطلب غير صحيح',
+      }
+    ),
+  slug: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === '') return true;
+        return /^[a-z0-9-]+$/.test(val) && val.length >= 3 && val.length <= 60;
+      },
+      {
+        message: 'الرابط المخصص يجب أن يكون بين 3 و 60 حرفاً ويحتوي على أحرف إنجليزية وأرقام وشرطات فقط',
+      }
+    ),
+  title: z.string().optional().nullable(),
   type: z.enum(['wedding', 'engagement', 'henna', 'katb_ketab', 'custom']).default('wedding'),
   status: z.enum(['draft', 'preview', 'published', 'paused', 'expired', 'archived']).default('draft'),
   privacy: z.enum(['public', 'unlisted', 'private']).default('unlisted'),
@@ -116,7 +162,7 @@ export const invitationSchema = z.object({
   musicTitle: z.string().optional().nullable(),
 
   // Theme
-  themeId: z.string().min(1, 'قالب الدعوة مطلوب'),
+  themeId: z.string().optional().nullable(),
   themeConfig: z.record(z.any()).optional().nullable(),
 
   // Features
@@ -126,7 +172,7 @@ export const invitationSchema = z.object({
   envelopeAnimationEnabled: z.boolean().default(true),
 
   // Dates
-  eventDate: z.string().min(1, 'تاريخ المناسبة مطلوب'),
+  eventDate: z.string().optional().nullable(),
   startDate: z.string().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
 });

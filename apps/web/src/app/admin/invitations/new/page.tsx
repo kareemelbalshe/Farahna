@@ -16,7 +16,12 @@ import {
   Info,
   Type,
 } from 'lucide-react';
-import { ARABIC_WEDDING_FONTS, WeddingFontOption } from '@farahna/shared';
+import {
+  ARABIC_WEDDING_FONTS,
+  WeddingFontOption,
+  generateInvitationSlug,
+  transliterateArabicToSlug,
+} from '@farahna/shared';
 
 const PACKAGES_CONFIG = [
   {
@@ -116,10 +121,9 @@ export default function NewInvitationPage() {
     if (!title && (groom || bride)) {
       setTitle(`دعوة زفاف ${groom} & ${bride} ❤️`);
     }
-    if (!slug && groom) {
-      const cleanGroom = groom.trim().split(' ')[0] || 'groom';
-      const cleanBride = bride ? bride.trim().split(' ')[0] : 'bride';
-      setSlug(`${cleanGroom}-${cleanBride}`.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    if (!slug) {
+      const generatedSlug = generateInvitationSlug(groom, bride);
+      setSlug(generatedSlug);
     }
   };
 
@@ -131,54 +135,80 @@ export default function NewInvitationPage() {
     try {
       let resolvedCustomerId = '';
 
-      // If existing customer selected
-      if (customerMode === 'existing' && customerId) {
+      // 1. Resolve Customer by selected mode
+      if (customerMode === 'existing') {
+        if (!customerId) {
+          setErrorMsg('يرجى اختيار عميل مسجل من القائمة، أو التبديل إلى الوضع السريع ⚡');
+          setSubmitting(false);
+          return;
+        }
         resolvedCustomerId = customerId;
-      } else if (customerMode === 'new' && newCustomerName && newCustomerPhone) {
+      } else if (customerMode === 'new') {
+        if (!newCustomerName.trim() || !newCustomerPhone.trim()) {
+          setErrorMsg('يرجى إدخال اسم العميل ورقم هاتفه لتسجيله أولاً');
+          setSubmitting(false);
+          return;
+        }
+
         // Fast create customer
         const custRes = await adminFetch('/customers', {
           method: 'POST',
           body: JSON.stringify({
-            name: newCustomerName,
-            phone: newCustomerPhone,
-            whatsapp: newCustomerPhone,
-            notes: `تم إنشاؤه أثناء إنشاء دعوة ${title}`,
+            name: newCustomerName.trim(),
+            phone: newCustomerPhone.trim(),
+            whatsapp: newCustomerPhone.trim(),
+            notes: `تم إنشاؤه تلقائياً أثناء إنشاء دعوة ${title || 'جديدة'}`,
             source: 'website',
           }),
         });
+
         if (custRes.success && custRes.data?.id) {
           resolvedCustomerId = custRes.data.id;
+        } else {
+          setErrorMsg(custRes.message || 'فشل تسجيل العميل الجديد، يرجى مراجعة رقم الهاتف والبيانات');
+          setSubmitting(false);
+          return;
         }
       }
       // If customerMode === 'quick', leave resolvedCustomerId empty so backend auto-assigns fast guest!
 
+      // 2. Sanitize Slug
+      const cleanSlug = (slug || generateInvitationSlug(coupleGroomAr, coupleBrideAr))
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/^-+|-+$/g, '');
+
+      const payload = {
+        customerId: resolvedCustomerId || undefined,
+        title: title || `دعوة فرح - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''}`,
+        slug: cleanSlug || `farah-${Date.now().toString().slice(-6)}`,
+        type,
+        coupleGroomAr: coupleGroomAr || 'العريس',
+        coupleBrideAr: coupleBrideAr || 'العروس',
+        eventDate: new Date(eventDate).toISOString(),
+        themeId: themeId || (themes[0]?.id || 'theme-royal-burgundy'),
+        isMultiEvent,
+        status: 'draft',
+        themeConfig: {
+          selectedPackage,
+          fontFamily: selectedFont,
+        },
+      };
+
       const res = await adminFetch('/invitations', {
         method: 'POST',
-        body: JSON.stringify({
-          customerId: resolvedCustomerId || undefined,
-          title: title || `دعوة فرح - ${coupleGroomAr || 'العروسين'}`,
-          slug: slug.toLowerCase().trim() || `farah-${Date.now().toString().slice(-6)}`,
-          type,
-          coupleGroomAr: coupleGroomAr || 'العريس',
-          coupleBrideAr: coupleBrideAr || 'العروس',
-          eventDate: new Date(eventDate).toISOString(),
-          themeId: themeId || (themes[0]?.id || 'theme-royal-burgundy'),
-          isMultiEvent,
-          status: 'draft',
-          themeConfig: {
-            selectedPackage,
-            fontFamily: selectedFont,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.success && res.data?.id) {
         router.push(`/admin/invitations/${res.data.id}/builder`);
       } else {
-        setErrorMsg(res.message || 'فشل إنشاء الدعوة');
+        const errorDetail = res.errors?.map((err: any) => `${err.field}: ${err.message}`).join(' - ');
+        setErrorMsg(errorDetail ? `${res.message}: ${errorDetail}` : (res.message || 'فشل إنشاء الدعوة'));
       }
-    } catch (e) {
-      setErrorMsg('حدث خطأ في الاتصال بالخادم');
+    } catch (e: any) {
+      setErrorMsg(e?.message || 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setSubmitting(false);
     }
@@ -313,17 +343,24 @@ export default function NewInvitationPage() {
             {/* Existing Customer Dropdown */}
             {customerMode === 'existing' && (
               <div className="space-y-1">
-                <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
-                >
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.phone})
-                    </option>
-                  ))}
-                </select>
+                {customers.length === 0 ? (
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs font-medium">
+                    ⚠️ لا يوجد عملاء مسجلون حالياً. يمكنك اختيار &quot;إنشاء سريع ومباشر ⚡&quot; أو &quot;تسجيل عميل جديد&quot;.
+                  </div>
+                ) : (
+                  <select
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
+                  >
+                    <option value="">-- اختر العميل المسجل --</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.phone})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 

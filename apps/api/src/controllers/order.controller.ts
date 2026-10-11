@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
+import { DEFAULT_SECTIONS } from '@farahna/shared';
 
 export async function getOrders(req: Request, res: Response, next: NextFunction) {
   try {
@@ -123,6 +124,15 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         },
       });
       invitationId = invitation.id;
+
+      await prisma.invitationSection.createMany({
+        data: DEFAULT_SECTIONS.map((sec, idx) => ({
+          invitationId: invitation.id,
+          sectionKey: sec.key,
+          isEnabled: sec.defaultEnabled,
+          sortOrder: idx,
+        })),
+      });
     }
 
     const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;

@@ -182,3 +182,44 @@ export function getGoogleMapsDirectionsUrl(options: {
 export function getOpenStreetMapUrl(latitude: number, longitude: number, zoom: number = 16): string {
   return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=${zoom}/${latitude}/${longitude}`;
 }
+
+const ARABIC_TO_LATIN_MAP: Record<string, string> = {
+  'أ': 'a', 'إ': 'e', 'آ': 'a', 'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th',
+  'ج': 'g', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z',
+  'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a',
+  'غ': 'gh', 'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+  'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'a', 'ئ': 'e', 'ء': 'a', 'ة': 'a',
+  'ؤ': 'o', 'پ': 'p', 'چ': 'ch', 'ژ': 'zh', 'ڤ': 'v', 'گ': 'g',
+};
+
+/**
+ * Transliterates Arabic names/phrases into clean URL slug compatible text
+ */
+export function transliterateArabicToSlug(text: string): string {
+  if (!text) return '';
+  let result = '';
+  const lower = text.toLowerCase().trim();
+  for (const char of lower) {
+    if (ARABIC_TO_LATIN_MAP[char]) {
+      result += ARABIC_TO_LATIN_MAP[char];
+    } else if (/[a-z0-9]/.test(char)) {
+      result += char;
+    } else if (/\s|_|-/.test(char)) {
+      result += '-';
+    }
+  }
+  return result.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Generates a valid unique URL slug from groom & bride names
+ */
+export function generateInvitationSlug(groom?: string, bride?: string): string {
+  const cleanGroom = transliterateArabicToSlug((groom || '').trim().split(/\s+/)[0]) || 'groom';
+  const cleanBride = transliterateArabicToSlug((bride || '').trim().split(/\s+/)[0]) || 'bride';
+  const combined = `${cleanGroom}-${cleanBride}`.replace(/^-+|-+$/g, '');
+  if (combined.length >= 3 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(combined)) {
+    return combined;
+  }
+  return `farah-${Date.now().toString().slice(-6)}`;
+}

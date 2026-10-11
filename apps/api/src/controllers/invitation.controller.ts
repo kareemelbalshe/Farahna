@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
 import { nanoid } from 'nanoid';
-import { DEFAULT_SECTIONS, isValidSafeUrl, normalizeWebUrl } from '@farahna/shared';
+import { DEFAULT_SECTIONS, isValidSafeUrl, normalizeWebUrl, generateInvitationSlug } from '@farahna/shared';
 
 export async function getInvitations(req: Request, res: Response, next: NextFunction) {
   try {
@@ -144,21 +144,46 @@ export function validateSlug(slug: string): { valid: boolean; error?: string } {
 
 export async function createInvitation(req: Request, res: Response, next: NextFunction) {
   try {
-    const { eventDate, startDate, expiresAt, ...rest } = req.body;
-
-    // Validate slug
-    const cleanSlug = (rest.slug || '').toLowerCase().trim();
-    const slugCheck = validateSlug(cleanSlug);
-    if (!slugCheck.valid) {
-      return res.status(400).json({ success: false, message: slugCheck.error });
-    }
-    rest.slug = cleanSlug;
+    const {
+      eventDate,
+      startDate,
+      expiresAt,
+      slug,
+      title,
+      themeId,
+      customerId,
+      customer,
+      newCustomerName,
+      newCustomerPhone,
+      coupleGroomAr,
+      coupleBrideAr,
+      type = 'wedding',
+      status = 'draft',
+      privacy = 'unlisted',
+      coupleGroomEn,
+      coupleBrideEn,
+      parentsGroomAr,
+      parentsBrideAr,
+      weddingMessageAr,
+      weddingMessageEn,
+      coverImageUrl,
+      coupleImageUrl,
+      galleryImages,
+      musicUrl,
+      musicTitle,
+      themeConfig,
+      isMultiEvent,
+      rsvpEnabled,
+      countdownEnabled,
+      envelopeAnimationEnabled,
+      orderId,
+    } = req.body;
 
     // Validate URLs
     if (
-      !isValidSafeUrl(rest.musicUrl) ||
-      !isValidSafeUrl(rest.coverImageUrl) ||
-      !isValidSafeUrl(rest.coupleImageUrl)
+      !isValidSafeUrl(musicUrl) ||
+      !isValidSafeUrl(coverImageUrl) ||
+      !isValidSafeUrl(coupleImageUrl)
     ) {
       return res.status(400).json({
         success: false,
@@ -166,27 +191,93 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
       });
     }
 
-    // Check slug uniqueness
-    const existingSlug = await prisma.invitation.findUnique({
-      where: { slug: rest.slug },
-    });
-    if (existingSlug) {
-      return res.status(400).json({
-        success: false,
-        message: 'الرابط المختصر مستخدم بالفعل، يرجى اختيار رابط آخر',
+    // Resolve or Auto-Generate Slug
+    let finalSlug = (slug || '').toLowerCase().trim().replace(/^-+|-+$/g, '');
+    if (finalSlug) {
+      const slugCheck = validateSlug(finalSlug);
+      if (!slugCheck.valid) {
+        return res.status(400).json({ success: false, message: slugCheck.error });
+      }
+
+      // Check slug uniqueness
+      const existingSlug = await prisma.invitation.findUnique({
+        where: { slug: finalSlug },
       });
+      if (existingSlug) {
+        return res.status(400).json({
+          success: false,
+          message: 'الرابط المختصر مستخدم بالفعل، يرجى اختيار رابط آخر',
+        });
+      }
+    } else {
+      // Auto-generate clean unique slug
+      let baseSlug = generateInvitationSlug(coupleGroomAr, coupleBrideAr);
+      let candidateSlug = baseSlug;
+      let counter = 1;
+      while (await prisma.invitation.findUnique({ where: { slug: candidateSlug } })) {
+        candidateSlug = `${baseSlug}-${nanoid(4).toLowerCase()}`;
+        counter++;
+        if (counter > 10) {
+          candidateSlug = `farah-${Date.now().toString().slice(-6)}-${nanoid(3).toLowerCase()}`;
+          break;
+        }
+      }
+      finalSlug = candidateSlug;
     }
 
-    // Auto-resolve customerId if not provided (allows fast invitation creation)
-    let finalCustomerId = rest.customerId;
-    if (!finalCustomerId || finalCustomerId === 'quick_draft' || finalCustomerId === 'none') {
+    // Resolve Title
+    const finalTitle =
+      (title || '').trim() ||
+      `دعوة فرح - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''} ❤️`;
+
+    // Resolve Customer (Support all cases: explicit UUID, inline new customer, or auto guest)
+    let finalCustomerId = customerId;
+
+    if (finalCustomerId && finalCustomerId !== 'quick_draft' && finalCustomerId !== 'none') {
+      const existingCustomer = await prisma.customer.findUnique({
+        where: { id: finalCustomerId },
+      });
+      if (!existingCustomer) {
+        finalCustomerId = null; // Will fallback below
+      }
+    } else {
+      finalCustomerId = null;
+    }
+
+    // Check if inline customer details were provided
+    if (!finalCustomerId) {
+      const phoneInput = (customer?.phone || newCustomerPhone || '').trim();
+      const nameInput = (customer?.name || newCustomerName || '').trim();
+
+      if (phoneInput) {
+        let matchedCustomer = await prisma.customer.findFirst({
+          where: { phone: phoneInput },
+        });
+        if (!matchedCustomer) {
+          matchedCustomer = await prisma.customer.create({
+            data: {
+              name: nameInput || coupleGroomAr || 'عميل دعوة جديدة',
+              phone: phoneInput,
+              whatsapp: customer?.whatsapp || newCustomerPhone || phoneInput,
+              notes: `تم إنشاؤه تلقائياً أثناء إنشاء دعوة ${finalTitle}`,
+              source: 'website',
+              status: 'active',
+            },
+          });
+        }
+        finalCustomerId = matchedCustomer.id;
+      }
+    }
+
+    // Fallback to fast default customer if still not resolved (quick draft mode)
+    if (!finalCustomerId) {
       let defaultCustomer = await prisma.customer.findFirst({
         where: { phone: '01000000000' },
       });
       if (!defaultCustomer) {
         defaultCustomer = await prisma.customer.create({
           data: {
-            name: rest.coupleGroomAr ? `عميل (${rest.coupleGroomAr})` : 'عميل سريع / دعوة عامة',
+            name: coupleGroomAr ? `عميل (${coupleGroomAr})` : 'عميل سريع / دعوة عامة',
             phone: '01000000000',
             notes: 'تم إنشاء هذا الحساب تلقائياً لسرعة إنشاء الدعوات المباشرة',
             source: 'website',
@@ -197,14 +288,78 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
       finalCustomerId = defaultCustomer.id;
     }
 
+    // Resolve Theme
+    let finalThemeId = themeId;
+    if (finalThemeId) {
+      const themeRecord = await prisma.theme.findUnique({
+        where: { id: finalThemeId },
+      });
+      if (!themeRecord) {
+        finalThemeId = null;
+      }
+    }
+
+    if (!finalThemeId) {
+      const defaultTheme =
+        (await prisma.theme.findFirst({ where: { isDefault: true, isActive: true } })) ||
+        (await prisma.theme.findFirst({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } })) ||
+        (await prisma.theme.findFirst());
+      finalThemeId = defaultTheme?.id || 'theme-royal-burgundy';
+    }
+
+    // Resolve Dates
+    const parsedEventDate =
+      eventDate && !isNaN(new Date(eventDate).getTime())
+        ? new Date(eventDate)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const parsedStartDate =
+      startDate && !isNaN(new Date(startDate).getTime()) ? new Date(startDate) : null;
+
+    const parsedExpiresAt =
+      expiresAt && !isNaN(new Date(expiresAt).getTime()) ? new Date(expiresAt) : null;
+
+    // Resolve Order ID if valid
+    let finalOrderId: string | null = null;
+    if (orderId && typeof orderId === 'string' && orderId.trim()) {
+      const orderExists = await prisma.order.findUnique({ where: { id: orderId } });
+      if (orderExists) {
+        finalOrderId = orderExists.id;
+      }
+    }
+
     const invitation = await prisma.$transaction(async (tx) => {
       const inv = await tx.invitation.create({
         data: {
-          ...rest,
           customerId: finalCustomerId,
-          eventDate: new Date(eventDate),
-          startDate: startDate ? new Date(startDate) : null,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
+          orderId: finalOrderId,
+          slug: finalSlug,
+          title: finalTitle,
+          type,
+          status,
+          privacy,
+          coupleGroomAr: coupleGroomAr || 'العريس',
+          coupleBrideAr: coupleBrideAr || 'العروس',
+          coupleGroomEn: coupleGroomEn || null,
+          coupleBrideEn: coupleBrideEn || null,
+          parentsGroomAr: parentsGroomAr || null,
+          parentsBrideAr: parentsBrideAr || null,
+          weddingMessageAr: weddingMessageAr || null,
+          weddingMessageEn: weddingMessageEn || null,
+          coverImageUrl: coverImageUrl || null,
+          coupleImageUrl: coupleImageUrl || null,
+          galleryImages: Array.isArray(galleryImages) ? galleryImages : [],
+          musicUrl: musicUrl || null,
+          musicTitle: musicTitle || null,
+          themeId: finalThemeId,
+          themeConfig: themeConfig || {},
+          isMultiEvent: Boolean(isMultiEvent),
+          rsvpEnabled: rsvpEnabled !== undefined ? Boolean(rsvpEnabled) : true,
+          countdownEnabled: countdownEnabled !== undefined ? Boolean(countdownEnabled) : true,
+          envelopeAnimationEnabled: envelopeAnimationEnabled !== undefined ? Boolean(envelopeAnimationEnabled) : true,
+          eventDate: parsedEventDate,
+          startDate: parsedStartDate,
+          expiresAt: parsedExpiresAt,
         },
       });
 
