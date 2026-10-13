@@ -1423,7 +1423,15 @@ export default function VisualInvitationBuilderPage() {
             </div>
 
             {/* Inner Live Screen */}
-            <div className="flex-1 overflow-y-auto bg-[#FAF7F2]">
+            <div
+              className="flex-1 overflow-y-auto no-scrollbar"
+              style={{
+                backgroundColor:
+                  invitation.themeConfig?.backgroundColor ||
+                  invitation.theme?.config?.backgroundColor ||
+                  '#FAF7F2',
+              }}
+            >
               <InvitationRenderer
                 invitation={invitation}
                 events={invitation.events || []}

@@ -34,7 +34,7 @@ export function ParentsSection({
 
         <div className="pt-2 border-t border-stone-100 theme-divider">
           <p
-            className="text-xs sm:text-sm font-black font-cairo"
+            className="text-xs sm:text-sm font-black font-cairo theme-subheading"
             style={{ color: primaryColor }}
           >
             يتشرفون بدعوة سيادتكم لمشاركتهم فرحتهم الكبرى ❤️

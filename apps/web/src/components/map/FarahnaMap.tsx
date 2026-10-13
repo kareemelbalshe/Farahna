@@ -24,7 +24,7 @@ const LeafletMapView = dynamic(() => import('./LeafletMapView'), {
   loading: () => (
     <div className="w-full h-full min-h-[260px] sm:min-h-[320px] bg-stone-100 rounded-2xl flex flex-col items-center justify-center space-y-3 animate-pulse">
       <div className="w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center text-stone-400">
-        <Compass className="w-6 h-6 animate-spin text-amber-600" />
+        <Compass className="w-6 h-6 text-amber-600 animate-pulse" />
       </div>
       <span className="text-xs font-bold text-stone-500 font-cairo">
         جاري تحميل خريطة OpenStreetMap التفاعلية...

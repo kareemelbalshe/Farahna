@@ -23,7 +23,7 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
           {/* Right Column: Hero Pitch (RTL) */}
           <div className="lg:col-span-7 text-center lg:text-right space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-200/80 text-xs sm:text-sm font-bold shadow-sm">
-              <Sparkles className="w-4 h-4 text-amber-600 animate-spin" />
+              <Sparkles className="w-4 h-4 text-amber-600" />
               <span>دعوة مصممة مخصوص ليكم — مش مجرد قالب جاهز</span>
             </div>
 
@@ -39,36 +39,36 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
             </p>
 
             {/* CTAs */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3.5">
               <Link
                 href="/create"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-base shadow-xl shadow-amber-500/25 hover:scale-[1.02] active:scale-95 transition-all border border-amber-400"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 sm:gap-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 hover:scale-[1.02] active:scale-95 transition-all border border-amber-400"
               >
                 <Sparkles className="w-5 h-5 text-stone-950 animate-bounce" />
-                <span>صمم دعوتك بنفسك مجاناً 🪄</span>
+                <span>صمم دعوتك بنفسك الآن 🪄</span>
               </Link>
 
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl burgundy-gradient-bg text-white font-bold text-base shadow-xl shadow-rose-950/20 hover:opacity-95 active:scale-95 transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 sm:py-4 rounded-2xl burgundy-gradient-bg text-white font-bold text-sm sm:text-base shadow-xl shadow-rose-950/20 hover:opacity-95 active:scale-95 transition-all"
               >
                 <MessageCircle className="w-5 h-5 fill-current" />
                 <span>طلب تصميم خاص 💬</span>
               </a>
 
               <a
-                href="#demos"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-white text-stone-800 border-2 border-stone-200/80 font-bold text-sm hover:bg-stone-50 hover:border-stone-300 shadow-xs transition-all"
+                href="#themes"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-stone-800 border-2 border-stone-200/80 font-bold text-xs sm:text-sm hover:bg-stone-50 hover:border-stone-300 shadow-xs transition-all"
               >
                 <Eye className="w-4 h-4 text-amber-600" />
-                <span>النماذج 💌</span>
+                <span>النماذج والثيمات 💌</span>
               </a>
             </div>
 
             {/* Trust Badges */}
-            <div className="pt-6 border-t border-stone-200/80 grid grid-cols-3 gap-4 max-w-lg mx-auto lg:mx-0 text-center">
+            <div className="pt-6 border-t border-stone-200/80 grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto lg:mx-0 text-center">
               <div>
                 <p className="text-2xl font-black text-[#720925] font-cairo">٤ مناسبات</p>
                 <p className="text-xs text-stone-500 font-medium">في رابط واحد متكامل</p>
@@ -86,9 +86,9 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
 
           {/* Left Column: Live Interactive Demo Mockup */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full max-w-[300px] sm:max-w-sm">
               {/* Phone Frame */}
-              <div className="relative mx-auto border-[10px] border-stone-800 rounded-[44px] shadow-2xl bg-[#0F0F10] overflow-hidden aspect-[9/18]">
+              <div className="relative mx-auto border-[8px] sm:border-[10px] border-stone-800 rounded-[38px] sm:rounded-[44px] shadow-2xl bg-[#0F0F10] overflow-hidden aspect-[9/18]">
                 {/* Speaker pill */}
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-4 bg-stone-900 rounded-full z-20 flex items-center justify-center">
                   <div className="w-2.5 h-2.5 bg-stone-800 rounded-full mr-2" />
@@ -96,16 +96,16 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
                 </div>
 
                 {/* Inner Preview Content */}
-                <div className="relative w-full h-full bg-[#FAF7F2] p-5 pt-12 flex flex-col justify-between overflow-y-auto">
-                  <div className="text-center space-y-4">
+                <div className="relative w-full h-full bg-[#FAF7F2] p-4 sm:p-5 pt-10 sm:pt-12 flex flex-col justify-between overflow-y-auto no-scrollbar">
+                  <div className="text-center space-y-3 sm:space-y-4">
                     <span className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-[#720925]">
                       💍 دعوة زفاف ملكية
                     </span>
-                    <h3 className="text-2xl font-black text-stone-900 font-cairo">
+                    <h3 className="text-xl sm:text-2xl font-black text-stone-900 font-cairo">
                       أحمد محمود <br />
-                      <span className="text-[#720925] text-lg font-amiri">&amp; سارة إبراهيم</span>
+                      <span className="text-[#720925] text-base sm:text-lg font-amiri">&amp; سارة إبراهيم</span>
                     </h3>
-                    <p className="text-[12px] text-stone-600 leading-relaxed font-amiri px-2">
+                    <p className="text-[11px] sm:text-[12px] text-stone-600 leading-relaxed font-amiri px-2">
                       "وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا"
                     </p>
 
@@ -117,11 +117,11 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
                     </div>
 
                     <div className="bg-white/80 border border-stone-200 rounded-xl p-3 shadow-xs space-y-1.5 text-right">
-                      <div className="flex items-center gap-2 text-[11px] text-stone-700 font-bold">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-stone-700 font-bold">
                         <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                         <span>الجمعة ٢٠ نوفمبر ٢٠٢٦ — ٨:٠٠ م</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-stone-700 font-bold">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-stone-700 font-bold">
                         <MapPin className="w-3.5 h-3.5 text-[#720925] shrink-0" />
                         <span>فندق ماريوت الزمالك — قاعة عايدة</span>
                       </div>
@@ -129,10 +129,10 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
                   </div>
 
                   {/* Interactive Open Button simulation */}
-                  <div className="pt-4 pb-2">
+                  <div className="pt-3 sm:pt-4 pb-2">
                     <Link
                       href="/invitation/wedding/ahmed-sara"
-                      className="block w-full text-center py-3 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-90 transition-opacity"
+                      className="block w-full text-center py-2.5 sm:py-3 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-90 transition-opacity"
                     >
                       افتح الدعوة التفاعلية الكاملة 💌
                     </Link>
@@ -141,7 +141,7 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
               </div>
 
               {/* Decorative floating label */}
-              <div className="absolute -bottom-4 -right-4 bg-white/95 backdrop-blur-md border border-stone-200 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3">
+              <div className="absolute -bottom-3 right-0 sm:-right-4 bg-white/95 backdrop-blur-md border border-stone-200 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 sm:gap-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
                   <Music className="w-5 h-5 animate-bounce" />
                 </div>

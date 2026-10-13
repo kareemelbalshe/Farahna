@@ -27,8 +27,9 @@ import { ShareSheet } from './ShareSheet';
 import { WhatsAppContactSection } from './WhatsAppContactSection';
 import { ClosingMessageSection } from './ClosingMessageSection';
 import { recordPublicAnalytics } from '@/lib/api';
+import { getAutoRenewingDemoDate } from '@/lib/date';
 import Link from 'next/link';
-import { Sparkles, Edit3, X } from 'lucide-react';
+import { Sparkles, CameraOff, Edit3, X } from 'lucide-react';
 
 export interface InvitationRendererProps {
   invitation: InvitationDTO;
@@ -36,6 +37,7 @@ export interface InvitationRendererProps {
   theme: ThemeDTO;
   sections?: InvitationSectionDTO[];
   isPreview?: boolean;
+  hidePreviewBanner?: boolean;
   initialEventId?: string;
 }
 
@@ -45,6 +47,7 @@ export function InvitationRenderer({
   theme,
   sections = [],
   isPreview = false,
+  hidePreviewBanner = false,
   initialEventId,
 }: InvitationRendererProps) {
   // Safe invitation reference
@@ -85,8 +88,25 @@ export function InvitationRenderer({
   const visibleEvents = (events || []).filter((e) => e && e.isVisible !== false);
   const primaryEvent = visibleEvents[0] || (events && events[0]) || null;
 
-  // Resolve effective event date
-  const effectiveEventDate = safeInv.eventDate || primaryEvent?.date || null;
+  // Check if invitation is a default / demo invitation that should auto-renew
+  const isDemo = Boolean(
+    (safeInv as any).isDemo ||
+      (safeInv as any).isMock ||
+      safeInv.id?.startsWith('inv-') ||
+      safeInv.id?.startsWith('demo-') ||
+      safeInv.id === 'studio-preview' ||
+      ['ahmed-sara', 'omar-salma', 'mariam-youssef', 'karim-nada'].some((s) =>
+        safeInv.slug?.includes(s)
+      )
+  );
+
+  // Resolve effective event date (auto-renew for demo invitations if expired/passed)
+  const rawEventDate = safeInv.eventDate || primaryEvent?.date || null;
+  const effectiveEventDate =
+    isDemo && rawEventDate
+      ? getAutoRenewingDemoDate(rawEventDate).toISOString()
+      : rawEventDate;
+
   const hasValidEventDate = Boolean(
     effectiveEventDate && !isNaN(new Date(effectiveEventDate).getTime())
   );
@@ -147,9 +167,24 @@ export function InvitationRenderer({
       theme?.slug === 'elegant-gold'
   );
 
+  const isVip = Boolean(
+    (safeInv as any).isVip ||
+    (safeInv as any).themeConfig?.selectedPackage === 'luxury-vip' ||
+    (safeInv as any).selectedPackage === 'luxury-vip'
+  );
+  const enableRoyalShimmer = Boolean(
+    (safeInv as any).enableRoyalShimmer ||
+    (safeInv as any).themeConfig?.enableRoyalShimmer ||
+    isVip
+  );
+  const waxSealMonogram =
+    (safeInv as any).waxSealMonogram ||
+    (safeInv as any).themeConfig?.waxSealMonogram ||
+    null;
+
   return (
     <div
-      className={`min-h-screen transition-colors selection:bg-[#720925] selection:text-white ${
+      className={`min-h-screen transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
         isDark ? 'invitation-dark-theme dark' : ''
       }`}
       style={{
@@ -168,8 +203,19 @@ export function InvitationRenderer({
           )}:wght@300;400;600;700;800&display=swap`}
         />
       )}
+
+      {/* Floating Royal Gold Shimmer Effect for VIP */}
+      {enableRoyalShimmer && (
+        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden">
+          <div className="absolute top-12 right-[12%] w-2.5 h-2.5 rounded-full bg-amber-400/80 blur-2xs animate-ping" />
+          <div className="absolute top-36 left-[8%] w-3 h-3 rounded-full bg-amber-300/90 blur-2xs animate-pulse" />
+          <div className="absolute top-[55%] right-[10%] w-2 h-2 rounded-full bg-amber-400/70 blur-2xs animate-ping" />
+          <div className="absolute top-[75%] left-[15%] w-3 h-3 rounded-full bg-amber-300/80 blur-2xs animate-pulse" />
+        </div>
+      )}
+
       {/* 👑 Preview Banner if in admin preview mode */}
-      {isPreview && (
+      {isPreview && !hidePreviewBanner && (
         <div className="sticky top-0 z-50 bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-black shadow-md flex items-center justify-center gap-2">
           <span>👑 وضع المعاينة الآمنة — هذه النسخة غير معتمدة أو منشورة رسمياً بعد</span>
         </div>
@@ -189,6 +235,7 @@ export function InvitationRenderer({
           weddingMessageAr={safeInv.weddingMessageAr}
           eventDate={effectiveEventDate}
           invitationTitle={safeInv.title}
+          waxSealMonogram={waxSealMonogram}
         />
       )}
 
@@ -202,7 +249,16 @@ export function InvitationRenderer({
       )}
 
       {/* Main Invitation Layout Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up">
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up">
+        {/* VIP Crown Badge */}
+        {isVip && (
+          <div className="text-center pt-1 animate-fade-in">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-linear-to-r from-amber-300/30 via-amber-100/50 to-amber-300/30 text-amber-950 border border-amber-400 text-xs font-black shadow-xs tracking-wider backdrop-blur-xs">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>دعوة ملكية خاصة VIP 💎</span>
+            </span>
+          </div>
+        )}
         {/* 1. الغلاف (Cover / Hero) */}
         {isSectionEnabled('cover') && (
           <CoverHeroSection
@@ -239,6 +295,7 @@ export function InvitationRenderer({
           <CountdownTimer
             eventDate={effectiveEventDate!}
             primaryColor={primaryColor}
+            autoRenew={isDemo}
           />
         )}
 
@@ -334,6 +391,39 @@ export function InvitationRenderer({
               secondaryColor={secondaryColor}
             />
           )}
+
+        {/* 12.1. قسم ليلة الحنة المخصص للسيدات (VIP Henna Special Section) */}
+        {(isSectionEnabled('henna_special') ||
+          (isVip && ((safeInv.themeConfig as any)?.hennaSpecialEnabled || (safeInv as any).hennaSpecialEnabled))) && (
+          <section className="py-6 px-3 sm:px-4 max-w-2xl mx-auto space-y-4 text-center font-cairo">
+            <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-linear-to-b from-rose-50/90 via-white to-amber-50/70 border-2 border-rose-300/80 shadow-md space-y-4">
+              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-2xs">
+                <Sparkles className="w-4 h-4 text-rose-600" />
+                <span>ليلة الحنة — حفل خاص بالسيدات فقط 🌸</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-rose-950">
+                أهلاً بكم في ليلة حنة العروس 🌿
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-md mx-auto">
+                {(safeInv.themeConfig as any)?.hennaMessage ||
+                  (safeInv as any).hennaMessage ||
+                  'يسعدنا تشريفكم في ليلة الحنة المبهجة في أجواء راقية ومخصصة للسيدات فقط للاحتفال بالعروس.'}
+              </p>
+              {((safeInv.themeConfig as any)?.hennaPasscode || (safeInv as any).hennaPasscode) && (
+                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white border border-rose-200 shadow-2xs">
+                  <span className="text-xs font-bold text-stone-700">رمز الدخول الخاص:</span>
+                  <span className="font-mono text-base font-black text-[#720925] tracking-widest" dir="ltr">
+                    {(safeInv.themeConfig as any)?.hennaPasscode || (safeInv as any).hennaPasscode}
+                  </span>
+                </div>
+              )}
+              <div className="pt-1 flex items-center justify-center gap-2 text-xs font-bold text-rose-800">
+                <CameraOff className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>نرجو عدم التصوير احتراماً لخصوصية العروس والمعازيم ❤️</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 13. RSVP (Attendance Form) */}
         {isSectionEnabled('rsvp') && safeInv.rsvpEnabled && (

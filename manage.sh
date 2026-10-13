@@ -8,7 +8,7 @@
 #    ./manage.sh prod-ip         76.13.5.227          → deploy with raw IP on port 80
 #    ./manage.sh prod-domain     farahna.com          → deploy with domain + auto SSL (Nginx + Certbot)
 #    ./manage.sh prod-cloudflare farahna.com:8880     → deploy via Cloudflare Proxy (SSL on CF, custom port on VPS)
-#    ./manage.sh update                               → zero-data-loss update (git pull, build, migrate)
+#    ./manage.sh update                               → zero-data-loss update (git pull, build, migrate, seed sync)
 #    ./manage.sh db-seed                              → seed super admin, demo weddings, themes, guests
 #    ./manage.sh status                               → show container health & quick check
 #    ./manage.sh logs [service]                       → tail real-time logs (nginx|api|web|postgres)
@@ -76,7 +76,7 @@ show_help() {
     echo -e "  ${GREEN}prod-ip <ip[:port]>${NC}       Deploy with raw IP (HTTP only via Nginx)"
     echo -e "  ${GREEN}prod-domain <domain>${NC}      Deploy with domain + auto HTTPS (Nginx + Certbot)"
     echo -e "  ${GREEN}prod-cloudflare <domain[:port]>${NC} Deploy via Cloudflare proxy (custom port, SSL on CF)"
-    echo -e "  ${GREEN}update${NC}                    Zero-data-loss update (pull, build, migrate, cleanup)"
+    echo -e "  ${GREEN}update${NC}                    Zero-data-loss update (pull, build, migrate, seed sync, cleanup)"
     echo -e "  ${GREEN}db-seed${NC}                   Seed admin account, 5 Egyptian themes, demo data"
     echo -e "  ${GREEN}status${NC}                    Show health status of all containers"
     echo -e "  ${GREEN}logs [service]${NC}            Tail real-time logs (nginx|api|web|postgres|certbot)"
@@ -353,13 +353,13 @@ case "${1:-}" in
         echo -e "${YELLOW}${BOLD}Updating Farahna Platform (zero data loss)...${NC}"
 
         echo ""
-        echo -e "${CYAN}[1/5] Pulling latest code from Git...${NC}"
+        echo -e "${CYAN}[1/6] Pulling latest code from Git...${NC}"
         git stash save "Auto-stash before update" 2>/dev/null || true
         git pull || true
         git stash pop 2>/dev/null || true
 
         echo ""
-        echo -e "${CYAN}[2/5] Building updated images (RAM safeguards & BuildKit)...${NC}"
+        echo -e "${CYAN}[2/6] Building updated images (RAM safeguards & BuildKit)...${NC}"
         ensure_swap
 
         # Temporarily stop web container to free 500MB+ RAM during build
@@ -369,23 +369,28 @@ case "${1:-}" in
         $COMPOSE_PROD build api
 
         echo ""
-        echo -e "${CYAN}[3/5] Restarting containers with updated images...${NC}"
+        echo -e "${CYAN}[3/6] Restarting containers with updated images...${NC}"
         $COMPOSE_PROD up -d --force-recreate --no-build
+        wait_for_healthy "api" 120
 
         echo ""
-        echo -e "${CYAN}[4/5] Syncing database schema (migration & push)...${NC}"
+        echo -e "${CYAN}[4/6] Syncing database schema (migration & push)...${NC}"
         $COMPOSE_PROD exec -T api \
             npx prisma migrate deploy --schema apps/api/prisma/schema.prisma || true
         $COMPOSE_PROD exec -T api \
             npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate
 
+        echo ""
+        echo -e "${CYAN}[5/6] Updating and syncing seed data (themes, plans, settings, demo data)...${NC}"
+        $COMPOSE_PROD exec -T api npm run db:seed || true
+
         # Reclaim disk space
         echo ""
-        echo -e "${CYAN}[5/5] Reclaiming disk space (project-scoped cleanup)...${NC}"
+        echo -e "${CYAN}[6/6] Reclaiming disk space (project-scoped cleanup)...${NC}"
         bash "$0" cleanup
 
         echo ""
-        echo -e "${GREEN}${BOLD}✓ Update complete! Zero data loss & server optimized.${NC}"
+        echo -e "${GREEN}${BOLD}✓ Update complete! Zero data loss & seed data synced successfully.${NC}"
         ;;
 
     # ─────────────────────────────────────────────────────────────────────────

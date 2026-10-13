@@ -12,7 +12,7 @@ export async function getSettings(req: Request, res: Response, next: NextFunctio
           supportPhone: '+201019262075',
           whatsappNumber: '201019262075',
           paymentInstructionsAr:
-            'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
+            'الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723',
           defaultTimezone: 'Africa/Cairo',
         },
       });

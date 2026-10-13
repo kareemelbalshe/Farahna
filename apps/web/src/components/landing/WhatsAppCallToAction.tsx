@@ -29,7 +29,7 @@ export function WhatsAppCallToAction({
 
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-bold text-amber-200 mx-auto">
-            <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
+            <Sparkles className="w-4 h-4 text-amber-300" />
             <span>فريق فرحنا بانتظاركم بكل حب ❤️</span>
           </div>
 

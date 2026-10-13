@@ -9,7 +9,7 @@ export default function AdminSettingsPage() {
     siteNameAr: 'فرحنا',
     whatsappNumber: '201019262075',
     supportPhone: '+201019262075',
-    paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
+    paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723',
     defaultTimezone: 'Africa/Cairo',
     defaultDurationDays: 60,
   });
@@ -163,7 +163,7 @@ export default function AdminSettingsPage() {
               value={settings.paymentInstructionsAr || ''}
               onChange={(e) => setSettings({ ...settings, paymentInstructionsAr: e.target.value })}
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs leading-relaxed focus:border-[#720925] focus:outline-hidden"
-              placeholder="الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب"
+              placeholder="الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723"
             />
             <p className="text-[10px] text-stone-400">
               * هذا النص يظهر للعميل في شاشات المتابعة كتعليمات عامة، ويؤكد له أن تفاصيل التحويل ستصله مباشرة على واتساب.

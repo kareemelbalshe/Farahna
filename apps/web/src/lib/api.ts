@@ -104,7 +104,7 @@ export async function fetchSiteSettings() {
       siteNameAr: 'فرحنا',
       whatsappNumber: '201019262075',
       supportPhone: '+201019262075',
-      paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب',
+      paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723',
     };
   }
 }

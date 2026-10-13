@@ -22,7 +22,7 @@ export function DressCodeSection({
         {/* Henna Female Only Banner */}
         {isHennaFemaleOnly && (
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-xs mx-auto">
-            <Sparkles className="w-4 h-4 text-rose-600 animate-spin" />
+            <Sparkles className="w-4 h-4 text-rose-600" />
             <span>ليلة خاصة بالسيدات فقط — خصوصية وأمان تام 🌿</span>
           </div>
         )}

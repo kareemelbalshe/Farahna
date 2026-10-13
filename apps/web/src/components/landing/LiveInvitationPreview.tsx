@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Heart, Sparkles, Music, MapPin, Calendar, Check, Volume2, ArrowLeft } from 'lucide-react';
+import { Heart, Sparkles, Music, MapPin, Calendar, Check, Volume2, ArrowLeft, Crown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export function LiveInvitationPreview() {
@@ -26,7 +26,7 @@ export function LiveInvitationPreview() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#720925] border border-rose-200 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
             معاينة حية وتفاعلية
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 tracking-tight font-cairo">
@@ -59,21 +59,44 @@ export function LiveInvitationPreview() {
                     <p className="text-xs text-stone-500 font-amiri">فندق ماريوت الزمالك — القاهرة</p>
                   </div>
 
-                  {/* Wax Seal Graphic */}
-                  <div className="relative my-4">
+                  {/* Royal 3D Wax Seal Graphic */}
+                  <div className="relative my-3">
+                    {/* Satin Ribbons */}
+                    <div className="absolute top-[80%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 pointer-events-none -z-10">
+                      <div
+                        className="w-2.5 h-8 bg-gradient-to-b from-[#8C0B2A] to-[#540619] shadow-md transform -rotate-12 origin-top"
+                        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}
+                      />
+                      <div
+                        className="w-2.5 h-8 bg-gradient-to-b from-[#8C0B2A] to-[#540619] shadow-md transform rotate-12 origin-top"
+                        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}
+                      />
+                    </div>
+
                     <button
                       type="button"
                       onClick={handleOpen}
-                      className="w-24 h-24 rounded-full burgundy-gradient-bg border-4 border-amber-300 shadow-xl flex flex-col items-center justify-center text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                      className="w-24 h-24 rounded-full border-2 border-amber-300 shadow-2xl flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                      style={{
+                        background: 'radial-gradient(circle at 35% 35%, #B5183F 0%, #800A25 50%, #4D0313 100%)',
+                        boxShadow: '0 12px 28px rgba(0,0,0,0.4), 0 0 20px rgba(212,175,55,0.45)',
+                      }}
                     >
-                      <Heart className="w-8 h-8 fill-amber-300 text-amber-300 animate-pulse" />
-                      <span className="text-[10px] font-black tracking-wider text-amber-200 mt-1">افتح الدعوة</span>
+                      <div className="w-20 h-20 rounded-full border border-dashed border-amber-300/80 flex flex-col items-center justify-center text-amber-200">
+                        <Crown className="w-5 h-5 text-amber-300 mb-0.5" />
+                        <Heart className="w-4 h-4 fill-amber-300 text-amber-300" />
+                      </div>
                     </button>
                   </div>
 
-                  <p className="text-xs font-bold text-[#720925] animate-bounce">
-                    اضغط على الختم لتجربة فتح الظرف 💌
-                  </p>
+                  <button
+                    type="button"
+                    onClick={handleOpen}
+                    className="relative group overflow-hidden px-6 py-2.5 rounded-full font-black text-xs bg-gradient-to-r from-[#720925] via-[#8E1032] to-[#500619] text-white border border-amber-300/80 shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-gold-shimmer pointer-events-none" />
+                    <span>اضغط لفض الختم وفتح الدعوة 💌</span>
+                  </button>
                 </div>
               ) : (
                 /* Opened Invitation State */

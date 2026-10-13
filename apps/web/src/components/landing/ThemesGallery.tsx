@@ -754,17 +754,18 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                 <button
                   type="button"
                   onClick={() => handleModalSealClick()}
-                  className="px-6 py-2.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="relative group overflow-hidden px-7 py-3 rounded-full text-xs font-black bg-gradient-to-r from-[#D4AF37] via-[#FFF1B8] to-[#BF953F] text-stone-950 border border-amber-300/80 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                 >
+                  <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-gold-shimmer pointer-events-none" />
                   {isModalEnvelopeOpen ? (
                     <>
-                      <RotateCcw className="w-3.5 h-3.5" />
+                      <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                       <span>إعادة تشغيل النغمة ↺</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>اضغط على الختم لفتح الظرف 💌</span>
+                      <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                      <span>اضغط لفض الختم وفتح الظرف 💌</span>
                     </>
                   )}
                 </button>

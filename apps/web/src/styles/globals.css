@@ -128,21 +128,33 @@ body {
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1ebd9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5a059;
-  border-radius: 4px;
+  background: rgba(197, 160, 89, 0.35);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #720925;
+}
+
+/* Hide scrollbar utility (for mobile preview frames) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Reduced motion preference */
@@ -310,5 +322,21 @@ body {
 .invitation-dark-theme select:focus {
   border-color: #D4AF37 !important;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.35) !important;
+}
+
+.invitation-dark-theme::-webkit-scrollbar-track,
+.invitation-dark-theme *::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.invitation-dark-theme::-webkit-scrollbar-thumb,
+.invitation-dark-theme *::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35) !important;
+  border-radius: 9999px !important;
+}
+
+.invitation-dark-theme::-webkit-scrollbar-thumb:hover,
+.invitation-dark-theme *::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.7) !important;
 }
 

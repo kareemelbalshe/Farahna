@@ -5,6 +5,7 @@ import {
   InvitationSectionDTO,
   DEFAULT_THEMES,
 } from '@farahna/shared';
+import { getAutoRenewingDemoDate } from './date';
 
 export interface FullInvitationMock {
   invitation: InvitationDTO;
@@ -50,7 +51,7 @@ const BASE_EVENTS: InvitationEventDTO[] = [
     type: 'wedding',
     titleAr: 'حفل الزفاف والزفة الكبرى 👑',
     subtitleAr: 'الليلة الملكية في قاعة عايدة',
-    date: '2026-11-20T18:00:00.000Z',
+    date: getAutoRenewingDemoDate('2026-11-20T18:00:00.000Z', 30).toISOString(),
     startTime: '٨:٠٠ م',
     endTime: '٢:٠٠ ص',
     venueNameAr: 'فندق ماريوت الزمالك — قاعة عايدة الملكية',
@@ -68,7 +69,7 @@ const BASE_EVENTS: InvitationEventDTO[] = [
     type: 'henna',
     titleAr: 'ليلة الحنة وسهرة البنات 🌿',
     subtitleAr: 'أجواء شعبية مصرية دافئة وزغاريد',
-    date: '2026-11-18T16:00:00.000Z',
+    date: getAutoRenewingDemoDate('2026-11-18T16:00:00.000Z', 28).toISOString(),
     startTime: '٥:٠٠ م',
     endTime: '١٠:٠٠ م',
     venueNameAr: 'فيلا النرجس للمناسبات الخاصة',
@@ -86,7 +87,7 @@ const BASE_EVENTS: InvitationEventDTO[] = [
     type: 'katb_ketab',
     titleAr: 'عقد القران وكتب الكتاب 📜',
     subtitleAr: 'اللحظة الشرعية المباركة',
-    date: '2026-11-06T14:00:00.000Z',
+    date: getAutoRenewingDemoDate('2026-11-06T14:00:00.000Z', 25).toISOString(),
     startTime: '٣:٠٠ م',
     endTime: '٥:٠٠ م',
     venueNameAr: 'قاعة الماسة — مسجد المشير طنطاوي',
@@ -104,7 +105,7 @@ const BASE_EVENTS: InvitationEventDTO[] = [
     type: 'engagement',
     titleAr: 'حفل الخطوبة الرسمي 💍',
     subtitleAr: 'بداية الرحلة والارتباط',
-    date: '2026-10-15T17:00:00.000Z',
+    date: getAutoRenewingDemoDate('2026-10-15T17:00:00.000Z', 15).toISOString(),
     startTime: '٦:٠٠ م',
     endTime: '١١:٠٠ م',
     venueNameAr: 'فندق رويال توليب — التراس المفتوح',
@@ -219,7 +220,7 @@ export function createAhmedSaraWithTheme(
       countdownEnabled: true,
       envelopeAnimationEnabled: true,
 
-      eventDate: '2026-11-20T18:00:00.000Z',
+      eventDate: getAutoRenewingDemoDate('2026-11-20T18:00:00.000Z', 30).toISOString(),
       startDate: '2026-10-15T16:00:00.000Z',
       viewsCount: 1420,
       uniqueVisitorsCount: 890,
@@ -333,7 +334,7 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     countdownEnabled: true,
     envelopeAnimationEnabled: true,
 
-    eventDate: '2026-10-15T18:00:00.000Z',
+    eventDate: getAutoRenewingDemoDate('2026-10-15T18:00:00.000Z', 15).toISOString(),
     startDate: '2026-10-15T18:00:00.000Z',
     viewsCount: 680,
     uniqueVisitorsCount: 420,
@@ -348,7 +349,7 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
       type: 'engagement',
       titleAr: 'حفل الخطوبة الرسمي 💎',
       subtitleAr: 'سهرة مسائية ساحرة على الكورنيش',
-      date: '2026-10-15T18:00:00.000Z',
+      date: getAutoRenewingDemoDate('2026-10-15T18:00:00.000Z', 15).toISOString(),
       startTime: '٧:٠٠ م',
       endTime: '١٢:٠٠ ص',
       venueNameAr: 'فندق سيسل التاريخي — قاعة فيردي المطلة على البحر',
@@ -423,7 +424,7 @@ export const MOCK_MARIAM_YOUSSEF: FullInvitationMock = {
     countdownEnabled: true,
     envelopeAnimationEnabled: true,
 
-    eventDate: '2026-11-18T18:00:00.000Z',
+    eventDate: getAutoRenewingDemoDate('2026-11-18T18:00:00.000Z', 20).toISOString(),
     startDate: '2026-11-18T18:00:00.000Z',
     viewsCount: 520,
     uniqueVisitorsCount: 340,
@@ -438,7 +439,7 @@ export const MOCK_MARIAM_YOUSSEF: FullInvitationMock = {
       type: 'henna',
       titleAr: 'سهرة الحنة المصرية 🌿',
       subtitleAr: 'أمسية احتفالية نسائية مميزة',
-      date: '2026-11-18T18:00:00.000Z',
+      date: getAutoRenewingDemoDate('2026-11-18T18:00:00.000Z', 20).toISOString(),
       startTime: '٦:٠٠ م',
       endTime: '١١:٠٠ م',
       venueNameAr: 'فيلا النرجس للمناسبات الخاصة',
@@ -513,7 +514,7 @@ export const MOCK_KARIM_NADA: FullInvitationMock = {
     countdownEnabled: true,
     envelopeAnimationEnabled: true,
 
-    eventDate: '2026-11-06T17:00:00.000Z',
+    eventDate: getAutoRenewingDemoDate('2026-11-06T17:00:00.000Z', 22).toISOString(),
     startDate: '2026-11-06T17:00:00.000Z',
     viewsCount: 480,
     uniqueVisitorsCount: 310,
@@ -528,7 +529,7 @@ export const MOCK_KARIM_NADA: FullInvitationMock = {
       type: 'katb_ketab',
       titleAr: 'مراسم عقد القران الرسمي 📜',
       subtitleAr: 'عقد القران في رحاب المسجد',
-      date: '2026-11-06T17:00:00.000Z',
+      date: getAutoRenewingDemoDate('2026-11-06T17:00:00.000Z', 22).toISOString(),
       startTime: '٥:٠٠ م',
       endTime: '٨:٠٠ م',
       venueNameAr: 'قاعة الماسة — مسجد المشير طنطاوي',

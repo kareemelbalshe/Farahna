@@ -2,6 +2,7 @@ import React from 'react';
 import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero';
 import { WhyFarahna } from '@/components/landing/WhyFarahna';
+import { ThemesGallery } from '@/components/landing/ThemesGallery';
 import { DemoGallery } from '@/components/landing/DemoGallery';
 import { InvitationTypes } from '@/components/landing/InvitationTypes';
 import { MultiEventJourneyExplainer } from '@/components/landing/MultiEventJourneyExplainer';
@@ -25,7 +26,7 @@ export default async function LandingPage() {
     settings?.supportPhone || process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+201019262075';
 
   return (
-    <main className="min-h-screen flex flex-col justify-between bg-[#FAF7F2] text-stone-900 selection:bg-rose-100 selection:text-[#720925]">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col justify-between bg-[#FAF7F2] text-stone-900 selection:bg-rose-100 selection:text-[#720925]">
       {/* 1. Enhanced Local SEO & Geo JSON-LD Structured Data */}
       <LandingJsonLd whatsappNumber={whatsappNumber} />
 
@@ -38,7 +39,10 @@ export default async function LandingPage() {
       {/* 4. Why Farahna — The Value Proposition & Digital vs Paper Comparison */}
       <WhyFarahna whatsappNumber={whatsappNumber} />
 
-      {/* 5. Master Showcase — The Single Definitive Live Interactive Demos & Themes Gallery */}
+      {/* 5. Themes Showcase — 5 Visual Styles with Audio Signatures & Wax Seals */}
+      <ThemesGallery whatsappNumber={whatsappNumber} />
+
+      {/* 6. Package Demos — Live Interactive Demos */}
       <DemoGallery whatsappNumber={whatsappNumber} />
 
       {/* 6. Invitation Types — Deep Dive into Wedding, Henna, Katb Ketab & Engagement */}

@@ -159,7 +159,6 @@ export function DemoGallery({
 
   return (
     <section id="demos" className="py-20 lg:py-28 bg-white relative">
-      <div id="themes" className="absolute -top-24 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
