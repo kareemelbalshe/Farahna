@@ -148,4 +148,57 @@ describe('10 & 11. Public Access, Privacy Levels & Lifecycle States Test Suite',
     const pubRes = await request(app).get(`/api/public/invitations/wedding/${deletedSlug}`);
     expect(pubRes.status).toBe(404);
   });
+
+  it('11.4 should handle self-service design submission, draft invitation with previewToken, and block public slug until admin approval', async () => {
+    const selfSlug = `self-service-${Date.now().toString().slice(-5)}`;
+    const submitRes = await request(app)
+      .post('/api/public/submit-design')
+      .send({
+        customerName: 'كريم البليشي',
+        customerPhone: '01019262075',
+        title: 'دعوة زفاف كريم ومنى',
+        slug: selfSlug,
+        coupleGroomAr: 'كريم',
+        coupleBrideAr: 'منى',
+        eventDate: '2026-12-15T18:00:00.000Z',
+        weddingMessageAr: 'وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا',
+        backgroundMusicUrl: 'https://assets.farahna.com/audio/piano-oriental-wedding.mp3',
+        venueNameAr: 'دار ضباط النصر - مدينة نصر',
+        venueAddressAr: 'شارع النصر، مدينة نصر، القاهرة',
+        packageId: 'wedding-journey',
+        amount: 95,
+        paymentMethod: 'instapay',
+        referenceNumber: 'INSTA-TEST-1234',
+        paymentProofBase64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      });
+
+    expect(submitRes.status).toBe(201);
+    expect(submitRes.body.success).toBe(true);
+    expect(submitRes.body.data.previewToken).toBeDefined();
+    expect(submitRes.body.data.slug).toBe(selfSlug);
+
+    // 1. Public link should NOT be live yet (status: draft => 403 Forbidden)
+    const publicRes = await request(app).get(`/api/public/invitations/wedding/${selfSlug}`);
+    expect(publicRes.status).toBe(403);
+    expect(publicRes.body.status).toBe('draft');
+
+    // 2. Private preview token link SHOULD be accessible for couple
+    const previewRes = await request(app).get(`/api/public/preview/${submitRes.body.data.previewToken}`);
+    expect(previewRes.status).toBe(200);
+    expect(previewRes.body.data.title).toBe('دعوة زفاف كريم ومنى');
+
+    // 3. Admin can verify payment to activate the link
+    const paymentId = submitRes.body.data.paymentId;
+    const verifyRes = await request(app)
+      .patch(`/api/payments/${paymentId}/verify`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ publishImmediately: true });
+
+    expect(verifyRes.status).toBe(200);
+
+    // 4. Public link should now be published and accessible (200 OK)
+    const liveRes = await request(app).get(`/api/public/invitations/wedding/${selfSlug}`);
+    expect(liveRes.status).toBe(200);
+    expect(liveRes.body.data.status).toBe('published');
+  });
 });

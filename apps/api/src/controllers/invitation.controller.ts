@@ -389,7 +389,21 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
 export async function updateInvitation(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { eventDate, startDate, expiresAt, slug, ...rest } = req.body;
+    const {
+      eventDate,
+      startDate,
+      expiresAt,
+      slug,
+      sections,
+      events,
+      customer,
+      theme,
+      order,
+      rsvps,
+      reminders,
+      analytics,
+      ...rest
+    } = req.body;
 
     if (slug) {
       const cleanSlug = slug.toLowerCase().trim();
@@ -420,6 +434,14 @@ export async function updateInvitation(req: Request, res: Response, next: NextFu
       });
     }
 
+    // Allow deleting / emptying weddingMessageAr cleanly
+    if (rest.weddingMessageAr !== undefined) {
+      rest.weddingMessageAr =
+        rest.weddingMessageAr && rest.weddingMessageAr.trim()
+          ? rest.weddingMessageAr.trim()
+          : null;
+    }
+
     const invitation = await prisma.invitation.update({
       where: { id },
       data: {
@@ -431,16 +453,67 @@ export async function updateInvitation(req: Request, res: Response, next: NextFu
       },
     });
 
+    // Update individual sections if provided
+    if (Array.isArray(sections)) {
+      for (const sec of sections) {
+        if (sec.sectionKey) {
+          await prisma.invitationSection.upsert({
+            where: {
+              invitationId_sectionKey: {
+                invitationId: id,
+                sectionKey: sec.sectionKey,
+              },
+            },
+            update: {
+              isEnabled: Boolean(sec.isEnabled),
+              ...(sec.sortOrder !== undefined ? { sortOrder: sec.sortOrder } : {}),
+            },
+            create: {
+              invitationId: id,
+              sectionKey: sec.sectionKey,
+              isEnabled: Boolean(sec.isEnabled),
+              sortOrder: sec.sortOrder || 0,
+            },
+          });
+        }
+      }
+    }
+
+    // Keep legacy toggle flags in sync with sections
     if (rest.rsvpEnabled !== undefined) {
       await prisma.invitationSection.updateMany({
         where: { invitationId: id, sectionKey: 'rsvp' },
-        data: { isEnabled: rest.rsvpEnabled },
-      });
+        data: { isEnabled: Boolean(rest.rsvpEnabled) },
+      }).catch(() => {});
     }
+
+    if (rest.countdownEnabled !== undefined) {
+      await prisma.invitationSection.updateMany({
+        where: { invitationId: id, sectionKey: 'countdown' },
+        data: { isEnabled: Boolean(rest.countdownEnabled) },
+      }).catch(() => {});
+    }
+
+    if (rest.envelopeAnimationEnabled !== undefined) {
+      await prisma.invitationSection.updateMany({
+        where: { invitationId: id, sectionKey: 'envelope' },
+        data: { isEnabled: Boolean(rest.envelopeAnimationEnabled) },
+      }).catch(() => {});
+    }
+
+    const fullUpdated = await prisma.invitation.findUnique({
+      where: { id },
+      include: {
+        theme: true,
+        events: { orderBy: { sortOrder: 'asc' } },
+        sections: { orderBy: { sortOrder: 'asc' } },
+        customer: true,
+      },
+    });
 
     return res.json({
       success: true,
-      data: invitation,
+      data: fullUpdated || invitation,
       message: 'تم تحديث بيانات الدعوة بنجاح',
     });
   } catch (error) {

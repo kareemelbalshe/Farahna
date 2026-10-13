@@ -165,7 +165,7 @@ export function InvitationRenderer({
       )}
 
       {/* 💌 Envelope Opening Overlay */}
-      {safeInv.envelopeAnimationEnabled && !isEnvelopeOpen && (
+      {safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen && (
         <EnvelopeScreen
           coupleNames={coupleNames}
           onOpen={handleOpenEnvelope}
@@ -175,6 +175,9 @@ export function InvitationRenderer({
           backgroundColor={backgroundColor}
           textColor={textColor}
           themeSlug={theme?.slug}
+          weddingMessageAr={safeInv.weddingMessageAr}
+          eventDate={effectiveEventDate}
+          invitationTitle={safeInv.title}
         />
       )}
 

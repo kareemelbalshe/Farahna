@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Check, MessageCircle, Sparkles } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 
@@ -129,20 +130,28 @@ export function PricingSection({ whatsappNumber = '201019262075' }: PricingSecti
                   </div>
                 </div>
 
-                {/* WhatsApp Order Button */}
-                <div className="pt-8">
+                {/* Actions */}
+                <div className="pt-8 space-y-2.5">
+                  <Link
+                    href={`/create?package=${pkg.slug}`}
+                    className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-stone-950" />
+                    <span>صمم دعوتك بهذه الباقة فوراً 🪄</span>
+                  </Link>
+
                   <a
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm shadow-md transition-all active:scale-95 ${
+                    className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-xs shadow-xs transition-all active:scale-95 ${
                       pkg.isPopular
                         ? 'burgundy-gradient-bg text-white shadow-rose-950/20 hover:opacity-95'
                         : 'bg-stone-900 text-white hover:bg-stone-800'
                     }`}
                   >
                     <MessageCircle className="w-4 h-4 fill-current" />
-                    <span>اطلب دعوتك على واتساب</span>
+                    <span>أو اطلب من المصمم عبر واتساب</span>
                   </a>
                 </div>
               </div>

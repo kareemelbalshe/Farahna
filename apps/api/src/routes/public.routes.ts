@@ -6,6 +6,7 @@ import {
   submitRsvp,
   recordAnalyticsEvent,
   getSitemapInvitations,
+  submitPublicDesign,
 } from '../controllers/public.controller';
 import { validateBody } from '../middleware/validate';
 import { rsvpRateLimiter } from '../middleware/auth';
@@ -13,7 +14,10 @@ import { rsvpSubmissionSchema, analyticsEventSchema } from '@farahna/shared';
 
 const router = Router();
 
-// 1. Sitemap indexable invitations (Must be before wildcard!)
+// 1. Self-Service Design Submission & Payment Proof
+router.post('/submit-design', submitPublicDesign);
+
+// 2. Sitemap indexable invitations (Must be before wildcard!)
 router.get('/sitemap-invitations', getSitemapInvitations);
 
 // 2. RSVP Endpoints (Must be before :type/:slug wildcard!)

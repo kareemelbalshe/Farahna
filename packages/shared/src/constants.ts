@@ -143,14 +143,16 @@ export const DEFAULT_THEMES = [
 
 export const DEFAULT_SECTIONS: { key: SectionKey; labelAr: string; defaultEnabled: boolean }[] = [
   { key: 'envelope', labelAr: 'الظرف الافتتاحي التفاعلي', defaultEnabled: true },
-  { key: 'couple', labelAr: 'أسماء العروسين وصورهم', defaultEnabled: true },
+  { key: 'cover', labelAr: 'غلاف وبداية الدعوة (Cover / Hero)', defaultEnabled: true },
+  { key: 'couple', labelAr: 'أسماء العروسين', defaultEnabled: true },
   { key: 'message', labelAr: 'الرسالة الافتتاحية والآية الكريمة', defaultEnabled: true },
   { key: 'countdown', labelAr: 'العد التنازلي لموعد الفرح', defaultEnabled: true },
   { key: 'events', labelAr: 'تبويبات رحلة الفرح (المناسبات المتعددة)', defaultEnabled: true },
   { key: 'timeline', labelAr: 'الخط الزمني الشامل للمواعيد', defaultEnabled: true },
   { key: 'parents', labelAr: 'إهداء أولياء الأمور والعائلات', defaultEnabled: true },
+  { key: 'couple_photo', labelAr: 'صورة العروسين الشخصية (Portrait)', defaultEnabled: true },
   { key: 'henna_special', labelAr: 'قسم ليلة الحنة المخصص (للسيدات)', defaultEnabled: false },
-  { key: 'gallery', labelAr: 'معرض صور العروسين', defaultEnabled: true },
+  { key: 'gallery', labelAr: 'معرض صور العروسين (Photo Album)', defaultEnabled: true },
   { key: 'venue', labelAr: 'معلومات القاعة ومكان الحفل', defaultEnabled: true },
   { key: 'map', labelAr: 'الخريطة التفاعلية والاتجاهات', defaultEnabled: true },
   { key: 'dresscode', labelAr: 'إرشادات اللباس (Dress Code)', defaultEnabled: true },

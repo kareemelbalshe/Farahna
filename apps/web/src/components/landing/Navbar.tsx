@@ -54,10 +54,17 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
         </nav>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/create"
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400"
+          >
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
+            <span>صمم دعوتك بنفسك 🪄</span>
+          </Link>
           <Link
             href="/admin/login"
-            className="hidden sm:inline-flex text-xs font-bold text-stone-600 hover:text-stone-900 px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors"
+            className="hidden lg:inline-flex text-xs font-bold text-stone-600 hover:text-stone-900 px-2.5 py-2 rounded-lg hover:bg-stone-100 transition-colors"
           >
             لوحة الإدارة
           </Link>
@@ -65,10 +72,10 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full burgundy-gradient-bg text-white font-bold text-sm shadow-lg shadow-rose-950/20 hover:shadow-rose-950/30 hover:opacity-95 transition-all active:scale-95"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full burgundy-gradient-bg text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-950/20 hover:shadow-rose-950/30 hover:opacity-95 transition-all active:scale-95"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
-            <span>تواصل على واتساب</span>
+            <span>واتساب</span>
           </a>
         </div>
       </div>

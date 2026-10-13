@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
+import { nanoid } from 'nanoid';
+import { DEFAULT_SECTIONS, generateInvitationSlug } from '@farahna/shared';
+import { storageService } from '../services/storage';
 
 export async function getPublicInvitation(req: Request, res: Response, next: NextFunction) {
   try {
@@ -341,3 +344,256 @@ export async function getSitemapInvitations(req: Request, res: Response, next: N
     next(error);
   }
 }
+
+export async function submitPublicDesign(req: Request, res: Response, next: NextFunction) {
+  try {
+    const {
+      customerName,
+      customerPhone,
+      packageId = 'wedding-journey',
+      amount = 95,
+      paymentMethod = 'instapay',
+      referenceNumber,
+      paymentProofImage,
+      paymentProofBase64,
+      paymentProofUrl: existingProofUrl,
+    } = req.body;
+
+    const invInput = {
+      ...(req.body.invitation || {}),
+      ...(req.body || {}),
+    };
+
+    if (!customerPhone || !customerPhone.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'رقم هاتف / واتساب العميل مطلوب لتأكيد التفعيل وإرسال الرابط',
+      });
+    }
+
+    const cleanPhone = customerPhone.trim();
+    const cleanName = (customerName || invInput.coupleGroomAr || 'عميل تصميم ذاتي').trim();
+
+    // 1. Resolve or Create Customer
+    let customer = await prisma.customer.findFirst({
+      where: { phone: cleanPhone },
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          name: cleanName,
+          phone: cleanPhone,
+          whatsapp: cleanPhone,
+          source: 'website',
+          notes: `قام بتصميم دعوته ذاتياً عبر استوديو الموقع في ${new Date().toLocaleDateString('ar-EG')}`,
+          status: 'active',
+        },
+      });
+    }
+
+    // 2. Handle Payment Proof Screenshot
+    let finalProofUrl = existingProofUrl || '';
+    const proofRaw = paymentProofImage || paymentProofBase64;
+    if (proofRaw && typeof proofRaw === 'string' && proofRaw.startsWith('data:image/')) {
+      try {
+        const matches = proofRaw.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const ext = mimeType.split('/')[1] || 'png';
+          const stored = await storageService.saveFile({
+            buffer,
+            originalName: `proof-${Date.now()}.${ext}`,
+            mimeType,
+            category: 'payment_proof',
+            customerId: customer.id,
+          });
+          finalProofUrl = stored.url;
+        }
+      } catch (err) {
+        console.error('Failed to save payment proof image:', err);
+      }
+    }
+
+    // 3. Resolve Unique Slug
+    const groom = (invInput.coupleGroomAr || 'groom').trim();
+    const bride = (invInput.coupleBrideAr || 'bride').trim();
+    let baseSlug = (invInput.slug ? String(invInput.slug).trim() : generateInvitationSlug(groom, bride));
+    let finalSlug = baseSlug;
+    let counter = 1;
+    while (await prisma.invitation.findUnique({ where: { slug: finalSlug } })) {
+      finalSlug = `${baseSlug}-${nanoid(4).toLowerCase()}`;
+      counter++;
+      if (counter > 15) {
+        finalSlug = `farah-${Date.now().toString().slice(-6)}-${nanoid(3).toLowerCase()}`;
+        break;
+      }
+    }
+
+    // 4. Resolve Theme
+    let finalThemeId = invInput.themeId;
+    if (finalThemeId) {
+      const themeRecord = await prisma.theme.findUnique({ where: { id: finalThemeId } });
+      if (!themeRecord) finalThemeId = null;
+    }
+    if (!finalThemeId) {
+      const defaultTheme =
+        (await prisma.theme.findFirst({ where: { isDefault: true, isActive: true } })) ||
+        (await prisma.theme.findFirst({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } })) ||
+        (await prisma.theme.findFirst());
+      finalThemeId = defaultTheme?.id || 'theme-royal-burgundy';
+    }
+
+    // 5. Resolve Dates
+    const parsedEventDate =
+      invInput.eventDate && !isNaN(new Date(invInput.eventDate).getTime())
+        ? new Date(invInput.eventDate)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // 6. Create Draft Invitation + Order + Payment in Transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const inv = await tx.invitation.create({
+        data: {
+          customerId: customer.id,
+          slug: finalSlug,
+          title: (invInput.title || `دعوة فرح ${groom} & ${bride} ❤️`).trim(),
+          type: invInput.type || 'wedding',
+          status: 'draft', // Draft until admin verifies payment!
+          privacy: 'unlisted',
+          coupleGroomAr: groom,
+          coupleBrideAr: bride,
+          coupleGroomEn: invInput.coupleGroomEn || null,
+          coupleBrideEn: invInput.coupleBrideEn || null,
+          parentsGroomAr: invInput.parentsGroomAr || null,
+          parentsBrideAr: invInput.parentsBrideAr || null,
+          weddingMessageAr:
+            invInput.weddingMessageAr && invInput.weddingMessageAr.trim()
+              ? invInput.weddingMessageAr.trim()
+              : null,
+          weddingMessageEn: invInput.weddingMessageEn || null,
+          coverImageUrl: invInput.coverImageUrl || null,
+          coupleImageUrl: invInput.coupleImageUrl || null,
+          galleryImages: Array.isArray(invInput.galleryImages) ? invInput.galleryImages : [],
+          musicUrl:
+            invInput.musicUrl && invInput.musicUrl.trim()
+              ? invInput.musicUrl.trim()
+              : invInput.backgroundMusicUrl && invInput.backgroundMusicUrl.trim()
+              ? invInput.backgroundMusicUrl.trim()
+              : null,
+          musicTitle: invInput.musicTitle || 'موسيقى ليلة العمر',
+          themeId: finalThemeId,
+          themeConfig: {
+            fontFamily: invInput.fontFamily || "'Cairo', sans-serif",
+            selectedPackage: packageId,
+            ...(invInput.themeConfig || {}),
+          },
+          isMultiEvent: Boolean(invInput.isMultiEvent),
+          rsvpEnabled: invInput.rsvpEnabled !== undefined ? Boolean(invInput.rsvpEnabled) : true,
+          countdownEnabled:
+            invInput.countdownEnabled !== undefined ? Boolean(invInput.countdownEnabled) : true,
+          envelopeAnimationEnabled:
+            invInput.envelopeAnimationEnabled !== undefined
+              ? Boolean(invInput.envelopeAnimationEnabled)
+              : true,
+          eventDate: parsedEventDate,
+        },
+      });
+
+      // Seed sections with client custom visibility toggles
+      const clientSections = Array.isArray(invInput.sections) ? invInput.sections : [];
+      const sectionsToCreate = DEFAULT_SECTIONS.map((sec, idx) => {
+        const clientSec = clientSections.find((cs: any) => cs.sectionKey === sec.key);
+        // Also sync special master flags if applicable
+        let isSecEnabled =
+          clientSec !== undefined ? Boolean(clientSec.isEnabled) : sec.defaultEnabled;
+        if (sec.key === 'envelope' && invInput.envelopeAnimationEnabled !== undefined) {
+          isSecEnabled = Boolean(invInput.envelopeAnimationEnabled);
+        } else if (sec.key === 'countdown' && invInput.countdownEnabled !== undefined) {
+          isSecEnabled = Boolean(invInput.countdownEnabled);
+        } else if (sec.key === 'rsvp' && invInput.rsvpEnabled !== undefined) {
+          isSecEnabled = Boolean(invInput.rsvpEnabled);
+        } else if (sec.key === 'message' && !invInput.weddingMessageAr?.trim()) {
+          // If verse is deleted / emptied, message section should be disabled
+          isSecEnabled = clientSec !== undefined ? Boolean(clientSec.isEnabled) : false;
+        }
+
+        return {
+          invitationId: inv.id,
+          sectionKey: sec.key,
+          isEnabled: isSecEnabled,
+          sortOrder: idx,
+        };
+      });
+
+      await tx.invitationSection.createMany({
+        data: sectionsToCreate,
+      });
+
+      // Seed primary event if venue info provided
+      if (invInput.venueNameAr || invInput.addressAr || invInput.venueAddressAr) {
+        await tx.invitationEvent.create({
+          data: {
+            invitationId: inv.id,
+            type: (invInput.type as any) || 'wedding',
+            titleAr: invInput.title || `حفل الزفاف المبارك`,
+            date: parsedEventDate,
+            startTime: invInput.startTime || '08:00 م',
+            venueNameAr: invInput.venueNameAr || 'قاعة الحفل',
+            addressAr: invInput.addressAr || invInput.venueAddressAr || 'القاهرة، مصر',
+            googleMapsUrl: invInput.googleMapsUrl || null,
+          },
+        });
+      }
+
+      // Create Order
+      const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          customerId: customer.id,
+          invitationId: inv.id,
+          packageId,
+          amount: Number(amount) || 95,
+          currency: 'EGP',
+          status: 'payment_proof_received', // Waiting for admin confirmation!
+          notes: `طلب تصميم ذاتي بواسطة العميل - بانتظار التحقق من إيصال الدفع (${paymentMethod})`,
+        },
+      });
+
+      // Create Payment
+      const payment = await tx.payment.create({
+        data: {
+          orderId: order.id,
+          customerId: customer.id,
+          amount: Number(amount) || 95,
+          currency: 'EGP',
+          method: paymentMethod as any,
+          status: 'proof_received',
+          paymentProofUrl: finalProofUrl || null,
+          referenceNumber: referenceNumber || null,
+          notes: `إيصال تحويل مقدم من العميل عند الحفظ الذاتي`,
+        },
+      });
+
+      return { invitation: inv, order, payment };
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'تم استلام تصميم دعوتك وإيصال الدفع بنجاح! جاري مراجعة الإيصال وتفعيل الرابط الرسمي خلال دقائق معدودة 🎉',
+      data: {
+        orderId: result.order.id,
+        orderNumber: result.order.orderNumber,
+        invitationId: result.invitation.id,
+        paymentId: result.payment.id,
+        slug: result.invitation.slug,
+        previewToken: result.invitation.previewToken,
+        status: result.order.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

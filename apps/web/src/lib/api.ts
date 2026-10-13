@@ -33,6 +33,19 @@ export async function submitPublicRsvp(invitationId: string, data: any) {
   return await res.json();
 }
 
+export async function submitPublicDesign(data: any) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/public/submit-design`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مرة أخرى' };
+  }
+}
+
 export async function recordPublicAnalytics(data: {
   invitationId: string;
   eventType: string;

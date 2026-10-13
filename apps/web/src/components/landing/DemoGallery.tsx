@@ -8,6 +8,8 @@ import { getWhatsAppUrl, createInquiryWhatsAppMessage } from '@/lib/whatsapp';
 export interface DemoItem {
   id: string;
   slug: string;
+  packageId: 'basic' | 'wedding-journey' | 'luxury-vip';
+  packageBadge: string;
   type: 'wedding' | 'engagement' | 'henna' | 'katb_ketab';
   typeNameAr: string;
   coupleNames: string;
@@ -26,10 +28,12 @@ export interface DemoItem {
   badge: string;
 }
 
-const DEFAULT_DEMOS: DemoItem[] = [
+export const DEFAULT_DEMOS: DemoItem[] = [
   {
     id: 'demo-1',
     slug: 'ahmed-sara',
+    packageId: 'wedding-journey',
+    packageBadge: 'باقة رحلة الفرح (95 ج.م) 👑',
     type: 'wedding',
     typeNameAr: 'زفاف ملكي شامل',
     coupleNames: 'أحمد & سارة',
@@ -50,6 +54,8 @@ const DEFAULT_DEMOS: DemoItem[] = [
   {
     id: 'demo-2',
     slug: 'omar-salma',
+    packageId: 'basic',
+    packageBadge: 'باقة المناسبة الواحدة (50 ج.م) 🌸',
     type: 'engagement',
     typeNameAr: 'حفل خطوبة رومانسي',
     coupleNames: 'عمر & سلمى',
@@ -70,6 +76,8 @@ const DEFAULT_DEMOS: DemoItem[] = [
   {
     id: 'demo-3',
     slug: 'mariam-youssef',
+    packageId: 'basic',
+    packageBadge: 'باقة المناسبة الواحدة (50 ج.م) 🌸',
     type: 'henna',
     typeNameAr: 'سهرة الحنة المصرية',
     coupleNames: 'حنة مريم',
@@ -90,6 +98,8 @@ const DEFAULT_DEMOS: DemoItem[] = [
   {
     id: 'demo-4',
     slug: 'karim-nada',
+    packageId: 'basic',
+    packageBadge: 'باقة المناسبة الواحدة (50 ج.م) 🌸',
     type: 'katb_ketab',
     typeNameAr: 'عقد قران مبارك',
     coupleNames: 'كريم & ندى',
@@ -110,6 +120,8 @@ const DEFAULT_DEMOS: DemoItem[] = [
   {
     id: 'demo-5',
     slug: 'ahmed-sara-egyptian-oriental',
+    packageId: 'luxury-vip',
+    packageBadge: 'باقة VIP التصميم الخاص (150 ج.م) 💎',
     type: 'wedding',
     typeNameAr: 'زفاف مصري شرقي',
     coupleNames: 'طارق & نور',
@@ -143,7 +155,7 @@ export function DemoGallery({
   const filteredDemos =
     activeFilter === 'all'
       ? demos
-      : demos.filter((item) => item.type === activeFilter);
+      : demos.filter((item) => item.type === activeFilter || item.packageId === activeFilter);
 
   return (
     <section id="demos" className="py-20 lg:py-28 bg-white relative">
@@ -153,24 +165,27 @@ export function DemoGallery({
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#720925] border border-rose-200 text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            معرض النماذج الحية
+            معرض النماذج الافتراضية لكافة البقات
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 tracking-tight font-cairo">
-            نماذج حقيقية عاش معازيمها <br />
-            <span className="text-[#720925]">أجمل تجربة دعوة إلكترونية ❤️</span>
+            نماذج افتراضية حية لكل الباقات <br />
+            <span className="text-[#720925]">اختر نموذجك وعدّل عليه ببياناتك الحقيقية ❤️</span>
           </h2>
           <p className="text-stone-600 text-base sm:text-lg">
-            تصفح نماذج حية تفاعلية لدعوات صممناها لأفراح ومناسبات مصرية حقيقية.
+            تصفح نماذج جاهزة لكل باقة وميزاتها، عاين الدعوة بفتح الظرف الملكي والموسيقى، وبنقرة زر واحدة اجعلها نقطة البداية لتصميم دعوتك الخاصة!
           </p>
 
           {/* Filter Pills */}
           <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
             {[
               { id: 'all', label: 'كل النماذج' },
-              { id: 'wedding', label: '👑 أفراح وزفاف' },
-              { id: 'engagement', label: '💍 خطوبة' },
-              { id: 'henna', label: '🌿 ليلة حنة' },
-              { id: 'katb_ketab', label: '📜 كتب كتاب' },
+              { id: 'wedding-journey', label: '👑 باقة رحلة الفرح (95 ج.م)' },
+              { id: 'luxury-vip', label: '💎 باقة VIP (150 ج.م)' },
+              { id: 'basic', label: '🌸 باقة المناسبة الواحدة (50 ج.م)' },
+              { id: 'wedding', label: 'أفراح وزفاف' },
+              { id: 'engagement', label: 'خطوبة' },
+              { id: 'henna', label: 'ليلة حنة' },
+              { id: 'katb_ketab', label: 'كتب كتاب' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -240,6 +255,16 @@ export function DemoGallery({
 
                   {/* Card Details Body */}
                   <div className="p-5 space-y-3 text-right">
+                    {/* Package Badge */}
+                    <div className="flex items-center justify-between gap-1 pb-1 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-amber-900 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                        {demo.packageBadge}
+                      </span>
+                      <span className="text-[10px] font-bold text-stone-400">
+                        {demo.eventsCount > 1 ? `${demo.eventsCount} مناسبات برابط واحد` : 'مناسبة واحدة'}
+                      </span>
+                    </div>
+
                     <div className="flex items-center gap-2 text-xs text-stone-700 font-bold">
                       <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>{demo.date}</span>
@@ -258,23 +283,33 @@ export function DemoGallery({
                 {/* Card Action Buttons */}
                 <div className="p-5 pt-0 space-y-2">
                   <Link
-                    href={demo.previewUrl}
-                    target="_blank"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-stone-900 text-white font-bold text-xs hover:bg-stone-800 transition-colors shadow-xs"
+                    href={`/create?template=${demo.slug}&package=${demo.packageId}&theme=${demo.themeSlug}&type=${demo.type}&groom=${encodeURIComponent(demo.groomName)}&bride=${encodeURIComponent(demo.brideName)}&venue=${encodeURIComponent(demo.venue)}&city=${encodeURIComponent(demo.city)}`}
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 active:scale-95 border border-amber-400 cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5 text-amber-400" />
-                    <span>شاهد نموذج الدعوة 💌</span>
+                    <Sparkles className="w-3.5 h-3.5 text-stone-950" />
+                    <span>ابدأ تصميم دعوتك بهذا النموذج 🪄</span>
                   </Link>
 
-                  <a
-                    href={waUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-rose-50 text-[#720925] hover:bg-rose-100 border border-rose-200 font-bold text-xs transition-colors"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                    <span>اطلب تصميم مشابه على واتساب</span>
-                  </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href={demo.previewUrl}
+                      target="_blank"
+                      className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-stone-900 text-white font-bold text-[11px] hover:bg-stone-800 transition-colors shadow-2xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-amber-400" />
+                      <span>معاينة النموذج</span>
+                    </Link>
+
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-rose-50 text-[#720925] hover:bg-rose-100 border border-rose-200 font-bold text-[11px] transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                      <span>واتساب</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             );

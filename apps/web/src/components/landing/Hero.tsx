@@ -39,23 +39,31 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
             </p>
 
             {/* CTAs */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+              <Link
+                href="/create"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-base shadow-xl shadow-amber-500/25 hover:scale-[1.02] active:scale-95 transition-all border border-amber-400"
+              >
+                <Sparkles className="w-5 h-5 text-stone-950 animate-bounce" />
+                <span>صمم دعوتك بنفسك مجاناً 🪄</span>
+              </Link>
+
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl burgundy-gradient-bg text-white font-black text-base shadow-xl shadow-rose-950/25 hover:shadow-rose-950/40 hover:scale-[1.02] active:scale-95 transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl burgundy-gradient-bg text-white font-bold text-base shadow-xl shadow-rose-950/20 hover:opacity-95 active:scale-95 transition-all"
               >
                 <MessageCircle className="w-5 h-5 fill-current" />
-                <span>اعمل دعوتك دلوقتي ❤️</span>
+                <span>طلب تصميم خاص 💬</span>
               </a>
 
               <a
                 href="#demos"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-white text-stone-800 border-2 border-stone-200/80 font-bold text-base hover:bg-stone-50 hover:border-stone-300 shadow-sm transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-white text-stone-800 border-2 border-stone-200/80 font-bold text-sm hover:bg-stone-50 hover:border-stone-300 shadow-xs transition-all"
               >
-                <Eye className="w-5 h-5 text-amber-600" />
-                <span>استعرض نماذج الدعوات 💌</span>
+                <Eye className="w-4 h-4 text-amber-600" />
+                <span>النماذج 💌</span>
               </a>
             </div>
 

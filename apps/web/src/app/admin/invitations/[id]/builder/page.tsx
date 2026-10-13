@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Save,
@@ -26,8 +26,20 @@ import {
   Copy,
   FolderOpen,
   Type,
+  Play,
+  Pause,
+  Upload,
+  Trash2,
 } from 'lucide-react';
-import { ARABIC_WEDDING_FONTS, WeddingFontOption, isValidSafeUrl, normalizeWebUrl } from '@farahna/shared';
+import {
+  ARABIC_WEDDING_FONTS,
+  WeddingFontOption,
+  isValidSafeUrl,
+  normalizeWebUrl,
+  WEDDING_MUSIC_PRESETS,
+  DEFAULT_SECTIONS,
+  QURANIC_VERSES_PRESETS,
+} from '@farahna/shared';
 import { adminFetch } from '@/lib/api';
 import { InvitationRenderer } from '@/components/invitation/InvitationRenderer';
 
@@ -43,6 +55,44 @@ export default function VisualInvitationBuilderPage() {
   const [activeTab, setActiveTab] = useState<'couple' | 'events' | 'theme' | 'sections' | 'media'>('couple');
   const [previewTokenCopied, setPreviewTokenCopied] = useState(false);
   const [successNotice, setSuccessNotice] = useState('');
+
+  // Audio Preview State
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggleAudioPlay = (url?: string) => {
+    if (!url) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(url);
+      audioRef.current.onended = () => setAudioPlaying(false);
+    }
+    if (audioPlaying) {
+      audioRef.current.pause();
+      setAudioPlaying(false);
+    } else {
+      audioRef.current.src = url;
+      audioRef.current
+        .play()
+        .then(() => setAudioPlaying(true))
+        .catch(() => setAudioPlaying(false));
+    }
+  };
+
+  const handleAdminAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      handleChange('musicUrl', dataUrl);
+      handleChange('musicTitle', file.name.replace(/\.[^/.]+$/, ''));
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setAudioPlaying(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Media upload & library state
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -114,6 +164,35 @@ export default function VisualInvitationBuilderPage() {
         ...(prev.themeConfig || {}),
         [key]: value,
       },
+    }));
+  };
+
+  const handleToggleSection = (sectionKey: string, isEnabled: boolean) => {
+    const existingSections = Array.isArray(invitation.sections)
+      ? [...invitation.sections]
+      : DEFAULT_SECTIONS.map((s, idx) => ({
+          sectionKey: s.key,
+          isEnabled: s.defaultEnabled,
+          sortOrder: idx,
+        }));
+
+    const index = existingSections.findIndex((s: any) => s.sectionKey === sectionKey);
+    if (index >= 0) {
+      existingSections[index] = { ...existingSections[index], isEnabled };
+    } else {
+      existingSections.push({
+        sectionKey,
+        isEnabled,
+        sortOrder: existingSections.length,
+      });
+    }
+
+    setInvitation((prev: any) => ({
+      ...prev,
+      sections: existingSections,
+      ...(sectionKey === 'envelope' ? { envelopeAnimationEnabled: isEnabled } : {}),
+      ...(sectionKey === 'countdown' ? { countdownEnabled: isEnabled } : {}),
+      ...(sectionKey === 'rsvp' ? { rsvpEnabled: isEnabled } : {}),
     }));
   };
 
@@ -482,25 +561,149 @@ export default function VisualInvitationBuilderPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">رسالة الدعوة والآية الكريمة:</label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-stone-700 block flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>رسالة الدعوة والآية الكريمة:</span>
+                  </label>
+                  {invitation.weddingMessageAr ? (
+                    <button
+                      type="button"
+                      onClick={() => handleChange('weddingMessageAr', '')}
+                      className="text-[11px] font-bold text-rose-700 hover:text-rose-900 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>حذف / إفراغ الآية ❌</span>
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
+                      محذوفة (لن تظهر بالدعوة ولا بالظرف)
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick Presets Chips */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-stone-400 block font-bold">
+                    اختر نموذج سريع أو اكتب كلام مخصص:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QURANIC_VERSES_PRESETS.map((vp) => (
+                      <button
+                        key={vp.id}
+                        type="button"
+                        onClick={() => handleChange('weddingMessageAr', vp.verse)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                          invitation.weddingMessageAr === vp.verse
+                            ? 'bg-amber-100 text-amber-950 border-amber-300 shadow-2xs'
+                            : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        {vp.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <textarea
                   rows={4}
                   value={invitation.weddingMessageAr || ''}
                   onChange={(e) => handleChange('weddingMessageAr', e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs leading-relaxed"
+                  placeholder="اكتب الآية الكريمة أو الكلمات الخاصة بكم هنا، أو اتركها فارغة لحذف القسم تماماً..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm font-amiri leading-relaxed"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">رابط ملف الموسيقى (MP3 URL):</label>
-                <input
-                  type="url"
-                  value={invitation.musicUrl || ''}
-                  onChange={(e) => handleChange('musicUrl', e.target.value)}
-                  placeholder="https://example.com/audio.mp3"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr"
-                />
+              {/* Music & Audio Settings */}
+              <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                    <Music className="w-4 h-4 text-[#720925]" />
+                    <span>موسيقى الدعوة والخلفية الصوتية:</span>
+                  </label>
+                  {invitation.musicUrl && (
+                    <button
+                      type="button"
+                      onClick={() => toggleAudioPlay(invitation.musicUrl)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#720925] border border-rose-200 text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      {audioPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                      <span>{audioPlaying ? 'إيقاف' : 'تجربة الصوت'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Preset Chips */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-stone-500 block">اختر مقطع جاهز أو أدخل رابطك المباشر:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WEDDING_MUSIC_PRESETS.map((m) => {
+                      const isSelected = invitation.musicUrl === m.url;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            handleChange('musicUrl', m.url);
+                            handleChange('musicTitle', m.title);
+                            if (audioRef.current) audioRef.current.pause();
+                            setAudioPlaying(false);
+                          }}
+                          className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#720925] text-white border-[#720925]'
+                              : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
+                          }`}
+                        >
+                          {m.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Direct Custom URL Input */}
+                <div className="space-y-1 pt-1">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    رابط ملف الموسيقى المباشر (MP3 URL) — يمكنك كتابة أو تعديل أي رابط بنفسك:
+                  </label>
+                  <input
+                    type="url"
+                    value={invitation.musicUrl || ''}
+                    onChange={(e) => handleChange('musicUrl', e.target.value)}
+                    placeholder="https://example.com/audio.mp3"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr font-mono"
+                  />
+                </div>
+
+                {/* Song Title & File Upload Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-stone-700 block">عنوان المقطع الصوتي المعروض:</label>
+                    <input
+                      type="text"
+                      value={invitation.musicTitle || ''}
+                      onChange={(e) => handleChange('musicTitle', e.target.value)}
+                      placeholder="مثال: بيانو رومانسي - ليلة العمر"
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-stone-700 block">أو رفع ملف MP3 من جهازك:</label>
+                    <label className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-dashed border-stone-300 text-stone-700 text-xs font-bold cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-amber-600" />
+                      <span>اختر ملف صوتي من الكمبيوتر 📁</span>
+                      <input
+                        type="file"
+                        accept="audio/*,.mp3"
+                        onChange={handleAdminAudioUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -849,60 +1052,123 @@ export default function VisualInvitationBuilderPage() {
               <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-[11px] flex items-start gap-2">
                 <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <span>
-                  💡 نصيحة الأدمن: يمكنك تخصيص الأقسام التي تظهر للضيوف حسب طلب العميل، وإلغاء أي قسم غير مطلوب بنقرة واحدة.
+                  💡 تحكم كامل بالأقسام: يمكنك تفعيل أو حذف أي سكشن بالكامل من الدعوة، أو إخفاؤه حسب رغبة العميل بنقرة زر واحدة.
                 </span>
               </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-stone-800 block">تجربة فتح الظرف التفاعلي</span>
-                    <span className="text-[10px] text-stone-400">إظهار ختم الشمع وفتح الظرف قبل الدخول</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={invitation.envelopeAnimationEnabled}
-                    onChange={(e) => handleChange('envelopeAnimationEnabled', e.target.checked)}
-                    className="w-4 h-4 rounded text-[#720925]"
-                  />
-                </label>
+              {/* Quick Actions */}
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs font-bold text-stone-700">قائمة أقسام الدعوة:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allEnabled = DEFAULT_SECTIONS.map((s, idx) => ({
+                        sectionKey: s.key,
+                        isEnabled: true,
+                        sortOrder: idx,
+                      }));
+                      setInvitation((prev: any) => ({
+                        ...prev,
+                        sections: allEnabled,
+                        envelopeAnimationEnabled: true,
+                        countdownEnabled: true,
+                        rsvpEnabled: true,
+                      }));
+                    }}
+                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 cursor-pointer transition-colors"
+                  >
+                    تفعيل الكل ✨
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const minimal = DEFAULT_SECTIONS.map((s, idx) => ({
+                        sectionKey: s.key,
+                        isEnabled: ['cover', 'couple', 'venue'].includes(s.key),
+                        sortOrder: idx,
+                      }));
+                      setInvitation((prev: any) => ({
+                        ...prev,
+                        sections: minimal,
+                        envelopeAnimationEnabled: false,
+                        countdownEnabled: false,
+                        rsvpEnabled: false,
+                      }));
+                    }}
+                    className="text-[10px] font-bold text-stone-600 hover:text-stone-800 bg-stone-100 hover:bg-stone-200 px-2.5 py-1 rounded-lg border border-stone-200 cursor-pointer transition-colors"
+                  >
+                    الأساسي فقط ⚡
+                  </button>
+                </div>
+              </div>
 
-                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-stone-800 block">العد التنازلي لموعد الفرح</span>
-                    <span className="text-[10px] text-stone-400">عداد الأيام والساعات والدقائق</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={invitation.countdownEnabled}
-                    onChange={(e) => handleChange('countdownEnabled', e.target.checked)}
-                    className="w-4 h-4 rounded text-[#720925]"
-                  />
-                </label>
+              {/* Dynamic Sections List */}
+              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                {DEFAULT_SECTIONS.map((sec) => {
+                  const currentSec = invitation.sections?.find((s: any) => s.sectionKey === sec.key);
+                  let isEnabled = currentSec !== undefined ? currentSec.isEnabled : sec.defaultEnabled;
 
-                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-stone-800 block">نموذج تأكيد الحضور (RSVP)</span>
-                    <span className="text-[10px] text-stone-400">حصر عدد الضيوف واعتذارات الحضور</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={invitation.rsvpEnabled}
-                    onChange={(e) => handleChange('rsvpEnabled', e.target.checked)}
-                    className="w-4 h-4 rounded text-[#720925]"
-                  />
-                </label>
+                  if (sec.key === 'envelope' && invitation.envelopeAnimationEnabled !== undefined) {
+                    isEnabled = invitation.envelopeAnimationEnabled;
+                  } else if (sec.key === 'countdown' && invitation.countdownEnabled !== undefined) {
+                    isEnabled = invitation.countdownEnabled;
+                  } else if (sec.key === 'rsvp' && invitation.rsvpEnabled !== undefined) {
+                    isEnabled = invitation.rsvpEnabled;
+                  }
 
-                <label className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 border border-stone-200 cursor-pointer">
+                  return (
+                    <label
+                      key={sec.key}
+                      className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-all ${
+                        isEnabled
+                          ? 'bg-white border-stone-200 shadow-2xs hover:border-amber-400'
+                          : 'bg-stone-100/70 border-dashed border-stone-300 opacity-60 hover:opacity-80'
+                      }`}
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-stone-900">{sec.labelAr}</span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.2 rounded-full ${
+                              isEnabled
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {isEnabled ? 'ظاهر للضيوف' : 'محذوف / مخفي'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-400 font-mono" dir="ltr">
+                          sectionKey: {sec.key}
+                        </span>
+                      </div>
+
+                      <input
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={(e) => handleToggleSection(sec.key, e.target.checked)}
+                        className="w-4 h-4 rounded text-[#720925] cursor-pointer"
+                      />
+                    </label>
+                  );
+                })}
+
+                {/* Multi-Event Journey Switch */}
+                <label className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/80 border border-amber-200 cursor-pointer mt-3">
                   <div>
-                    <span className="text-xs font-bold text-stone-800 block">رحلة الفرح المتعددة (Multi-Event Tabs)</span>
-                    <span className="text-[10px] text-stone-400">تنقل ذكي بين المناسبات (باقة 95 ج.م أو VIP)</span>
+                    <span className="text-xs font-bold text-amber-950 block">
+                      تبويبات رحلة الفرح المتعددة (Multi-Event Tabs)
+                    </span>
+                    <span className="text-[10px] text-amber-800">
+                      تنقل ذكي بين مناسبات الفرح (باقة رحلة الفرح 95 ج.م أو VIP)
+                    </span>
                   </div>
                   <input
                     type="checkbox"
-                    checked={invitation.isMultiEvent}
+                    checked={invitation.isMultiEvent || false}
                     onChange={(e) => handleChange('isMultiEvent', e.target.checked)}
-                    className="w-4 h-4 rounded text-[#720925]"
+                    className="w-4 h-4 rounded text-[#720925] cursor-pointer"
                   />
                 </label>
               </div>

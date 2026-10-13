@@ -20,6 +20,9 @@ import {
   MailOpen,
   X,
   UserCheck,
+  Camera,
+  Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import Link from 'next/link';
@@ -32,7 +35,7 @@ const ORDER_STATUS_LIST = [
   { key: 'designing', label: 'قيد التصميم', color: 'bg-amber-100 text-amber-900 border-amber-300' },
   { key: 'preview_sent', label: 'أُرسلت المعاينة', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
   { key: 'awaiting_payment', label: 'بانتظار الدفع', color: 'bg-orange-100 text-orange-900 border-orange-300' },
-  { key: 'payment_proof_received', label: 'تم استلام إيصال الدفع', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' },
+  { key: 'payment_proof_received', label: 'تم استلام إيصال الدفع 📸', color: 'bg-amber-100 text-amber-900 border-amber-300 font-bold' },
   { key: 'paid', label: 'تم الدفع بنجاح', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
   { key: 'published', label: 'تم النشر لايف', color: 'bg-rose-100 text-rose-900 border-rose-300' },
   { key: 'completed', label: 'مكتمل بالكامل', color: 'bg-green-100 text-green-900 border-green-300' },
@@ -51,6 +54,8 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [approvingPaymentId, setApprovingPaymentId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -174,6 +179,27 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleVerifyPayment = async (paymentId: string) => {
+    setApprovingPaymentId(paymentId);
+    try {
+      const res = await adminFetch(`/payments/${paymentId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify({ publishImmediately: true }),
+      });
+      if (res.success) {
+        setToastMsg('تم اعتماد الدفع وتفعيل رابط الدعوة ونشرها بنجاح! 🚀');
+        loadOrders();
+        if (selectedOrder) {
+          openOrderDetails(selectedOrder);
+        }
+      } else {
+        alert(res.message || 'فشل اعتماد الدفع');
+      }
+    } finally {
+      setApprovingPaymentId(null);
+    }
+  };
+
   const orderColumns: ColumnDef<any>[] = [
     {
       key: 'orderNumber',
@@ -259,17 +285,29 @@ export default function AdminOrdersPage() {
         const statusInfo =
           ORDER_STATUS_LIST.find((s) => s.key === o.status) || ORDER_STATUS_LIST[0];
         return (
-          <select
-            value={o.status}
-            onChange={(e) => handleQuickStatusChange(o.id, e.target.value)}
-            className={`text-[11px] font-bold p-1.5 rounded-xl border ${statusInfo.color} focus:outline-hidden cursor-pointer`}
-          >
-            {ORDER_STATUS_LIST.map((s) => (
-              <option key={s.key} value={s.key}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <select
+              value={o.status}
+              onChange={(e) => handleQuickStatusChange(o.id, e.target.value)}
+              className={`text-[11px] font-bold p-1.5 rounded-xl border ${statusInfo.color} focus:outline-hidden cursor-pointer`}
+            >
+              {ORDER_STATUS_LIST.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            {o.status === 'payment_proof_received' && (
+              <button
+                type="button"
+                onClick={() => openOrderDetails(o)}
+                className="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-[10px] animate-pulse cursor-pointer shadow-xs whitespace-nowrap"
+                title="مراجعة الإيصال واعتماد التفعيل فوراً"
+              >
+                📸 مراجعة الإيصال
+              </button>
+            )}
+          </div>
         );
       },
     },
@@ -341,6 +379,32 @@ export default function AdminOrdersPage() {
           <span>إنشاء طلب جديد</span>
         </button>
       </div>
+
+      {/* Alert Banner for Orders Awaiting Proof Review */}
+      {orders.filter((o) => o.status === 'payment_proof_received').length > 0 && (
+        <div className="p-4 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center font-bold text-lg shrink-0 shadow-xs">
+              📸
+            </div>
+            <div>
+              <h4 className="font-black text-amber-950 text-sm">
+                يوجد {orders.filter((o) => o.status === 'payment_proof_received').length} طلبات بانتظار مراجعة إيصال التحويل وتفعيل الدعوة!
+              </h4>
+              <p className="text-amber-800 text-xs mt-0.5">
+                قام العرسان بتصميم دعواتهم ورفع لقطة شاشة التحويل. راجع الإيصال واعتمد الطلب لتفعيل رابط الدعوة لايف فوراً.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('payment_proof_received')}
+            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-sm whitespace-nowrap cursor-pointer transition-colors"
+          >
+            تصفية الطلبات المعلقة ({orders.filter((o) => o.status === 'payment_proof_received').length})
+          </button>
+        </div>
+      )}
 
       {/* Search & Status Toolbar */}
       <div className="bg-white p-4 rounded-3xl border border-stone-200 shadow-2xs flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -610,10 +674,10 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* 3. Payments Card */}
-                <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                      3. مدفوعات InstaPay ({orderDetails.payments?.length || 0})
+                      3. مدفوعات InstaPay / فودافون كاش ({orderDetails.payments?.length || 0})
                     </span>
                     <span className="font-black text-stone-900 text-sm">
                       المبلغ المطلوب: {orderDetails.amount} ج.م
@@ -623,22 +687,71 @@ export default function AdminOrdersPage() {
                   {orderDetails.payments && orderDetails.payments.length > 0 ? (
                     <div className="divide-y divide-stone-100">
                       {orderDetails.payments.map((p: any) => (
-                        <div key={p.id} className="py-2 flex items-center justify-between">
-                          <div>
-                            <span className="font-bold text-stone-900 font-mono">{p.amount} ج.م</span>
-                            <span className="text-stone-500 mr-2 text-[11px]">
-                              عبر: {p.method === 'vodafone_cash' ? 'فودافون كاش 📱' : 'InstaPay 📲'}
-                            </span>
+                        <div key={p.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            {p.paymentProofUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(p.paymentProofUrl)}
+                                className="relative group shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-amber-400 shadow-xs cursor-pointer hover:scale-105 transition-transform"
+                                title="اضغط لتكبير صورة إيصال التحويل"
+                              >
+                                <img src={p.paymentProofUrl} alt="إيصال الدفع" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                                  <Camera className="w-4 h-4 text-white drop-shadow" />
+                                </div>
+                              </button>
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-400 flex items-center justify-center text-[10px] shrink-0 font-bold">
+                                لا يوجد إيصال
+                              </div>
+                            )}
+
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-stone-900 font-mono text-sm">{p.amount} ج.م</span>
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                    p.status === 'verified'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : p.status === 'proof_received'
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      : 'bg-stone-100 text-stone-700'
+                                  }`}
+                                >
+                                  {p.status === 'verified'
+                                    ? 'معتمد ومؤكد ✅'
+                                    : p.status === 'proof_received'
+                                    ? 'إيصال مستلم 📸'
+                                    : 'بانتظار الدفع'}
+                                </span>
+                              </div>
+                              <p className="text-stone-500 text-[11px]">
+                                طريقة الدفع: {p.method === 'vodafone_cash' ? 'فودافون كاش 📱' : 'InstaPay 📲'}
+                                {p.referenceNumber && ` — مرجع: ${p.referenceNumber}`}
+                              </p>
+                              {p.notes && <p className="text-stone-600 text-[10px] italic">ملاحظات: {p.notes}</p>}
+                            </div>
                           </div>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                              p.status === 'verified'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {p.status === 'verified' ? 'معتمد ✅' : 'بانتظار المراجعة'}
-                          </span>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            {p.status !== 'verified' ? (
+                              <button
+                                type="button"
+                                disabled={approvingPaymentId === p.id}
+                                onClick={() => handleVerifyPayment(p.id)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>{approvingPaymentId === p.id ? 'جاري الاعتماد...' : 'اعتماد ونشر الدعوة لايف 🚀'}</span>
+                              </button>
+                            ) : (
+                              <span className="text-emerald-700 font-bold text-xs flex items-center gap-1">
+                                <CheckCircle2 className="w-4 h-4" />
+                                تم الاعتماد بنجاح
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -654,8 +767,74 @@ export default function AdminOrdersPage() {
                     </div>
                   )}
                 </div>
+
+                {/* 4. Live Link WhatsApp Notifier (Shown once published or paid) */}
+                {orderDetails.invitation && orderDetails.invitation.status === 'published' && orderDetails.customer?.phone && (
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <h4 className="font-black text-emerald-950 text-xs">رابط الدعوة لايف ومتاح لجميع الضيوف الآن! 🎉</h4>
+                      </div>
+                      <p className="text-stone-600 font-mono text-[11px] mt-1">
+                        /invitation/{orderDetails.invitation.type || 'wedding'}/{orderDetails.invitation.slug}
+                      </p>
+                    </div>
+                    <a
+                      href={getWhatsAppUrl(
+                        orderDetails.customer.phone,
+                        `ألف مبروك يا أستاذ ${orderDetails.customer.name}! 🎉 تم اعتماد التحويل وتفعيل رابط دعوتكم رسمياً ليصبح متاحاً لجميع المعازيم والضيوف:\nhttps://farahna.com/invitation/${orderDetails.invitation.type || 'wedding'}/${orderDetails.invitation.slug}\n\nفرحنا يتمنى لكم زواجاً مباركاً وحياة سعيدة ملؤها المحبة ❤️💍`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors whitespace-nowrap"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-current" />
+                      <span>إرسال الرابط للعروسين على واتساب 📲</span>
+                    </a>
+                  </div>
+                )}
               </div>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Proof Preview Lightbox */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-60 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-xl max-h-[85vh] bg-stone-900 rounded-3xl p-4 shadow-2xl border border-stone-700 flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between pb-3 px-1 text-white text-xs font-bold border-b border-stone-800 mb-3">
+              <span>📸 معاينة إيصال تحويل InstaPay / كاش</span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <img
+              src={previewImage}
+              alt="إيصال الدفع"
+              className="w-full max-h-[65vh] object-contain rounded-2xl bg-black"
+            />
+            <div className="pt-3 text-center">
+              <a
+                href={previewImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-amber-400 hover:underline text-xs font-bold"
+              >
+                فتح الصورة بالحجم الكامل في نافذة مستقلة ↗️
+              </a>
+            </div>
           </div>
         </div>
       )}
