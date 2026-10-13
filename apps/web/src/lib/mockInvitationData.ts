@@ -285,7 +285,7 @@ export const MOCK_AHMED_SARA_THEME_OVERRIDE: FullInvitationMock = {
 };
 
 /**
- * ✨ Invitation #2: عمر وسلمى (Single event, Minimal Dark Mode)
+ * ✨ Invitation #2: عمر وسلمى (Single event, Elegant Gold Dark Mode)
  */
 export const MOCK_OMAR_SALMA: FullInvitationMock = {
   theme: getThemeBySlug('elegant-gold'),
@@ -293,7 +293,7 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     id: 'inv-omar-salma-002',
     customerId: 'cust-demo-002',
     slug: 'omar-salma',
-    title: 'حفل خطوبة عمر وسلمى',
+    title: 'حفل خطوبة عمر وسلمى 💍',
     type: 'engagement',
     status: 'published',
     privacy: 'public',
@@ -304,17 +304,26 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     coupleGroomEn: 'Omar Khaled',
     coupleBrideEn: 'Salma El-Sherif',
 
-    parentsGroomAr: null,
-    parentsBrideAr: null,
+    parentsGroomAr: 'يتشرف المستشار خالد عبد الرحمن وحرمه',
+    parentsBrideAr: 'والأستاذ الدكتور طارق الشريف وحرمه',
 
-    weddingMessageAr: `يسرّنا أن نعلن عن خطوبتنا السعيدة، ونتشرف بمشاركتكم هذه الليلة المميزة على ضفاف عروس البحر الأبيض المتوسط ✨`,
+    weddingMessageAr: `يسرّنا أن نعلن عن خطوبتنا السعيدة، ونتشرف بمشاركتكم هذه الليلة المميزة على ضفاف عروس البحر الأبيض المتوسط ✨
 
-    coverImageUrl: null,
-    coupleImageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
-    galleryImages: [],
+"وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً"
 
-    musicUrl: null,
-    musicTitle: null,
+حضوركم يكتمل به سرورنا ويزيد ليلتنا بهجة وتألقاً ❤️`,
+
+    coverImageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80',
+    coupleImageUrl: 'https://images.unsplash.com/photo-1621621667797-e06afc21b56a?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1621621667797-e06afc21b56a?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+    ],
+
+    musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-113337.mp3',
+    musicTitle: 'موسيقى رومانسي ليلة الخطوبة 💎',
 
     themeId: 'theme-elegant-gold',
     themeConfig: getThemeBySlug('elegant-gold').config,
@@ -322,7 +331,7 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     isMultiEvent: false,
     rsvpEnabled: true,
     countdownEnabled: true,
-    envelopeAnimationEnabled: false,
+    envelopeAnimationEnabled: true,
 
     eventDate: '2026-10-15T18:00:00.000Z',
     startDate: '2026-10-15T18:00:00.000Z',
@@ -353,16 +362,16 @@ export const MOCK_OMAR_SALMA: FullInvitationMock = {
     },
   ],
   sections: [
-    { id: 'os-1', invitationId: 'inv-omar-salma-002', sectionKey: 'envelope', isEnabled: false, sortOrder: 1 },
+    { id: 'os-1', invitationId: 'inv-omar-salma-002', sectionKey: 'envelope', isEnabled: true, sortOrder: 1 },
     { id: 'os-2', invitationId: 'inv-omar-salma-002', sectionKey: 'cover', isEnabled: true, sortOrder: 2 },
     { id: 'os-3', invitationId: 'inv-omar-salma-002', sectionKey: 'couple', isEnabled: true, sortOrder: 3 },
-    { id: 'os-4', invitationId: 'inv-omar-salra-002', sectionKey: 'message', isEnabled: true, sortOrder: 4 },
+    { id: 'os-4', invitationId: 'inv-omar-salma-002', sectionKey: 'message', isEnabled: true, sortOrder: 4 },
     { id: 'os-5', invitationId: 'inv-omar-salma-002', sectionKey: 'countdown', isEnabled: true, sortOrder: 5 },
     { id: 'os-6', invitationId: 'inv-omar-salma-002', sectionKey: 'events', isEnabled: false, sortOrder: 6 },
     { id: 'os-7', invitationId: 'inv-omar-salma-002', sectionKey: 'timeline', isEnabled: false, sortOrder: 7 },
-    { id: 'os-8', invitationId: 'inv-omar-salma-002', sectionKey: 'parents', isEnabled: false, sortOrder: 8 },
+    { id: 'os-8', invitationId: 'inv-omar-salma-002', sectionKey: 'parents', isEnabled: true, sortOrder: 8 },
     { id: 'os-9', invitationId: 'inv-omar-salma-002', sectionKey: 'couple_photo', isEnabled: true, sortOrder: 9 },
-    { id: 'os-10', invitationId: 'inv-omar-salma-002', sectionKey: 'gallery', isEnabled: false, sortOrder: 10 },
+    { id: 'os-10', invitationId: 'inv-omar-salma-002', sectionKey: 'gallery', isEnabled: true, sortOrder: 10 },
     { id: 'os-11', invitationId: 'inv-omar-salma-002', sectionKey: 'venue', isEnabled: true, sortOrder: 11 },
     { id: 'os-12', invitationId: 'inv-omar-salma-002', sectionKey: 'map', isEnabled: true, sortOrder: 12 },
     { id: 'os-13', invitationId: 'inv-omar-salma-002', sectionKey: 'dresscode', isEnabled: true, sortOrder: 13 },

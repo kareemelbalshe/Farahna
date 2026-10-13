@@ -487,6 +487,10 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
             fontFamily: invInput.fontFamily || "'Cairo', sans-serif",
             selectedPackage: packageId,
             ...(invInput.themeConfig || {}),
+            customOgImageUrl:
+              invInput.customOgImageUrl ||
+              invInput.themeConfig?.customOgImageUrl ||
+              null,
           },
           isMultiEvent: Boolean(invInput.isMultiEvent),
           rsvpEnabled: invInput.rsvpEnabled !== undefined ? Boolean(invInput.rsvpEnabled) : true,

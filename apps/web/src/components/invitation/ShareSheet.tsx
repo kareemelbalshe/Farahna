@@ -108,7 +108,7 @@ export function ShareSheet({
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-stone-200 text-stone-800 hover:bg-stone-50 font-bold text-xs shadow-xs transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer"
         >
           {copied ? (
             <>

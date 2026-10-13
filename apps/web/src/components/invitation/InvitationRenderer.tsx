@@ -27,6 +27,8 @@ import { ShareSheet } from './ShareSheet';
 import { WhatsAppContactSection } from './WhatsAppContactSection';
 import { ClosingMessageSection } from './ClosingMessageSection';
 import { recordPublicAnalytics } from '@/lib/api';
+import Link from 'next/link';
+import { Sparkles, Edit3, X } from 'lucide-react';
 
 export interface InvitationRendererProps {
   invitation: InvitationDTO;
@@ -51,6 +53,7 @@ export function InvitationRenderer({
   // If envelopeAnimationEnabled is true, start closed
   const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(!safeInv.envelopeAnimationEnabled);
   const [audioTriggered, setAudioTriggered] = useState(false);
+  const [showStickyDesignBar, setShowStickyDesignBar] = useState(true);
 
   // Extract theme colors with fallback to theme config or sensible defaults
   const primaryColor =
@@ -138,9 +141,17 @@ export function InvitationRenderer({
     }
   }, []);
 
+  const isDark = Boolean(
+    (backgroundColor &&
+      ['#0', '#1', '#2', 'black'].some((p) => backgroundColor.toLowerCase().startsWith(p))) ||
+      theme?.slug === 'elegant-gold'
+  );
+
   return (
     <div
-      className="min-h-screen transition-colors selection:bg-[#720925] selection:text-white"
+      className={`min-h-screen transition-colors selection:bg-[#720925] selection:text-white ${
+        isDark ? 'invitation-dark-theme dark' : ''
+      }`}
       style={{
         backgroundColor,
         color: textColor,
@@ -338,7 +349,7 @@ export function InvitationRenderer({
           primaryEvent.date &&
           !isNaN(new Date(primaryEvent.date).getTime()) && (
             <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
-              <h4 className="text-sm font-bold text-stone-800 font-cairo">
+              <h4 className="text-sm font-bold text-stone-800 font-cairo theme-heading">
                 احفظ موعد الفرح في تقويم هاتفك 📅
               </h4>
               <div className="flex justify-center">
@@ -387,9 +398,56 @@ export function InvitationRenderer({
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             supportPhone={(safeInv as any)?.settings?.whatsappNumber || '201019262075'}
+            templateSlug={safeInv.slug}
+            themeSlug={theme?.slug}
+            invitationType={safeInv.type}
+            groomName={safeInv.coupleGroomAr}
+            brideName={safeInv.coupleBrideAr}
           />
         )}
       </main>
+
+      {/* 🪄 Floating Studio CTA dock for Demo Visitors */}
+      {!isPreview && isEnvelopeOpen && showStickyDesignBar && (
+        <aside
+          aria-label="صمم دعوتك بنفسك"
+          className="fixed bottom-4 inset-x-4 max-w-md mx-auto z-50 animate-fade-in-up"
+        >
+          <div className="relative bg-stone-950/90 text-white backdrop-blur-xl border border-amber-400/40 shadow-2xl rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-amber-300 truncate">
+                  عجبك ستايل هذا النموذج؟ 💍
+                </p>
+                <p className="text-[11px] text-stone-300 truncate">
+                  عدّل كل حاجة مكتوبة وصمّم دعوتك بنفسك
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href={`/create?template=${safeInv.slug || ''}&theme=${theme?.slug || ''}&type=${safeInv.type || 'wedding'}&groom=${encodeURIComponent(safeInv.coupleGroomAr || '')}&bride=${encodeURIComponent(safeInv.coupleBrideAr || '')}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-stone-950 text-xs font-black shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>صمّم الآن</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowStickyDesignBar(false)}
+                className="p-1.5 text-stone-400 hover:text-white rounded-lg hover:bg-stone-800 transition-colors cursor-pointer"
+                title="إغلاق الشريط"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

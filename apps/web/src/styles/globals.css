@@ -251,22 +251,31 @@ body {
   --inv-heading: #FFFFFF;
   --inv-text-primary: #F8F5EE;
   --inv-text-muted: #D1C7B7;
-  --inv-card-bg: rgba(22, 21, 25, 0.88);
-  --inv-card-border: rgba(212, 175, 55, 0.35);
-  --inv-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+  --inv-card-bg: linear-gradient(145deg, rgba(28, 27, 34, 0.94), rgba(16, 15, 20, 0.98));
+  --inv-card-border: rgba(212, 175, 55, 0.38);
+  --inv-card-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.85), 0 0 25px rgba(212, 175, 55, 0.12);
 }
 
 .invitation-dark-theme .theme-card {
-  background-color: var(--inv-card-bg) !important;
+  background: var(--inv-card-bg) !important;
   border-color: var(--inv-card-border) !important;
   color: var(--inv-text-primary) !important;
   box-shadow: var(--inv-card-shadow) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.invitation-dark-theme .theme-card:hover {
+  border-color: rgba(212, 175, 55, 0.55) !important;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.2) !important;
 }
 
 .invitation-dark-theme .theme-heading {
   color: #FFFFFF !important;
+}
+
+.invitation-dark-theme .theme-subheading {
+  color: #F5D77F !important;
 }
 
 .invitation-dark-theme .theme-muted {
@@ -274,20 +283,20 @@ body {
 }
 
 .invitation-dark-theme .theme-badge {
-  background-color: rgba(212, 175, 55, 0.15) !important;
+  background-color: rgba(212, 175, 55, 0.16) !important;
   border-color: rgba(212, 175, 55, 0.45) !important;
   color: #F5D77F !important;
 }
 
 .invitation-dark-theme .theme-divider {
-  border-color: rgba(212, 175, 55, 0.25) !important;
+  border-color: rgba(212, 175, 55, 0.28) !important;
 }
 
 .invitation-dark-theme input,
 .invitation-dark-theme textarea,
 .invitation-dark-theme select {
-  background-color: rgba(30, 28, 34, 0.85) !important;
-  border-color: rgba(212, 175, 55, 0.3) !important;
+  background-color: rgba(26, 24, 30, 0.92) !important;
+  border-color: rgba(212, 175, 55, 0.35) !important;
   color: #FFFFFF !important;
 }
 
@@ -295,3 +304,11 @@ body {
 .invitation-dark-theme textarea::placeholder {
   color: rgba(212, 175, 55, 0.5) !important;
 }
+
+.invitation-dark-theme input:focus,
+.invitation-dark-theme textarea:focus,
+.invitation-dark-theme select:focus {
+  border-color: #D4AF37 !important;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.35) !important;
+}
+

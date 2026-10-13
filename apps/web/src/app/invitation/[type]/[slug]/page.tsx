@@ -123,7 +123,19 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const title = `دعوة فرح ${couple} ❤️ | فرحنا`;
   const description = `يسعدنا ويشرفنا حضوركم ومشاركتنا فرحتنا (${couple}). اضغط لمشاهدة تفاصيل الفرح، المواعيد، موقع القاعة، وتأكيد الحضور.`;
   const canonicalUrl = `${baseUrl}/invitation/${type}/${slug}`;
-  const ogImageUrl = `${baseUrl}/api/og/invitation/${slug}`;
+  
+  // Resolve WhatsApp & Social Sharing Image:
+  // Prioritize custom link preview image chosen by client or admin, then cover image, then dynamic generator
+  const rawOgImage =
+    inv.customOgImageUrl?.trim() ||
+    inv.themeConfig?.customOgImageUrl?.trim() ||
+    inv.coverImageUrl?.trim();
+
+  const ogImageUrl = rawOgImage
+    ? rawOgImage.startsWith('http')
+      ? rawOgImage
+      : `${baseUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`
+    : `${baseUrl}/api/og/invitation/${slug}`;
 
   // Privacy Indexing Rules:
   // - public + published -> indexable

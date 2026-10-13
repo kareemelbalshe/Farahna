@@ -651,22 +651,60 @@ export default function AdminOrdersPage() {
                     2. الدعوة المرتبطة بالطلب
                   </span>
                   {orderDetails.invitation ? (
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <h3 className="font-bold text-stone-900 text-sm">{orderDetails.invitation.title}</h3>
-                        <p className="text-stone-500 font-mono text-[11px]">
-                          الرابط: /{orderDetails.invitation.slug} (الحالة: {orderDetails.invitation.status})
-                        </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <h3 className="font-bold text-stone-900 text-sm">{orderDetails.invitation.title}</h3>
+                          <p className="text-stone-500 font-mono text-[11px]">
+                            الرابط: /{orderDetails.invitation.slug} (الحالة: {orderDetails.invitation.status})
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/invitations/${orderDetails.invitation.id}/builder`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-[11px] border border-amber-200"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            <span>تعديل في المحرر</span>
+                          </Link>
+                          <a
+                            href={`/invitation/${orderDetails.invitation.type}/${orderDetails.invitation.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-[11px]"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>معاينة حية</span>
+                          </a>
+                        </div>
                       </div>
-                      <a
-                        href={`/invitation/${orderDetails.invitation.type}/${orderDetails.invitation.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-[11px]"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>معاينة حية</span>
-                      </a>
+
+                      {/* WhatsApp link preview thumbnail info */}
+                      {(orderDetails.invitation.customOgImageUrl ||
+                        orderDetails.invitation.themeConfig?.customOgImageUrl ||
+                        orderDetails.invitation.coverImageUrl) && (
+                        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                          <img
+                            src={
+                              orderDetails.invitation.customOgImageUrl ||
+                              orderDetails.invitation.themeConfig?.customOgImageUrl ||
+                              orderDetails.invitation.coverImageUrl
+                            }
+                            alt="غلاف رابط واتساب"
+                            className="w-14 h-10 object-cover rounded-lg border border-stone-300 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] text-stone-500 font-bold block">
+                              صورة معاينة الرابط على واتساب (WhatsApp Social Thumbnail):
+                            </span>
+                            <span className="text-[11px] font-mono text-stone-700 truncate block dir-ltr text-left">
+                              {orderDetails.invitation.customOgImageUrl ||
+                                orderDetails.invitation.themeConfig?.customOgImageUrl ||
+                                orderDetails.invitation.coverImageUrl}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-stone-400 text-xs py-1">لا توجد دعوة مرتبطة بهذا الطلب حالياً</p>

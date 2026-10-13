@@ -98,7 +98,7 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
 
             {/* Attendance Radios */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-700 block">
+              <label className="text-xs font-bold text-stone-700 block theme-heading">
                 موقفك من الحضور:
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -107,8 +107,8 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
                   onClick={() => setAttendanceStatus('attending')}
                   className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'attending'
-                      ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-xs'
-                      : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-800 dark:text-emerald-300 shadow-xs'
+                      : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
                   <span className="text-base">🎉</span>
@@ -120,8 +120,8 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
                   onClick={() => setAttendanceStatus('maybe')}
                   className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'maybe'
-                      ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-xs'
-                      : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-800 dark:text-amber-300 shadow-xs'
+                      : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
                   <span className="text-base">⏳</span>
@@ -133,8 +133,8 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
                   onClick={() => setAttendanceStatus('not_attending')}
                   className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'not_attending'
-                      ? 'bg-rose-50 border-rose-500 text-rose-900 shadow-xs'
-                      : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-800 dark:text-rose-300 shadow-xs'
+                      : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
                   <span className="text-base">💌</span>
@@ -145,7 +145,7 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
 
             {/* Name */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-700 block">
+              <label className="text-xs font-bold text-stone-700 block theme-heading">
                 الاسم الكريم: *
               </label>
               <div className="relative">
@@ -163,7 +163,7 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
             {/* Phone & Guest count */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">
+                <label className="text-xs font-bold text-stone-700 block theme-heading">
                   رقم الهاتف (اختياري):
                 </label>
                 <input
@@ -177,7 +177,7 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
 
               {attendanceStatus !== 'not_attending' && (
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700 block">
+                  <label className="text-xs font-bold text-stone-700 block theme-heading">
                     عدد الأفراد الحاضرين:
                   </label>
                   <select
@@ -197,7 +197,7 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
 
             {/* Congratulation Message */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-700 block">
+              <label className="text-xs font-bold text-stone-700 block theme-heading">
                 رسالة أو كلمة تهنئة للعروسين:
               </label>
               <textarea
@@ -213,8 +213,15 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 rounded-xl font-bold text-sm text-white shadow-md hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-              style={{ backgroundColor: primaryColor }}
+              className="w-full py-3.5 rounded-xl font-black text-sm shadow-md hover:opacity-95 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+              style={{
+                backgroundColor: primaryColor,
+                color:
+                  primaryColor.toLowerCase().startsWith('#d') ||
+                  primaryColor.toLowerCase().startsWith('#f')
+                    ? '#121114'
+                    : '#FFFFFF',
+              }}
             >
               <Send className="w-4 h-4 fill-current" />
               <span>{isSubmitting ? 'جاري الإرسال...' : 'تأكيد الرد وإرسال التهنئة ❤️'}</span>

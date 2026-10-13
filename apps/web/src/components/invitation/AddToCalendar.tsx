@@ -132,9 +132,9 @@ export function AddToCalendar({
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleGoogleCalendarClick}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 font-bold text-xs hover:bg-amber-100 transition-colors shadow-xs"
+        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors shadow-xs"
       >
-        <CalendarPlus className="w-3.5 h-3.5 text-amber-700" />
+        <CalendarPlus className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
         <span>أضف للتقويم (Google)</span>
       </a>
 
@@ -142,16 +142,16 @@ export function AddToCalendar({
       <button
         type="button"
         onClick={handleIcsDownload}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 font-bold text-xs hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
       >
         {downloaded ? (
           <>
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-emerald-700">تم الحفظ</span>
+            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-emerald-700 dark:text-emerald-300">تم الحفظ</span>
           </>
         ) : (
           <>
-            <Download className="w-3.5 h-3.5 text-stone-500" />
+            <Download className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             <span>Apple / iCal</span>
           </>
         )}

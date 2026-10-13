@@ -593,25 +593,35 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                   </div>
                 </div>
 
-                {/* Card Action Buttons (Direct Live Demo + WhatsApp Custom Order) */}
-                <div className="p-6 pt-0 grid grid-cols-2 gap-3 mt-2">
+                {/* Card Action Buttons (Direct Studio Create + Live Demo + WhatsApp) */}
+                <div className="p-6 pt-0 space-y-2 mt-2">
                   <Link
-                    href={theme.demoUrl}
-                    className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-bold text-xs transition-all active:scale-95 border border-stone-200 shadow-2xs group/btn"
+                    href={`/create?theme=${theme.slug}`}
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-stone-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400 cursor-pointer"
                   >
-                    <Eye className="w-4 h-4 text-amber-600 group-hover/btn:scale-110 transition-transform" />
-                    <span>شوف الدعوة</span>
+                    <Sparkles className="w-4 h-4 text-stone-950" />
+                    <span>صمّم دعوتك بهذا الثيم 🪄</span>
                   </Link>
 
-                  <a
-                    href={whatsappOrderUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-95 transition-all active:scale-95 group/wa"
-                  >
-                    <MessageCircle className="w-4 h-4 fill-current group-wa:scale-110 transition-transform" />
-                    <span>اطلب التصميم</span>
-                  </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href={theme.demoUrl}
+                      className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-bold text-xs transition-all active:scale-95 border border-stone-200 shadow-2xs group/btn"
+                    >
+                      <Eye className="w-4 h-4 text-amber-600 group-hover/btn:scale-110 transition-transform" />
+                      <span>معاينة النموذج</span>
+                    </Link>
+
+                    <a
+                      href={whatsappOrderUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20 hover:opacity-95 transition-all active:scale-95 group/wa"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-current group-wa:scale-110 transition-transform" />
+                      <span>واتساب</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             );
@@ -625,12 +635,20 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
             <span>حرية كاملة في تخصيص كل تفصيلة</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-stone-900 font-cairo">
-            مش لاقيين اللون أو الثيم اللي في خيالكم بالظبط؟
+            جاهز لتصميم دعوة فرحتك بنفسك الآن؟
           </h3>
           <p className="text-stone-600 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-            فريق منصة فرحنا يقدر يصمم لكم ثيم مخصص بالكامل (Custom Theme) بنفس ألوان كوشتكم، قاعتكم، أو فستان الفرح والبدلة مع خيارات الموسيقى المفضلة لكم.
+            استوديو فرحنا يتيح لك تعديل الأسماء، المواعيد، مكان القاعة، الموسيقى، ورسالة الفرح مع معاينة مباشرة وحية لهاتفك خطوة بخطوة 💍
           </p>
-          <div className="pt-2">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/create"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-sm shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-4.5 h-4.5 text-stone-950" />
+              <span>ابدأ تصميم دعوتك الآن في الاستوديو 🪄</span>
+            </Link>
+
             <a
               href={getWhatsAppUrl(
                 whatsappNumber,
@@ -638,10 +656,10 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full burgundy-gradient-bg text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 font-bold text-xs sm:text-sm shadow-xs transition-all"
             >
-              <MessageCircle className="w-4 h-4 fill-current" />
-              <span>تواصل معنا لتصميم ثيم خاص بألوانكم</span>
+              <MessageCircle className="w-4 h-4 fill-current text-emerald-600" />
+              <span>طلب ثيم خاص عبر واتساب</span>
             </a>
           </div>
         </div>
@@ -752,28 +770,39 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="space-y-2.5 pt-2">
                 <Link
-                  href={previewTheme.demoUrl}
+                  href={`/create?theme=${previewTheme.slug}`}
                   onClick={() => setIsModalOpen(false)}
-                  className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-bold text-xs transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400 cursor-pointer"
                 >
-                  <Eye className="w-4 h-4 text-amber-600" />
-                  <span>شوف الدعوة الكاملة</span>
+                  <Sparkles className="w-4 h-4 text-stone-950" />
+                  <span>صمّم دعوتك بهذا الثيم الآن 🪄</span>
                 </Link>
 
-                <a
-                  href={getWhatsAppUrl(
-                    whatsappNumber,
-                    createInquiryWhatsAppMessage(previewTheme.nameAr)
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md hover:opacity-95 transition-opacity"
-                >
-                  <MessageCircle className="w-4 h-4 fill-current" />
-                  <span>اطلب التصميم</span>
-                </a>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href={previewTheme.demoUrl}
+                    onClick={() => setIsModalOpen(false)}
+                    className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-bold text-xs transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-amber-600" />
+                    <span>معاينة الدعوة</span>
+                  </Link>
+
+                  <a
+                    href={getWhatsAppUrl(
+                      whatsappNumber,
+                      createInquiryWhatsAppMessage(previewTheme.nameAr)
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md hover:opacity-95 transition-opacity"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                    <span>واتساب</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -23,14 +23,14 @@ export function PhotoGallery({ images, coupleName }: PhotoGalleryProps) {
   return (
     <section className="py-12 px-4 max-w-4xl mx-auto space-y-8 font-cairo">
       <div className="text-center space-y-2">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold theme-badge">
           <Camera className="w-3.5 h-3.5 text-amber-600" />
           أجمل الذكريات
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-900">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 theme-heading">
           معرض صور العروسين
         </h2>
-        <p className="text-xs sm:text-sm text-stone-500">
+        <p className="text-xs sm:text-sm text-stone-500 theme-muted">
           لقطات مميزة من جلسة التصوير (Photo Session)
         </p>
       </div>

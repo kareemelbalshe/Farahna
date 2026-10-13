@@ -252,7 +252,7 @@ export default function VisualInvitationBuilderPage() {
   // Upload an image directly into local media storage & update invitation
   const handleDirectImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    targetType: 'cover' | 'couple' | 'gallery'
+    targetType: 'cover' | 'couple' | 'gallery' | 'customOg'
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -264,7 +264,7 @@ export default function VisualInvitationBuilderPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('category', targetType);
+      formData.append('category', targetType === 'customOg' ? 'cover' : targetType);
       formData.append('invitationId', invitationId);
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
@@ -287,6 +287,9 @@ export default function VisualInvitationBuilderPage() {
           handleChange('coverImageUrl', uploadedUrl);
         } else if (targetType === 'couple') {
           handleChange('coupleImageUrl', uploadedUrl);
+        } else if (targetType === 'customOg') {
+          handleNestedThemeConfigChange('customOgImageUrl', uploadedUrl);
+          handleChange('customOgImageUrl', uploadedUrl);
         } else if (targetType === 'gallery') {
           const currentGallery = Array.isArray(invitation.galleryImages)
             ? invitation.galleryImages
@@ -1196,6 +1199,106 @@ export default function VisualInvitationBuilderPage() {
                   {mediaUploadError}
                 </div>
               )}
+
+              {/* WhatsApp & Social Media Link Preview Customization */}
+              <div className="p-4 rounded-2xl bg-amber-50/80 border-2 border-amber-300/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-950 block text-xs">
+                    💬 صورة معاينة الرابط على واتساب ومواقع التواصل (WhatsApp Link Preview Image):
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    تظهر كغلاف في محادثات الواتس
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-amber-900 leading-relaxed">
+                  هذه الصورة تظهر تلقائياً عندما يقوم العريس أو العروس بمشاركة رابط الدعوة مع المدعوين في واتساب وفيسبوك.
+                </p>
+
+                {/* Live simulated WhatsApp preview card */}
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-2xs space-y-2">
+                  <div className="h-32 w-full rounded-lg bg-stone-900 overflow-hidden relative flex items-center justify-center">
+                    {invitation.themeConfig?.customOgImageUrl || invitation.customOgImageUrl || invitation.coverImageUrl ? (
+                      <img
+                        src={invitation.themeConfig?.customOgImageUrl || invitation.customOgImageUrl || invitation.coverImageUrl}
+                        alt="معاينة واتساب"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-white text-xs font-bold text-center p-2">
+                        كارت الدعوة الرسمي التلقائي من المنصة
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-bold text-stone-900">
+                    دعوة فرح {invitation.coupleGroomAr} & {invitation.coupleBrideAr} ❤️
+                  </div>
+                  <div className="text-[10px] text-stone-400 font-mono">
+                    farahna.menuflowx.com
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={invitation.themeConfig?.customOgImageUrl || invitation.customOgImageUrl || ''}
+                    onChange={(e) => {
+                      handleNestedThemeConfigChange('customOgImageUrl', e.target.value);
+                      handleChange('customOgImageUrl', e.target.value);
+                    }}
+                    placeholder="رابط الصورة أو اضغط رفع صورة جديدة"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-left dir-ltr bg-white"
+                  />
+                  <label className="shrink-0 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{uploadingImage ? 'جاري الرفع...' : 'رفع صورة'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleDirectImageUpload(e, 'customOg')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 text-[11px]">
+                  <span className="text-stone-500 font-bold">اختصار سريع:</span>
+                  {invitation.coverImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleNestedThemeConfigChange('customOgImageUrl', invitation.coverImageUrl);
+                        handleChange('customOgImageUrl', invitation.coverImageUrl);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold cursor-pointer"
+                    >
+                      استخدام صورة الغلاف
+                    </button>
+                  )}
+                  {invitation.coupleImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleNestedThemeConfigChange('customOgImageUrl', invitation.coupleImageUrl);
+                        handleChange('customOgImageUrl', invitation.coupleImageUrl);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold cursor-pointer"
+                    >
+                      استخدام صورة العروسين
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleNestedThemeConfigChange('customOgImageUrl', '');
+                      handleChange('customOgImageUrl', '');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-rose-700 font-bold cursor-pointer"
+                  >
+                    حذف وتطبيق التلقائي
+                  </button>
+                </div>
+              </div>
 
               {/* 1. Cover Image Upload */}
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">

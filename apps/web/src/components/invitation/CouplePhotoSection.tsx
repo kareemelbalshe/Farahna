@@ -42,7 +42,7 @@ export function CouplePhotoSection({
         </div>
       </div>
 
-      <p className="text-xs sm:text-sm font-amiri font-bold text-stone-600">
+      <p className="text-xs sm:text-sm font-amiri font-bold text-stone-600 theme-heading">
         "بارك الله لهما وبارك عليهما وجمع بينهما في خير"
       </p>
     </section>

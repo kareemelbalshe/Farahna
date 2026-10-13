@@ -212,14 +212,20 @@ export function transliterateArabicToSlug(text: string): string {
 }
 
 /**
- * Generates a valid unique URL slug from groom & bride names
+ * Generates a valid unique URL slug from groom & bride names with random suffix to prevent duplicates
  */
-export function generateInvitationSlug(groom?: string, bride?: string): string {
+export function generateInvitationSlug(groom?: string, bride?: string, customSuffix?: string): string {
   const cleanGroom = transliterateArabicToSlug((groom || '').trim().split(/\s+/)[0]) || 'groom';
   const cleanBride = transliterateArabicToSlug((bride || '').trim().split(/\s+/)[0]) || 'bride';
   const combined = `${cleanGroom}-${cleanBride}`.replace(/^-+|-+$/g, '');
+  
+  // 4-character random alphanumeric suffix to prevent duplicate collision
+  const randomSuffix =
+    customSuffix ||
+    Math.random().toString(36).substring(2, 6).toLowerCase();
+
   if (combined.length >= 3 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(combined)) {
-    return combined;
+    return `${combined}-${randomSuffix}`;
   }
-  return `farah-${Date.now().toString().slice(-6)}`;
+  return `farah-${Date.now().toString().slice(-6)}-${randomSuffix}`;
 }
