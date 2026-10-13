@@ -3,6 +3,7 @@ import { prisma } from '../config/db';
 import { nanoid } from 'nanoid';
 import { DEFAULT_SECTIONS, generateInvitationSlug } from '@farahna/shared';
 import { storageService } from '../services/storage';
+import { sendPaymentProofNotification } from '../services/email.service';
 
 export async function getPublicInvitation(req: Request, res: Response, next: NextFunction) {
   try {
@@ -581,6 +582,24 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
       });
 
       return { invitation: inv, order, payment };
+    });
+
+    // 7. Dispatch Immediate Email Notification to Super Admin (Async, Non-blocking)
+    sendPaymentProofNotification({
+      orderNumber: result.order.orderNumber,
+      customerName: cleanName,
+      customerPhone: cleanPhone,
+      coupleNames: `${groom} & ${bride}`,
+      amount: Number(amount) || 95,
+      paymentMethod,
+      referenceNumber: referenceNumber || null,
+      paymentProofUrl: finalProofUrl || null,
+      invitationTitle: result.invitation.title,
+      slug: result.invitation.slug,
+      packageId,
+      type: result.invitation.type,
+    }).catch((err) => {
+      console.error('[PublicController] Background email notification error:', err);
     });
 
     return res.status(201).json({

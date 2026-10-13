@@ -134,7 +134,7 @@ function LoginForm() {
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@farahna.com"
+              placeholder="farahna.connect@gmail.com"
               className="w-full pl-4 pr-10 py-3.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#720925] focus:border-transparent text-sm text-left dir-ltr bg-stone-50/50 hover:bg-white transition-colors"
             />
             <Mail className="w-4 h-4 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

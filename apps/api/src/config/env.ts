@@ -25,4 +25,11 @@ export const ENV = {
   STORAGE_PATH: process.env.STORAGE_PATH || path.resolve(process.cwd(), 'storage'),
   MAX_FILE_SIZE: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE, 10) : 10 * 1024 * 1024,
   DEFAULT_TIMEZONE: process.env.DEFAULT_TIMEZONE || 'Africa/Cairo',
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+  SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465,
+  SMTP_SECURE: process.env.SMTP_SECURE !== 'false',
+  SMTP_USER: process.env.SMTP_USER || 'farahna.connect@gmail.com',
+  SMTP_PASS: (process.env.SMTP_PASS || 'rhllpussftltvpvu').replace(/\s+/g, ''),
+  SYSTEM_ADMIN_EMAIL: process.env.SYSTEM_ADMIN_EMAIL || 'farahna.connect@gmail.com',
+  NOTIFICATION_EMAIL: process.env.NOTIFICATION_EMAIL || 'farahna.connect@gmail.com',
 };

@@ -9,15 +9,17 @@ async function main() {
 
   // 1. Create / Update Super Admin, Admin, and Editor Users
   const adminPasswordHash = await bcrypt.hash('Farahna@2026!', 10);
+  const primaryAdminEmail = process.env.SYSTEM_ADMIN_EMAIL || process.env.SEED_ADMIN_EMAIL || 'farahna.connect@gmail.com';
+
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@farahna.com' },
+    where: { email: primaryAdminEmail },
     update: {
       name: 'كريم مدير منصة فرحنا',
       role: 'super_admin',
       isActive: true,
     },
     create: {
-      email: 'admin@farahna.com',
+      email: primaryAdminEmail,
       password: adminPasswordHash,
       name: 'كريم مدير منصة فرحنا',
       role: 'super_admin',
