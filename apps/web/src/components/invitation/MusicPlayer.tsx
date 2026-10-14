@@ -81,15 +81,15 @@ export function MusicPlayer({
     <div
       className={
         isPreview
-          ? 'fixed bottom-3 left-3 z-30 max-w-[calc(100%-24px)] pointer-events-auto'
-          : 'fixed bottom-20 left-4 sm:bottom-5 sm:left-5 z-40'
+          ? 'sticky bottom-3 left-3 z-40 max-w-[calc(100%-20px)] pointer-events-auto self-start mr-auto ml-2.5 mt-auto'
+          : 'fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 max-w-[calc(100%-32px)]'
       }
     >
       <div
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900/95 text-white backdrop-blur-md border border-amber-500/40 shadow-xl transition-all ${
           isPreview
-            ? 'max-w-[220px]'
-            : 'sm:px-3.5 sm:py-2 max-w-[230px] sm:max-w-none'
+            ? 'max-w-[210px]'
+            : 'sm:px-3.5 sm:py-2 max-w-[240px] sm:max-w-none'
         }`}
       >
         {/* Play/Pause Button */}

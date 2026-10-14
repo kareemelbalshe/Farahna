@@ -3668,13 +3668,38 @@ function StudioContent() {
 
                 {/* Inner Smartphone Screen Content */}
                 <div
-                  className="relative flex-1 rounded-[28px] sm:rounded-[36px] overflow-y-auto overflow-x-hidden no-scrollbar border border-stone-800/40 overscroll-contain"
+                  className="relative flex-1 rounded-[28px] sm:rounded-[36px] overflow-hidden border border-stone-800/40 flex flex-col"
                   style={{
                     backgroundColor,
-                    transform: 'translateZ(0)',
-                    WebkitTransform: 'translateZ(0)',
                   }}
                 >
+                  <div className="relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain flex-1 flex flex-col">
+                    {/* Main Rendered Invitation Body (Controls Envelope inside) */}
+                    <InvitationRenderer
+                      invitation={livePreviewInvitation}
+                      events={livePreviewEvents}
+                      theme={activeTheme as any}
+                      sections={livePreviewSections}
+                      isPreview={true}
+                      hidePreviewBanner={true}
+                      isEnvelopeOpen={envelopePreviewOpen}
+                      onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
+                    />
+                  </div>
+                </div>
+
+                {/* Home Indicator Bar */}
+                <div className="w-28 sm:w-32 h-1 bg-stone-700/60 rounded-full mx-auto mt-2 shrink-0 pointer-events-none" />
+              </div>
+            ) : (
+              /* Fluid edge-to-edge frame */
+              <div
+                className="relative w-full h-[580px] min-[390px]:h-[640px] sm:h-[700px] rounded-2xl sm:rounded-3xl shadow-xl border-2 border-stone-300 overflow-hidden flex flex-col"
+                style={{
+                  backgroundColor,
+                }}
+              >
+                <div className="relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar flex-1 flex flex-col">
                   {/* Main Rendered Invitation Body (Controls Envelope inside) */}
                   <InvitationRenderer
                     invitation={livePreviewInvitation}
@@ -3687,31 +3712,6 @@ function StudioContent() {
                     onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
                   />
                 </div>
-
-                {/* Home Indicator Bar */}
-                <div className="w-28 sm:w-32 h-1 bg-stone-700/60 rounded-full mx-auto mt-2 shrink-0 pointer-events-none" />
-              </div>
-            ) : (
-              /* Fluid edge-to-edge frame */
-              <div
-                className="relative w-full h-[580px] min-[390px]:h-[640px] sm:h-[700px] rounded-2xl sm:rounded-3xl shadow-xl border-2 border-stone-300 overflow-y-auto overflow-x-hidden no-scrollbar"
-                style={{
-                  backgroundColor,
-                  transform: 'translateZ(0)',
-                  WebkitTransform: 'translateZ(0)',
-                }}
-              >
-                {/* Main Rendered Invitation Body (Controls Envelope inside) */}
-                <InvitationRenderer
-                  invitation={livePreviewInvitation}
-                  events={livePreviewEvents}
-                  theme={activeTheme as any}
-                  sections={livePreviewSections}
-                  isPreview={true}
-                  hidePreviewBanner={true}
-                  isEnvelopeOpen={envelopePreviewOpen}
-                  onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
-                />
               </div>
             )}
 

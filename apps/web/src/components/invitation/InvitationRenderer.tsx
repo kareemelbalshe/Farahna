@@ -219,8 +219,8 @@ export function InvitationRenderer({
       className={`${
         isPreview && isEnvelopeActive
           ? 'h-full max-h-full overflow-hidden'
-          : 'min-h-screen'
-      } transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
+          : 'min-h-full'
+      } flex flex-col transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
         isDark ? 'invitation-dark-theme dark' : ''
       }`}
       style={{
@@ -274,16 +274,6 @@ export function InvitationRenderer({
           eventDate={effectiveEventDate}
           invitationTitle={safeInv.title}
           waxSealMonogram={waxSealMonogram}
-          isPreview={isPreview}
-        />
-      )}
-
-      {/* 🎵 Music Player (plays safely if url is provided) */}
-      {safeInv.musicUrl && typeof safeInv.musicUrl === 'string' && safeInv.musicUrl.trim() && (
-        <MusicPlayer
-          musicUrl={safeInv.musicUrl.trim()}
-          musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}
-          shouldAutoTrigger={audioTriggered}
           isPreview={isPreview}
         />
       )}
@@ -585,6 +575,16 @@ export function InvitationRenderer({
           />
         )}
       </main>
+
+      {/* 🎵 Music Player (Sticky Floating Dock in Preview, Fixed in Live) */}
+      {safeInv.musicUrl && typeof safeInv.musicUrl === 'string' && safeInv.musicUrl.trim() && isEnvelopeOpen && (
+        <MusicPlayer
+          musicUrl={safeInv.musicUrl.trim()}
+          musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}
+          shouldAutoTrigger={audioTriggered}
+          isPreview={isPreview}
+        />
+      )}
 
       {/* 🪄 Floating Studio CTA dock for Demo Visitors */}
       {!isPreview && isEnvelopeOpen && showStickyDesignBar && (
