@@ -209,7 +209,7 @@ export function createAhmedSaraWithTheme(
         'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80',
       ],
 
-      musicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-113337.mp3',
+      musicUrl: '/audio/presets/piano-romance.mp3',
       musicTitle: 'موسيقى ليلة العمر الهادئة',
 
       themeId: theme.id,

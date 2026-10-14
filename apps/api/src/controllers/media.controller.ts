@@ -157,6 +157,111 @@ export async function getInvitationMedia(req: Request, res: Response, next: Next
   }
 }
 
+export async function getAllMedia(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { category, type, search, page = '1', limit = '100' } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10) || 100));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+
+    if (category && category !== 'all') {
+      where.category = category as string;
+    }
+
+    if (type && type !== 'all') {
+      where.type = type as string;
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { originalName: { contains: q } },
+        { fileName: { contains: q } },
+        { caption: { contains: q } },
+        { category: { contains: q } },
+      ];
+    }
+
+    const [total, mediaList, statsGroup] = await Promise.all([
+      prisma.media.count({ where }),
+      prisma.media.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+        include: {
+          invitation: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              type: true,
+              coupleGroomAr: true,
+              coupleBrideAr: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+          event: {
+            select: {
+              id: true,
+              titleAr: true,
+              type: true,
+            },
+          },
+        },
+      }),
+      prisma.media.groupBy({
+        by: ['category', 'type'],
+        _count: { id: true },
+        _sum: { sizeBytes: true },
+      }),
+    ]);
+
+    let totalSizeBytes = 0;
+    let imagesCount = 0;
+    let audioCount = 0;
+    let paymentProofsCount = 0;
+
+    statsGroup.forEach((s) => {
+      totalSizeBytes += s._sum.sizeBytes || 0;
+      if (s.type === 'image') imagesCount += s._count.id;
+      if (s.type === 'audio') audioCount += s._count.id;
+      if (s.category === 'payment_proof') paymentProofsCount += s._count.id;
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        media: mediaList,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum),
+        },
+        stats: {
+          totalFiles: total,
+          totalSizeBytes,
+          imagesCount,
+          audioCount,
+          paymentProofsCount,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function deleteMedia(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
@@ -178,3 +283,4 @@ export async function deleteMedia(req: Request, res: Response, next: NextFunctio
     next(error);
   }
 }
+

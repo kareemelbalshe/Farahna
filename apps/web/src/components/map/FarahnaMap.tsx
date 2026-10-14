@@ -15,6 +15,8 @@ import {
   isValidCoordinates,
   getGoogleMapsDirectionsUrl,
   getOpenStreetMapUrl,
+  extractCoordinatesFromUrl,
+  resolveCityCoordinates,
 } from '@farahna/shared';
 import { recordPublicAnalytics } from '@/lib/api';
 
@@ -64,7 +66,74 @@ export function FarahnaMap({
   const [isInView, setIsInView] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const hasCoords = isValidCoordinates(latitude, longitude);
+  // 1. Direct coordinates from props
+  const directValid = isValidCoordinates(latitude, longitude);
+
+  // 2. Extracted coordinates from Google Maps URL
+  const urlCoords = !directValid && googleMapsUrl ? extractCoordinatesFromUrl(googleMapsUrl) : null;
+
+  // 3. Fast city / venue name database resolution
+  const cityCoords = !directValid && !urlCoords ? resolveCityCoordinates(`${venueName} ${address}`) : null;
+
+  // Active resolved coordinates state
+  const [resolvedCoords, setResolvedCoords] = useState<{ lat: number; lng: number } | null>(() => {
+    if (directValid && latitude && longitude) return { lat: latitude, lng: longitude };
+    if (urlCoords) return { lat: urlCoords.latitude, lng: urlCoords.longitude };
+    if (cityCoords) return { lat: cityCoords.latitude, lng: cityCoords.longitude };
+    return null;
+  });
+
+  // Re-sync and geocode whenever location inputs change
+  useEffect(() => {
+    if (directValid && latitude && longitude) {
+      setResolvedCoords({ lat: latitude, lng: longitude });
+      return;
+    }
+
+    if (googleMapsUrl) {
+      const fromUrl = extractCoordinatesFromUrl(googleMapsUrl);
+      if (fromUrl) {
+        setResolvedCoords({ lat: fromUrl.latitude, lng: fromUrl.longitude });
+        return;
+      }
+    }
+
+    const fromCity = resolveCityCoordinates(`${venueName} ${address}`);
+    if (fromCity) {
+      setResolvedCoords({ lat: fromCity.latitude, lng: fromCity.longitude });
+      return;
+    }
+
+    // Try OpenStreetMap Nominatim geocoder asynchronously if still unresolved
+    const query = [venueName, address].filter(Boolean).join(', ');
+    if (query && typeof window !== 'undefined') {
+      const controller = new AbortController();
+      fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+        {
+          signal: controller.signal,
+          headers: { 'Accept-Language': 'ar,en' },
+        }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.length > 0 && data[0].lat && data[0].lon) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            if (isValidCoordinates(lat, lng)) {
+              setResolvedCoords({ lat, lng });
+            }
+          }
+        })
+        .catch(() => {});
+
+      return () => controller.abort();
+    }
+  }, [latitude, longitude, googleMapsUrl, venueName, address, directValid]);
+
+  const effectiveLat = resolvedCoords?.lat ?? (directValid ? latitude! : null);
+  const effectiveLng = resolvedCoords?.lng ?? (directValid ? longitude! : null);
+  const hasCoords = isValidCoordinates(effectiveLat, effectiveLng);
 
   // Lazy loading using IntersectionObserver to ensure fast mobile performance
   useEffect(() => {
@@ -97,8 +166,8 @@ export function FarahnaMap({
   };
 
   const directionsUrl = getGoogleMapsDirectionsUrl({
-    latitude,
-    longitude,
+    latitude: effectiveLat,
+    longitude: effectiveLng,
     googleMapsUrl,
     venueName,
     address,
@@ -111,9 +180,9 @@ export function FarahnaMap({
   };
 
   const osmUrl =
-    hasCoords && latitude && longitude
-      ? openStreetMapUrl || getOpenStreetMapUrl(latitude, longitude)
-      : `https://www.openstreetmap.org/search?query=${encodeURIComponent(venueName + ' ' + address)}`;
+    hasCoords && effectiveLat && effectiveLng
+      ? openStreetMapUrl || getOpenStreetMapUrl(effectiveLat, effectiveLng)
+      : `https://www.openstreetmap.org/search?query=${encodeURIComponent([venueName, address].filter(Boolean).join(' '))}`;
 
   // -------------------------------------------------------------
   // Case A: Missing or invalid coordinates -> Render Graceful Fallback Card
@@ -204,10 +273,10 @@ export function FarahnaMap({
 
       {/* Embedded Leaflet Map Container */}
       <div className="relative w-full h-[260px] sm:h-[340px] bg-stone-100">
-        {isInView ? (
+        {isInView && effectiveLat && effectiveLng ? (
           <LeafletMapView
-            latitude={latitude!}
-            longitude={longitude!}
+            latitude={effectiveLat}
+            longitude={effectiveLng}
             venueName={venueName}
             address={address}
             primaryColor={primaryColor}

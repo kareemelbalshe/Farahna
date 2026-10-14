@@ -32,6 +32,7 @@ export interface StoredFileResult {
 export interface IStorageService {
   saveFile(params: SaveFileParams): Promise<StoredFileResult>;
   deleteFile(relativePath: string): Promise<boolean>;
+  deleteDirectory?(relativePath: string): Promise<boolean>;
   getAbsoluteFilePath(relativePath: string): string;
   validateFile(file: { mimetype: string; size: number }): { valid: boolean; error?: string };
 }

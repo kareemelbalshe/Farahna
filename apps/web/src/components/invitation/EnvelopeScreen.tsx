@@ -193,7 +193,11 @@ export function EnvelopeScreen({
   const palette = resolveThemePalette();
 
   const handleOpenClick = () => {
-    if (openStage !== 'closed') return;
+    if (openStage !== 'closed') {
+      // If user taps again while opening, immediately complete and reveal
+      onOpen();
+      return;
+    }
 
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
@@ -224,52 +228,52 @@ export function EnvelopeScreen({
     // Initial golden sparkle burst
     try {
       confetti({
-        particleCount: 50,
+        particleCount: 40,
         spread: 60,
-        origin: { y: 0.62 },
+        origin: { y: 0.6 },
         colors: [palette.envelopeBorder, '#FFD700', '#FFF8DC', '#FFFFFF'],
       });
     } catch (e) {}
 
-    // Step 2: Open Flap 180deg (180ms)
+    // Step 2: Open Flap 180deg (100ms)
     setTimeout(() => {
       setOpenStage('flap_open');
-    }, 180);
+    }, 100);
 
-    // Step 3: Card slides up smoothly (480ms)
+    // Step 3: Card slides up smoothly (250ms)
     setTimeout(() => {
       setOpenStage('card_up');
-    }, 480);
+    }, 250);
 
-    // Secondary festive confetti burst from both sides (600ms)
+    // Festive confetti burst from both sides (350ms)
     setTimeout(() => {
       try {
         confetti({
-          particleCount: 70,
+          particleCount: 50,
           angle: 60,
-          spread: 75,
-          origin: { x: 0.15, y: 0.65 },
+          spread: 65,
+          origin: { x: 0.2, y: 0.6 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
         confetti({
-          particleCount: 70,
+          particleCount: 50,
           angle: 120,
-          spread: 75,
-          origin: { x: 0.85, y: 0.65 },
+          spread: 65,
+          origin: { x: 0.8, y: 0.6 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
       } catch (e) {}
-    }, 600);
+    }, 350);
 
-    // Step 4: After letter is fully admired, smoothly fade & zoom envelope to reveal full page (1900ms)
+    // Step 4: Smoothly fade & scale envelope to reveal full page (850ms)
     setTimeout(() => {
       setOpenStage('revealing');
-    }, 1900);
+    }, 850);
 
-    // Step 5: Transition complete -> unmount and hand over to page (2400ms)
+    // Step 5: Transition complete -> unmount and hand over to page (1150ms)
     setTimeout(() => {
       onOpen();
-    }, 2400);
+    }, 1150);
   };
 
   const isFlapOpen = openStage === 'flap_open' || openStage === 'card_up' || openStage === 'revealing';
@@ -278,8 +282,8 @@ export function EnvelopeScreen({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 select-none overflow-hidden transition-all duration-700 ${
-        isRevealing ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 select-none overflow-hidden transition-all duration-350 ease-out ${
+        isRevealing ? 'opacity-0 scale-102 pointer-events-none' : 'opacity-100 scale-100'
       }`}
       style={{
         backgroundColor: isDark ? '#0A0A0D' : backgroundColor || '#FAF7F2',
@@ -302,7 +306,13 @@ export function EnvelopeScreen({
 
       <div className="relative w-full max-w-lg mx-auto text-center flex flex-col items-center justify-center space-y-4 sm:space-y-6 max-h-[96vh]">
         {/* Header Ribbon / Greetings */}
-        <div className="space-y-1.5 sm:space-y-2 animate-fade-in-up w-full">
+        <div
+          className={`space-y-1.5 sm:space-y-2 w-full transition-all duration-300 ease-out ${
+            openStage !== 'closed'
+              ? 'opacity-0 -translate-y-3 pointer-events-none'
+              : 'opacity-100 translate-y-0'
+          }`}
+        >
           {/* Top Royal Badge (NO SPINNING ICON) */}
           <div
             className={`inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${palette.badgeBg}`}
@@ -316,7 +326,7 @@ export function EnvelopeScreen({
 
           {/* Couple Names */}
           <h1
-            className="text-2xl sm:text-4xl lg:text-5xl font-black font-cairo tracking-tight drop-shadow-md pt-0.5 line-clamp-1"
+            className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-cairo tracking-tight drop-shadow-md pt-0.5 leading-snug px-2 break-words"
             style={{
               color: isDark ? '#FFFFFF' : '#1A1819',
               textShadow: isDark ? '0 2px 14px rgba(212,175,55,0.35)' : undefined,
@@ -336,7 +346,7 @@ export function EnvelopeScreen({
 
         {/* 3D Envelope Perspective Container */}
         <div
-          className="relative mx-auto w-[300px] sm:w-[390px] h-[200px] sm:h-[245px] cursor-pointer group shrink-0"
+          className="relative mx-auto w-[280px] min-[360px]:w-[320px] sm:w-[390px] h-[185px] min-[360px]:h-[210px] sm:h-[245px] cursor-pointer group shrink-0"
           style={{ perspective: '1200px' }}
           onClick={handleOpenClick}
           role="button"
@@ -358,13 +368,14 @@ export function EnvelopeScreen({
 
           {/* 1. Inner Luxury Card (Slides UP gracefully out of the pocket) */}
           <div
-            className={`absolute inset-x-3 bottom-2 h-[185px] sm:h-[225px] rounded-2xl border-2 shadow-2xl p-4 sm:p-5 flex flex-col justify-between text-center transition-all ease-out z-25 ${
+            className={`absolute inset-x-3 bottom-2 h-[170px] min-[360px]:h-[195px] sm:h-[225px] rounded-2xl border-2 shadow-2xl p-3 sm:p-5 flex flex-col justify-between text-center transition-all z-25 ${
               isCardUp
-                ? '-translate-y-28 sm:-translate-y-40 scale-105 shadow-[0_25px_50px_rgba(0,0,0,0.55),0_0_30px_rgba(212,175,55,0.4)]'
+                ? '-translate-y-16 min-[360px]:-translate-y-20 sm:-translate-y-28 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
                 : 'translate-y-0 opacity-95'
             }`}
             style={{
-              transitionDuration: '750ms',
+              transitionDuration: '450ms',
+              transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
               backgroundColor: isDark ? '#FFFDF8' : '#FCFAF6',
               borderColor: palette.envelopeBorder,
               backgroundImage:
@@ -392,7 +403,7 @@ export function EnvelopeScreen({
             {/* Couple names on card */}
             <div className="py-1 border-y border-amber-300/80 my-auto">
               <span
-                className="text-base sm:text-xl font-black font-cairo block leading-snug"
+                className="text-base sm:text-xl font-black font-cairo block leading-snug px-1 break-words"
                 style={{ color: '#720925' }}
               >
                 {coupleNames}
@@ -481,7 +492,7 @@ export function EnvelopeScreen({
               transformOrigin: 'top center',
               transformStyle: 'preserve-3d',
               transform: isFlapOpen ? 'rotateX(180deg)' : 'rotateX(0deg)',
-              transitionDuration: '750ms',
+              transitionDuration: '400ms',
               zIndex: isFlapOpen ? 15 : 40,
             }}
           >
@@ -596,7 +607,7 @@ export function EnvelopeScreen({
           <button
             type="button"
             onClick={handleOpenClick}
-            disabled={openStage !== 'closed'}
+            disabled={openStage === 'revealing'}
             className="relative group overflow-hidden w-full py-3.5 sm:py-4 px-6 sm:px-8 rounded-full font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer ring-2 ring-amber-400/60 ring-offset-2 ring-offset-black/50"
             style={{
               background: palette.buttonBg,

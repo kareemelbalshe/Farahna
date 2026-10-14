@@ -19,7 +19,11 @@ interface AddToCalendarProps {
  */
 function parseTimeToHoursAndMinutes(timeStr?: string | null): { hours: number; minutes: number } {
   if (!timeStr) return { hours: 20, minutes: 0 }; // Default 8:00 PM
-  const clean = timeStr.trim();
+  // Normalize Arabic-Indic digits (٠-٩) to Western (0-9)
+  const clean = timeStr
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632));
+
   const isPM = clean.includes('م') || clean.toUpperCase().includes('PM');
   const isAM = clean.includes('ص') || clean.toUpperCase().includes('AM');
   const numericPart = clean.replace(/[^0-9:]/g, '');
@@ -44,18 +48,46 @@ export function AddToCalendar({
   const [downloaded, setDownloaded] = useState(false);
 
   if (!eventDate) return null;
-  const dateObj = new Date(eventDate);
-  if (isNaN(dateObj.getTime())) return null;
 
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
+  // Safe Date resolution avoiding UTC rollover
+  let year: number;
+  let month: string;
+  let day: string;
+  let baseDate: Date;
+
+  if (typeof eventDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(eventDate)) {
+    const parts = eventDate.split('T')[0].split('-');
+    year = parseInt(parts[0], 10);
+    month = parts[1].padStart(2, '0');
+    day = parts[2].padStart(2, '0');
+    baseDate = new Date(year, parseInt(month, 10) - 1, parseInt(day, 10));
+  } else {
+    const d = new Date(eventDate);
+    if (isNaN(d.getTime())) return null;
+    year = d.getFullYear();
+    month = String(d.getMonth() + 1).padStart(2, '0');
+    day = String(d.getDate()).padStart(2, '0');
+    baseDate = new Date(year, d.getMonth(), d.getDate());
+  }
 
   const { hours: startH, minutes: startM } = parseTimeToHoursAndMinutes(startTime);
   const { hours: endH, minutes: endM } = parseTimeToHoursAndMinutes(endTime);
 
+  // If end time is before or equal to start time (e.g. starts 20:00, ends 01:00), end date is the next day!
+  let endYear = year;
+  let endMonth = month;
+  let endDay = day;
+
+  if (endH < startH || (endH === startH && endM <= startM)) {
+    const nextDay = new Date(baseDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    endYear = nextDay.getFullYear();
+    endMonth = String(nextDay.getMonth() + 1).padStart(2, '0');
+    endDay = String(nextDay.getDate()).padStart(2, '0');
+  }
+
   const startFormatted = `${year}${month}${day}T${String(startH).padStart(2, '0')}${String(startM).padStart(2, '0')}00`;
-  const endFormatted = `${year}${month}${day}T${String(endH).padStart(2, '0')}${String(endM).padStart(2, '0')}00`;
+  const endFormatted = `${endYear}${endMonth}${endDay}T${String(endH).padStart(2, '0')}${String(endM).padStart(2, '0')}00`;
 
   // Google Calendar deep link with explicit Africa/Cairo timezone (ctz=Africa/Cairo)
   const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
@@ -73,6 +105,11 @@ export function AddToCalendar({
         metadata: { provider: 'ical', eventTitle },
       });
     }
+
+    const safeDescription = `يسعدنا ويشرفنا حضوركم ومشاركتنا الفرحة في ${venueName} - ${address}\\n\\nصُنعت الدعوة عبر منصة فرحنا — Farahna`.replace(
+      /[\r\n]+/g,
+      '\\n'
+    );
 
     const icsContent = [
       'BEGIN:VCALENDAR',
@@ -93,7 +130,7 @@ export function AddToCalendar({
       'BEGIN:VEVENT',
       `UID:farahna-${Date.now()}@farahna.menuflowx.com`,
       `SUMMARY:${eventTitle}`,
-      `DESCRIPTION:يسعدنا ويشرفنا حضوركم ومشاركتنا الفرحة في ${venueName} - ${address}`,
+      `DESCRIPTION:${safeDescription}`,
       `LOCATION:${venueName}, ${address}`,
       `DTSTART;TZID=Africa/Cairo:${startFormatted}`,
       `DTEND;TZID=Africa/Cairo:${endFormatted}`,

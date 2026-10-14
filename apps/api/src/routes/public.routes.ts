@@ -3,28 +3,33 @@ import {
   getPublicInvitation,
   getPreviewInvitation,
   getInvitationRsvpSummary,
+  getPrivateGuestList,
   submitRsvp,
   recordAnalyticsEvent,
   getSitemapInvitations,
   submitPublicDesign,
+  uploadPublicAudio,
 } from '../controllers/public.controller';
+import { uploadMiddleware } from '../controllers/media.controller';
 import { validateBody } from '../middleware/validate';
 import { rsvpRateLimiter } from '../middleware/auth';
 import { rsvpSubmissionSchema, analyticsEventSchema } from '@farahna/shared';
 
 const router = Router();
 
-// 1. Self-Service Design Submission & Payment Proof
+// 1. Self-Service Design Submission & Audio Upload
 router.post('/submit-design', submitPublicDesign);
+router.post('/upload-audio', uploadMiddleware, uploadPublicAudio);
 
 // 2. Sitemap indexable invitations (Must be before wildcard!)
 router.get('/sitemap-invitations', getSitemapInvitations);
 
-// 2. RSVP Endpoints (Must be before :type/:slug wildcard!)
+// 3. RSVP Endpoints & Couple Private Guest List
 router.get('/invitations/:id/rsvp', getInvitationRsvpSummary);
 router.post('/invitations/:id/rsvp', rsvpRateLimiter, validateBody(rsvpSubmissionSchema), submitRsvp);
+router.get('/guests/:token', getPrivateGuestList);
 
-// 3. Guest public views
+// 4. Guest public views
 router.get('/invitations/:type/:slug', getPublicInvitation);
 router.get('/preview/:token', getPreviewInvitation);
 

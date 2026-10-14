@@ -190,6 +190,8 @@ export interface ThemeConfig {
   cardStyle?: string;
   animationStyle?: string;
   decorations?: string[];
+  whatsappPhone?: string | null;
+  whatsappContactEnabled?: boolean;
 }
 
 export interface InvitationDTO {
@@ -212,6 +214,7 @@ export interface InvitationDTO {
   parentsBrideAr?: string | null;
   weddingMessageAr?: string | null;
   weddingMessageEn?: string | null;
+  whatsappPhone?: string | null;
 
   // Media
   coverImageUrl?: string | null;

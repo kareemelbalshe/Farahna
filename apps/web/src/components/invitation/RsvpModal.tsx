@@ -101,44 +101,44 @@ export function RsvpModal({ invitationId, primaryColor = '#720925' }: RsvpModalP
               <label className="text-xs font-bold text-stone-700 block theme-heading">
                 موقفك من الحضور:
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setAttendanceStatus('attending')}
-                  className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
+                  className={`p-2 sm:p-3 rounded-xl font-bold text-[11px] sm:text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'attending'
                       ? 'bg-emerald-500/20 border-emerald-500 text-emerald-800 dark:text-emerald-300 shadow-xs'
                       : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
-                  <span className="text-base">🎉</span>
-                  <span>يشرفني الحضور</span>
+                  <span className="text-sm sm:text-base">🎉</span>
+                  <span className="truncate max-w-full">يشرفني الحضور</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAttendanceStatus('maybe')}
-                  className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
+                  className={`p-2 sm:p-3 rounded-xl font-bold text-[11px] sm:text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'maybe'
                       ? 'bg-amber-500/20 border-amber-500 text-amber-800 dark:text-amber-300 shadow-xs'
                       : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
-                  <span className="text-base">⏳</span>
-                  <span>سأحاول الحضور</span>
+                  <span className="text-sm sm:text-base">⏳</span>
+                  <span className="truncate max-w-full">سأحاول الحضور</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAttendanceStatus('not_attending')}
-                  className={`p-3 rounded-xl font-bold text-xs flex flex-col items-center gap-1 border transition-all ${
+                  className={`p-2 sm:p-3 rounded-xl font-bold text-[11px] sm:text-xs flex flex-col items-center gap-1 border transition-all ${
                     attendanceStatus === 'not_attending'
                       ? 'bg-rose-500/20 border-rose-500 text-rose-800 dark:text-rose-300 shadow-xs'
                       : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
-                  <span className="text-base">💌</span>
-                  <span>أعتذر لظروف</span>
+                  <span className="text-sm sm:text-base">💌</span>
+                  <span className="truncate max-w-full">أعتذر لظروف</span>
                 </button>
               </div>
             </div>

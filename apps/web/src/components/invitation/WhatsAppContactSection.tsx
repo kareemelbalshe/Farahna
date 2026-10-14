@@ -14,12 +14,21 @@ interface WhatsAppContactSectionProps {
 
 export function WhatsAppContactSection({
   coupleNames,
-  whatsappPhone = '201019262075',
+  whatsappPhone,
   primaryColor = '#720925',
   invitationId,
 }: WhatsAppContactSectionProps) {
-  const rawPhone = whatsappPhone?.trim() || '201019262075';
-  const cleanPhone = rawPhone.replace(/[^0-9]/g, '') || '201019262075';
+  if (!whatsappPhone || typeof whatsappPhone !== 'string' || !whatsappPhone.trim()) {
+    return null;
+  }
+
+  const rawPhone = whatsappPhone.trim();
+  const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+
+  if (!cleanPhone || cleanPhone.length < 5) {
+    return null;
+  }
+
   const message = `السلام عليكم ورحمة الله وبركاته 🌹
 بخصوص بطاقة دعوة الفرح (${coupleNames})، حابب استفسر عن بعض التفاصيل.`;
 

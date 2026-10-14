@@ -254,6 +254,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const roleMeta = ROLE_LABELS[userRole] || { ar: userRole, color: 'bg-stone-100 text-stone-800 border-stone-300' };
 
+  const isBuilderPage = Boolean(pathname?.includes('/builder'));
+
   return (
     <div className="min-h-screen bg-[#F7F4EE] flex text-stone-900 font-cairo">
       {/* Sidebar for Desktop */}
@@ -441,7 +443,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* Page Inner Container with RBAC Guard Check */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main
+          className={`flex-1 ${
+            isBuilderPage
+              ? 'w-full h-[calc(100vh-65px)] lg:h-screen overflow-hidden flex flex-col'
+              : 'p-4 sm:p-8 max-w-7xl w-full mx-auto overflow-y-auto'
+          }`}
+        >
           {authChecked && !isAccessAllowed ? (
             /* 403 Forbidden Screen */
             <div className="min-h-[60vh] flex items-center justify-center p-4">

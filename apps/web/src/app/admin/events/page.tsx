@@ -20,6 +20,7 @@ import {
 import {
   EVENT_TYPE_LABELS,
   extractCoordinatesFromUrl,
+  resolveCityCoordinates,
   isValidCoordinates,
   isValidSafeUrl,
   normalizeWebUrl,
@@ -84,7 +85,9 @@ export default function AdminEventsPage() {
       return;
     }
 
-    const coords = extractCoordinatesFromUrl(pastedUrl);
+    const coords =
+      extractCoordinatesFromUrl(pastedUrl) ||
+      resolveCityCoordinates(`${pastedUrl} ${formVenueName} ${formAddress}`);
     if (coords) {
       setFormLatitude(String(coords.latitude));
       setFormLongitude(String(coords.longitude));
@@ -93,13 +96,13 @@ export default function AdminEventsPage() {
       }
       setExtractFeedback({
         success: true,
-        message: `تم استخراج الإحداثيات بنجاح! خط العرض: ${coords.latitude} | خط الطول: ${coords.longitude}`,
+        message: `تم تحديد الإحداثيات بنجاح! خط العرض: ${coords.latitude} | خط الطول: ${coords.longitude}`,
       });
     } else {
       setExtractFeedback({
         success: false,
         message:
-          'لم يتم العثور على إحداثيات مباشرة في هذا الرابط. يمكنك كتابة خط العرض وخط الطول يدوياً، أو استخدام صيغة "@lat,lng" أو "lat, lng".',
+          'لم يتم العثور على إحداثيات مباشرة في هذا الرابط. يمكنك كتابة خط العرض وخط الطول يدوياً، أو استخدام صيغة "@lat,lng" أو "lat, lng" أو كتابة اسم القاعة والمدينة.',
       });
     }
   };

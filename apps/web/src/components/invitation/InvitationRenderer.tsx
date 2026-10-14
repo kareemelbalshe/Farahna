@@ -39,6 +39,8 @@ export interface InvitationRendererProps {
   isPreview?: boolean;
   hidePreviewBanner?: boolean;
   initialEventId?: string;
+  isEnvelopeOpen?: boolean;
+  onEnvelopeOpen?: () => void;
 }
 
 export function InvitationRenderer({
@@ -49,12 +51,19 @@ export function InvitationRenderer({
   isPreview = false,
   hidePreviewBanner = false,
   initialEventId,
+  isEnvelopeOpen: controlledEnvelopeOpen,
+  onEnvelopeOpen,
 }: InvitationRendererProps) {
   // Safe invitation reference
   const safeInv = invitation || ({} as InvitationDTO);
 
   // If envelopeAnimationEnabled is true, start closed
-  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(!safeInv.envelopeAnimationEnabled);
+  const [internalEnvelopeOpen, setInternalEnvelopeOpen] = useState(
+    !safeInv.envelopeAnimationEnabled
+  );
+  const isEnvelopeOpen =
+    controlledEnvelopeOpen !== undefined ? controlledEnvelopeOpen : internalEnvelopeOpen;
+
   const [audioTriggered, setAudioTriggered] = useState(false);
   const [showStickyDesignBar, setShowStickyDesignBar] = useState(true);
 
@@ -111,13 +120,29 @@ export function InvitationRenderer({
     effectiveEventDate && !isNaN(new Date(effectiveEventDate).getTime())
   );
 
-  // Check if primary event has meaningful location details
+  // Effective location fields with fallback to root invitation attributes
+  const effectiveVenueName =
+    primaryEvent?.venueNameAr?.trim() ||
+    (safeInv as any).venueNameAr?.trim() ||
+    (safeInv as any).venueAddressAr?.trim() ||
+    '';
+  const effectiveAddress =
+    primaryEvent?.addressAr?.trim() || (safeInv as any).addressAr?.trim() || '';
+  const effectiveGoogleMapsUrl =
+    primaryEvent?.googleMapsUrl?.trim() || (safeInv as any).googleMapsUrl?.trim() || '';
+  const effectiveLatitude =
+    primaryEvent?.latitude ?? (safeInv as any).latitude ?? null;
+  const effectiveLongitude =
+    primaryEvent?.longitude ?? (safeInv as any).longitude ?? null;
+  const effectiveOpenStreetMapUrl =
+    primaryEvent?.openStreetMapUrl?.trim() || (safeInv as any).openStreetMapUrl?.trim() || '';
+
+  // Check if primary event or root invitation has meaningful location details
   const hasLocationDetails = Boolean(
-    primaryEvent &&
-      (Boolean(primaryEvent.latitude && primaryEvent.longitude) ||
-        Boolean(primaryEvent.googleMapsUrl?.trim()) ||
-        Boolean(primaryEvent.venueNameAr?.trim()) ||
-        Boolean(primaryEvent.addressAr?.trim()))
+    effectiveVenueName ||
+      effectiveAddress ||
+      effectiveGoogleMapsUrl ||
+      Boolean(effectiveLatitude && effectiveLongitude)
   );
 
   // Helper function to check if a section is enabled
@@ -141,8 +166,11 @@ export function InvitationRenderer({
   }, [safeInv.id, isPreview]);
 
   const handleOpenEnvelope = () => {
-    setIsEnvelopeOpen(true);
+    setInternalEnvelopeOpen(true);
     setAudioTriggered(true);
+    if (onEnvelopeOpen) {
+      onEnvelopeOpen();
+    }
 
     if (!isPreview && safeInv.id) {
       recordPublicAnalytics({
@@ -253,7 +281,7 @@ export function InvitationRenderer({
         {/* VIP Crown Badge */}
         {isVip && (
           <div className="text-center pt-1 animate-fade-in">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-linear-to-r from-amber-300/30 via-amber-100/50 to-amber-300/30 text-amber-950 border border-amber-400 text-xs font-black shadow-xs tracking-wider backdrop-blur-xs">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-300/30 via-amber-100/50 to-amber-300/30 text-amber-950 border border-amber-400 text-xs font-black shadow-xs tracking-wider backdrop-blur-xs">
               <Sparkles className="w-4 h-4 text-amber-600" />
               <span>دعوة ملكية خاصة VIP 💎</span>
             </span>
@@ -295,6 +323,8 @@ export function InvitationRenderer({
           <CountdownTimer
             eventDate={effectiveEventDate!}
             primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
+            isDark={isDark}
             autoRenew={isDemo}
           />
         )}
@@ -367,14 +397,14 @@ export function InvitationRenderer({
           )}
 
         {/* 11. الخريطة (Interactive Map & Directions - Only if meaningful location info exists) */}
-        {isSectionEnabled('map') && primaryEvent && hasLocationDetails && (
+        {isSectionEnabled('map') && hasLocationDetails && (
           <InteractiveMapSection
-            venueName={primaryEvent.venueNameAr || undefined}
-            address={primaryEvent.addressAr || undefined}
-            latitude={primaryEvent.latitude}
-            longitude={primaryEvent.longitude}
-            googleMapsUrl={primaryEvent.googleMapsUrl}
-            openStreetMapUrl={primaryEvent.openStreetMapUrl}
+            venueName={effectiveVenueName || undefined}
+            address={effectiveAddress || undefined}
+            latitude={effectiveLatitude}
+            longitude={effectiveLongitude}
+            googleMapsUrl={effectiveGoogleMapsUrl || undefined}
+            openStreetMapUrl={effectiveOpenStreetMapUrl || undefined}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             invitationId={safeInv.id}
@@ -396,7 +426,7 @@ export function InvitationRenderer({
         {(isSectionEnabled('henna_special') ||
           (isVip && ((safeInv.themeConfig as any)?.hennaSpecialEnabled || (safeInv as any).hennaSpecialEnabled))) && (
           <section className="py-6 px-3 sm:px-4 max-w-2xl mx-auto space-y-4 text-center font-cairo">
-            <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-linear-to-b from-rose-50/90 via-white to-amber-50/70 border-2 border-rose-300/80 shadow-md space-y-4">
+            <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-rose-50/90 via-white to-amber-50/70 border-2 border-rose-300/80 shadow-md space-y-4">
               <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-2xs">
                 <Sparkles className="w-4 h-4 text-rose-600" />
                 <span>ليلة الحنة — حفل خاص بالسيدات فقط 🌸</span>
@@ -434,27 +464,36 @@ export function InvitationRenderer({
         )}
 
         {/* 14. إضافة للتقويم (Add to Calendar - Only if a valid event date exists) */}
-        {isSectionEnabled('calendar') &&
-          primaryEvent &&
-          primaryEvent.date &&
-          !isNaN(new Date(primaryEvent.date).getTime()) && (
-            <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
-              <h4 className="text-sm font-bold text-stone-800 font-cairo theme-heading">
-                احفظ موعد الفرح في تقويم هاتفك 📅
-              </h4>
-              <div className="flex justify-center">
-                <AddToCalendar
-                  invitationId={safeInv.id}
-                  eventTitle={`حفل زفاف ${coupleNames}`}
-                  eventDate={primaryEvent.date}
-                  startTime={primaryEvent.startTime}
-                  endTime={primaryEvent.endTime}
-                  venueName={primaryEvent.venueNameAr}
-                  address={primaryEvent.addressAr}
-                />
-              </div>
-            </section>
-          )}
+        {isSectionEnabled('calendar') && hasValidEventDate && (
+          <section className="py-6 px-4 max-w-xl mx-auto text-center space-y-3">
+            <h4 className="text-sm font-bold text-stone-800 font-cairo theme-heading">
+              احفظ موعد الفرح في تقويم هاتفك 📅
+            </h4>
+            <div className="flex justify-center">
+              <AddToCalendar
+                invitationId={safeInv.id}
+                eventTitle={
+                  primaryEvent?.titleAr
+                    ? `${primaryEvent.titleAr} - ${coupleNames}`
+                    : `حفل زفاف ${coupleNames}`
+                }
+                eventDate={effectiveEventDate!}
+                startTime={primaryEvent?.startTime || (safeInv as any).startTime || '08:00 م'}
+                endTime={primaryEvent?.endTime || (safeInv as any).endTime || '01:00 ص'}
+                venueName={
+                  primaryEvent?.venueNameAr ||
+                  (safeInv as any).venueNameAr ||
+                  'قاعة الفرح'
+                }
+                address={
+                  primaryEvent?.addressAr ||
+                  (safeInv as any).addressAr ||
+                  'القاهرة، مصر'
+                }
+              />
+            </div>
+          </section>
+        )}
 
         {/* 15. مشاركة الدعوة (Share Invitation) */}
         {isSectionEnabled('share') && (
@@ -466,21 +505,38 @@ export function InvitationRenderer({
           />
         )}
 
-        {/* 16. تواصل واتساب (WhatsApp Direct Contact) */}
-        {isSectionEnabled('whatsapp') && (
-          <WhatsAppContactSection
-            coupleNames={coupleNames}
-            whatsappPhone={
-              (safeInv as any).whatsappPhone ||
-              (safeInv.themeConfig as any)?.whatsappPhone ||
-              (safeInv as any).customer?.whatsapp ||
-              (safeInv as any).customer?.phone ||
-              '201019262075'
-            }
-            primaryColor={primaryColor}
-            invitationId={safeInv.id}
-          />
-        )}
+        {/* 16. تواصل واتساب (WhatsApp Direct Contact with Couple) */}
+        {(() => {
+          const rawWhatsapp =
+            (safeInv.themeConfig as any)?.whatsappPhone !== undefined
+              ? (safeInv.themeConfig as any)?.whatsappPhone
+              : (safeInv as any).whatsappPhone !== undefined
+              ? (safeInv as any).whatsappPhone
+              : (safeInv as any).customer?.whatsapp ||
+                (safeInv as any).customer?.phone ||
+                (isDemo ? '201019262075' : null);
+
+          const isWhatsappContactEnabled =
+            (safeInv.themeConfig as any)?.whatsappContactEnabled !== false;
+
+          const finalPhone =
+            typeof rawWhatsapp === 'string' && rawWhatsapp.trim().length > 0
+              ? rawWhatsapp.trim()
+              : null;
+
+          if (!isSectionEnabled('whatsapp') || !isWhatsappContactEnabled || !finalPhone) {
+            return null;
+          }
+
+          return (
+            <WhatsAppContactSection
+              coupleNames={coupleNames}
+              whatsappPhone={finalPhone}
+              primaryColor={primaryColor}
+              invitationId={safeInv.id}
+            />
+          );
+        })()}
 
         {/* 17. رسالة الختام (Closing Message & Farahna Stamp) */}
         {isSectionEnabled('footer') && (

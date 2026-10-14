@@ -76,7 +76,7 @@ export function MusicPlayer({
   };
 
   return (
-    <div className="fixed bottom-5 left-5 z-40">
+    <div className="fixed bottom-20 left-4 sm:bottom-5 sm:left-5 z-40">
       <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-stone-900/90 text-white backdrop-blur-md border border-amber-500/30 shadow-2xl transition-all">
         {/* Play/Pause Button */}
         <button

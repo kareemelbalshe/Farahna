@@ -17,6 +17,9 @@ import {
   Search,
   X,
   ExternalLink,
+  Copy,
+  Check,
+  Share2,
 } from 'lucide-react';
 import { formatArabicDate } from '@/lib/date';
 import { AppTable, type ColumnDef } from '@/components/ui/AppTable';
@@ -30,6 +33,7 @@ export default function AdminRsvpPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toggling, setToggling] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [copiedGuestLink, setCopiedGuestLink] = useState(false);
 
   const fetchInvitations = () => {
     adminFetch('/invitations').then((res) => {
@@ -262,6 +266,76 @@ export default function AdminRsvpPage() {
             ))}
           </select>
         </div>
+
+        {/* Couple Private Guest List Share Card */}
+        {currentInv && (
+          <div className="bg-gradient-to-br from-teal-50 via-white to-emerald-50 p-5 rounded-3xl border border-teal-200 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-teal-600 text-white">
+                    <Users className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-xs font-black text-teal-950">
+                    رابط كشف المعازيم الخاص بالعروسين (بدون تسجيل دخول) 📋
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold border border-teal-300">
+                    خاص بأصحاب المناسبة
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  أرسل هذا الرابط للعروسين على واتساب ليتابعوا تأكيدات الحضور ورسائل الضيوف لحظياً بدون دخول لوحة الإدارة
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const guestUrl = `${window.location.origin}/guests/${currentInv.previewToken || currentInv.id}`;
+                    navigator.clipboard.writeText(guestUrl);
+                    setCopiedGuestLink(true);
+                    setToastMsg('تم نسخ رابط كشف المعازيم للعروسين! 📋');
+                    setTimeout(() => setCopiedGuestLink(false), 2500);
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-teal-300 bg-white hover:bg-teal-50 text-teal-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                >
+                  {copiedGuestLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-teal-700" />}
+                  <span>{copiedGuestLink ? 'تم النسخ!' : 'نسخ الرابط'}</span>
+                </button>
+
+                <a
+                  href={`https://wa.me/${(currentInv.customer?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                    `ألف مبروك يا فندم! ده رابط كشف المعازيم وتأكيدات الحضور الخاص بيكم لمتابعة كل من يؤكد الحضور لحظة بلحظة وبشكل مباشر:\n${
+                      typeof window !== 'undefined' ? window.location.origin : ''
+                    }/guests/${currentInv.previewToken || currentInv.id}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>إرسال للعميل واتساب 📲</span>
+                </a>
+
+                <a
+                  href={`/guests/${currentInv.previewToken || currentInv.id}`}
+                  target="_blank"
+                  className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs shadow-2xs"
+                  title="فتح كشف العروسين في تبويب جديد"
+                >
+                  <ExternalLink className="w-4 h-4 text-stone-600" />
+                </a>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-white/80 border border-teal-200/80 font-mono text-[11px] text-teal-900 flex items-center justify-between dir-ltr text-right">
+              <span className="truncate">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/guests/{currentInv.previewToken || currentInv.id}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Section Enable/Disable Toggle Card */}
         <div className="bg-white p-5 rounded-3xl border border-stone-200/90 shadow-2xs flex items-center justify-between gap-4">

@@ -37,10 +37,12 @@ import {
   Shield,
   Lock,
   ChevronDown,
-  ChevronUp,
   Image as ImageIcon,
   Star,
   Plus,
+  Loader2,
+  Pipette,
+  Info,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -51,10 +53,12 @@ import {
   ARABIC_WEDDING_FONTS,
   WeddingFontOption,
   generateInvitationSlug,
+  extractCoordinatesFromUrl,
+  resolveCityCoordinates,
+  getOpenStreetMapUrl,
 } from '@farahna/shared';
 import { submitPublicDesign } from '@/lib/api';
 import { InvitationRenderer } from '@/components/invitation/InvitationRenderer';
-import { EnvelopeScreen } from '@/components/invitation/EnvelopeScreen';
 import { DEFAULT_DEMOS } from '@/components/landing/DemoGallery';
 import {
   MOCK_OMAR_SALMA,
@@ -136,6 +140,114 @@ const PACKAGES = [
 const LOCAL_STORAGE_KEY = 'farahna_draft_invitation_v2';
 const LOCAL_STORAGE_ORDER_KEY = 'farahna_submitted_order_v2';
 
+// Robust color normalizer accepting:
+// - Hex with or without #, 3/6/8-char, and trailing # (common typing bug in RTL e.g. "FFF8F9#", "C48B9F#")
+// - rgb(...) or rgba(...) with any spacing
+// - Bare RGB numbers: "156, 81, 98" or "156,81,98" or "156 81 98" or "156 - 81 - 98"
+// - Arabic-Indic numerals: "١٥٦, ٨١, ٩٨" and Arabic commas "،"
+// - Common named colors in English & Arabic
+function normalizeColor(input: string): string | null {
+  if (!input || typeof input !== 'string') return null;
+  let clean = input.trim();
+
+  // Convert Arabic-Indic numerals (٠-٩) to standard ASCII digits
+  clean = clean.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+
+  // Convert Arabic comma (،) to standard comma (,)
+  clean = clean.replace(/،/g, ',');
+
+  clean = clean.toLowerCase();
+
+  // Strip all trailing '#' (common typing bug when pasting/editing in RTL e.g. "FFF8F9#", "C48B9F#")
+  clean = clean.replace(/#+$/, '').trim();
+
+  // If input was e.g. "ffffff#" or "720925#", clean is now "ffffff" or "720925"
+  const hexPart = clean.startsWith('#') ? clean.slice(1) : clean;
+
+  // 3-digit hex (e.g. fff, 720)
+  if (/^[0-9a-f]{3}$/i.test(hexPart)) {
+    return `#${hexPart[0]}${hexPart[0]}${hexPart[1]}${hexPart[1]}${hexPart[2]}${hexPart[2]}`.toLowerCase();
+  }
+
+  // 6-digit hex (e.g. ffffff, 720925)
+  if (/^[0-9a-f]{6}$/i.test(hexPart)) {
+    return `#${hexPart}`.toLowerCase();
+  }
+
+  // 8-digit hex (with alpha)
+  if (/^[0-9a-f]{8}$/i.test(hexPart)) {
+    return `#${hexPart.slice(0, 6)}`.toLowerCase();
+  }
+
+  // rgb(...) or rgba(...)
+  const rgbMatch = clean.match(/^rgba?\s*\(\s*(\d{1,3})\s*[\s,]\s*(\d{1,3})\s*[\s,]\s*(\d{1,3})/i);
+  if (rgbMatch) {
+    const r = Math.min(255, Math.max(0, parseInt(rgbMatch[1], 10))).toString(16).padStart(2, '0');
+    const g = Math.min(255, Math.max(0, parseInt(rgbMatch[2], 10))).toString(16).padStart(2, '0');
+    const b = Math.min(255, Math.max(0, parseInt(rgbMatch[3], 10))).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`.toLowerCase();
+  }
+
+  // Bare RGB numbers: e.g. "156, 81, 98" or "156,81,98" or "156 81 98" or "156 - 81 - 98"
+  const bareRgb = clean.match(/^(\d{1,3})\s*[\s,.-]\s*(\d{1,3})\s*[\s,.-]\s*(\d{1,3})$/);
+  if (bareRgb) {
+    const rNum = parseInt(bareRgb[1], 10);
+    const gNum = parseInt(bareRgb[2], 10);
+    const bNum = parseInt(bareRgb[3], 10);
+    if (rNum <= 255 && gNum <= 255 && bNum <= 255) {
+      const r = rNum.toString(16).padStart(2, '0');
+      const g = gNum.toString(16).padStart(2, '0');
+      const b = bNum.toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`.toLowerCase();
+    }
+  }
+
+  // Common named CSS colors & Arabic color names
+  const NAMED_COLORS: Record<string, string> = {
+    white: '#ffffff',
+    black: '#000000',
+    gold: '#d4af37',
+    silver: '#c0c0c0',
+    bronze: '#cd7f32',
+    burgundy: '#720925',
+    maroon: '#800000',
+    navy: '#0f172a',
+    cream: '#faf7f2',
+    beige: '#fffbeb',
+    emerald: '#064e3b',
+    purple: '#4a044e',
+    rose: '#9f1239',
+    pink: '#fda4af',
+    champagne: '#f59e0b',
+    red: '#dc2626',
+    blue: '#2563eb',
+    green: '#16a34a',
+    yellow: '#eab308',
+    gray: '#6b7280',
+    grey: '#6b7280',
+    'عنابي': '#720925',
+    'ذهبي': '#d4af37',
+    'ذهب': '#d4af37',
+    'ابيض': '#ffffff',
+    'أبيض': '#ffffff',
+    'اسود': '#000000',
+    'أسود': '#000000',
+    'كحلي': '#0f172a',
+    'زمردي': '#064e3b',
+    'وردي': '#fda4af',
+    'كريمي': '#faf7f2',
+    'بيج': '#fffbeb',
+    'فضي': '#c0c0c0',
+    'برونزي': '#cd7f32',
+  };
+
+  if (NAMED_COLORS[clean]) {
+    return NAMED_COLORS[clean];
+  }
+
+  return null;
+}
+
 function StudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -146,9 +258,9 @@ function StudioContent() {
   const [selectedFont, setSelectedFont] = useState("'Cairo', sans-serif");
 
   // Custom Colors Override (Live Real-Time Editing)
-  const [customPrimaryColor, setCustomPrimaryColor] = useState<string>('');
-  const [customSecondaryColor, setCustomSecondaryColor] = useState<string>('');
-  const [customBackgroundColor, setCustomBackgroundColor] = useState<string>('');
+  const [customPrimaryColor, setCustomPrimaryColor] = useState<string>('#720925');
+  const [customSecondaryColor, setCustomSecondaryColor] = useState<string>('#D4AF37');
+  const [customBackgroundColor, setCustomBackgroundColor] = useState<string>('#FAF7F2');
 
   // Couple Details
   const [coupleGroomAr, setCoupleGroomAr] = useState('');
@@ -266,6 +378,10 @@ function StudioContent() {
   const [enableRoyalShimmer, setEnableRoyalShimmer] = useState(true);
   const [waxSealMonogram, setWaxSealMonogram] = useState('');
 
+  // WhatsApp Couple Direct Contact (Can set custom number, edit or cancel completely!)
+  const [whatsappContactPhone, setWhatsappContactPhone] = useState('201019262075');
+  const [whatsappContactEnabled, setWhatsappContactEnabled] = useState(true);
+
   // Section Visibility Toggles (Can edit, toggle or completely delete any section!)
   const [sectionsVisibility, setSectionsVisibility] = useState<Record<string, boolean>>({
     envelope: true,
@@ -314,23 +430,68 @@ function StudioContent() {
 
   // Post-submission Success State
   const [submittedOrder, setSubmittedOrder] = useState<any>(null);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [audioUploadSuccess, setAudioUploadSuccess] = useState<string | null>(null);
 
-  // Handle local audio file upload (MP3)
-  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local audio file upload (MP3) to server storage
+  const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setCustomMusicUrl(dataUrl);
-      setSelectedMusicId('custom-link');
-      setCustomMusicTitle(file.name.replace(/\.[^/.]+$/, ''));
-      if (audioPreviewRef.current) {
-        audioPreviewRef.current.pause();
-        setAudioPreviewing(null);
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('حجم الملف الصوتي كبير جداً، الحد الأقصى المسموح به 15 ميجابايت');
+      return;
+    }
+
+    const songTitle = file.name.replace(/\.[^/.]+$/, '');
+    setCustomMusicTitle(songTitle);
+    setSelectedMusicId('custom-link');
+    setIsUploadingAudio(true);
+    setAudioUploadSuccess(null);
+
+    // Stop current preview
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.pause();
+      setAudioPreviewing(null);
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'music');
+
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const uploadUrl = `${apiBase.replace(/\/+$/, '')}/public/upload-audio`;
+
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.data?.url) {
+        setCustomMusicUrl(data.data.url);
+        setAudioUploadSuccess('تم حفظ الصوت على السيرفر بنجاح ✅');
+      } else {
+        // Fallback to DataURL
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCustomMusicUrl(reader.result as string);
+          setAudioUploadSuccess('تم تجهيز الملف الصوتي بنجاح ✅');
+        };
+        reader.readAsDataURL(file);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      // Fallback to DataURL
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCustomMusicUrl(reader.result as string);
+        setAudioUploadSuccess('تم تجهيز الملف الصوتي بنجاح ✅');
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingAudio(false);
+    }
   };
 
   // Handle local image file upload (Cover / Portrait / WhatsApp Preview)
@@ -534,6 +695,9 @@ function StudioContent() {
           if (parsed.customOgImageUrl) setCustomOgImageUrl(parsed.customOgImageUrl);
           if (parsed.customerName) setCustomerName(parsed.customerName);
           if (parsed.customerPhone) setCustomerPhone(parsed.customerPhone);
+          if (parsed.whatsappContactPhone !== undefined) setWhatsappContactPhone(parsed.whatsappContactPhone);
+          if (parsed.whatsappContactEnabled !== undefined) setWhatsappContactEnabled(parsed.whatsappContactEnabled);
+          if (Array.isArray(parsed.journeyEvents) && parsed.journeyEvents.length > 0) setJourneyEvents(parsed.journeyEvents);
           if (parsed.slugSuffix) setSlugSuffix(parsed.slugSuffix);
           setLastSavedTime('تم استرجاع مسودتك المحفوظة');
         }
@@ -568,6 +732,9 @@ function StudioContent() {
       selectedVerseId,
       customWeddingMessage,
       sectionsVisibility,
+      whatsappContactPhone,
+      whatsappContactEnabled,
+      journeyEvents,
       selectedMusicId,
       customMusicUrl,
       customMusicTitle,
@@ -616,6 +783,8 @@ function StudioContent() {
     selectedVerseId,
     customWeddingMessage,
     sectionsVisibility,
+    whatsappContactPhone,
+    whatsappContactEnabled,
     selectedMusicId,
     customMusicUrl,
     customMusicTitle,
@@ -774,6 +943,10 @@ function StudioContent() {
           customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
           themeId: selectedThemeId,
           fontFamily: selectedFont,
+          whatsappPhone:
+            sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+              ? whatsappContactPhone.trim()
+              : null,
           themeConfig: {
             primaryColor,
             secondaryColor,
@@ -790,11 +963,19 @@ function StudioContent() {
             waxSealMonogram:
               waxSealMonogram ||
               `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`,
+            whatsappPhone:
+              sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+                ? whatsappContactPhone.trim()
+                : null,
+            whatsappContactEnabled: sectionsVisibility.whatsapp && whatsappContactEnabled,
           },
           eventDate: new Date(eventDate).toISOString(),
           venueNameAr: sectionsVisibility.venue ? venueNameAr || 'قاعة الحفل' : 'قاعة الحفل',
           addressAr: sectionsVisibility.venue ? addressAr || 'القاهرة، مصر' : 'القاهرة، مصر',
           googleMapsUrl: sectionsVisibility.map ? googleMapsUrl || null : null,
+          latitude: livePreviewEvents[0]?.latitude ?? null,
+          longitude: livePreviewEvents[0]?.longitude ?? null,
+          openStreetMapUrl: livePreviewEvents[0]?.openStreetMapUrl ?? null,
           isMultiEvent: selectedPackage !== 'basic' && isMultiEvent,
           isVip: selectedPackage === 'luxury-vip',
           envelopeAnimationEnabled: sectionsVisibility.envelope !== false,
@@ -808,6 +989,7 @@ function StudioContent() {
                 : sec.defaultEnabled,
             sortOrder: idx,
           })),
+          events: livePreviewEvents,
         },
       });
 
@@ -847,15 +1029,72 @@ function StudioContent() {
     DEFAULT_THEMES.find((t) => t.slug === selectedThemeId || `theme-${t.slug}` === selectedThemeId) ||
     DEFAULT_THEMES[0];
 
-  const primaryColor = customPrimaryColor || activeTheme.config?.primaryColor || '#720925';
-  const secondaryColor = customSecondaryColor || activeTheme.config?.secondaryColor || '#D4AF37';
-  const backgroundColor = customBackgroundColor || activeTheme.config?.backgroundColor || '#FAF7F2';
+  const isVip = selectedPackage === 'luxury-vip';
+
+  // Strict VIP Rule: Custom colors are only active if VIP package is selected
+  const primaryColor = isVip && normalizeColor(customPrimaryColor)
+    ? normalizeColor(customPrimaryColor)!
+    : (activeTheme.config?.primaryColor || '#720925');
+
+  const secondaryColor = isVip && normalizeColor(customSecondaryColor)
+    ? normalizeColor(customSecondaryColor)!
+    : (activeTheme.config?.secondaryColor || '#D4AF37');
+
+  const backgroundColor = isVip && normalizeColor(customBackgroundColor)
+    ? normalizeColor(customBackgroundColor)!
+    : (activeTheme.config?.backgroundColor || '#FAF7F2');
+
+  const safePickerPrimary = normalizeColor(primaryColor) || '#720925';
+  const safePickerSecondary = normalizeColor(secondaryColor) || '#d4af37';
+  const safePickerBackground = normalizeColor(backgroundColor) || '#faf7f2';
+
   const isDarkBackground =
     backgroundColor.toLowerCase() === '#0f0f11' ||
     backgroundColor.toLowerCase() === '#1e1e22' ||
     backgroundColor.toLowerCase() === '#18181b' ||
-    backgroundColor.toLowerCase() === '#0a0a0c';
+    backgroundColor.toLowerCase() === '#0a0a0c' ||
+    backgroundColor.toLowerCase() === '#000000' ||
+    backgroundColor.toLowerCase() === '#000';
   const textColor = isDarkBackground ? '#F8FAFC' : (activeTheme.config?.textColor || '#1A1819');
+
+  const handleColorInputChange = (
+    field: 'primary' | 'secondary' | 'background',
+    val: string
+  ) => {
+    if (field === 'primary') setCustomPrimaryColor(val);
+    else if (field === 'secondary') setCustomSecondaryColor(val);
+    else if (field === 'background') setCustomBackgroundColor(val);
+  };
+
+  const handleColorInputBlur = (
+    field: 'primary' | 'secondary' | 'background',
+    rawVal: string
+  ) => {
+    const trimmed = rawVal.trim();
+    const normalized = normalizeColor(trimmed);
+    if (!normalized) {
+      // Revert invalid value to theme default
+      if (field === 'primary') setCustomPrimaryColor(activeTheme.config?.primaryColor || '#720925');
+      else if (field === 'secondary') setCustomSecondaryColor(activeTheme.config?.secondaryColor || '#D4AF37');
+      else if (field === 'background') setCustomBackgroundColor(activeTheme.config?.backgroundColor || '#FAF7F2');
+    } else {
+      // If user typed bare RGB like "156, 81, 98", format nicely as "rgb(156, 81, 98)"
+      const cleanDigits = trimmed.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()).replace(/،/g, ',');
+      const bareRgb = cleanDigits.match(/^(\d{1,3})\s*[\s,.-]\s*(\d{1,3})\s*[\s,.-]\s*(\d{1,3})$/);
+      if (bareRgb) {
+        const formattedRgb = `rgb(${bareRgb[1]}, ${bareRgb[2]}, ${bareRgb[3]})`;
+        if (field === 'primary') setCustomPrimaryColor(formattedRgb);
+        else if (field === 'secondary') setCustomSecondaryColor(formattedRgb);
+        else if (field === 'background') setCustomBackgroundColor(formattedRgb);
+      } else if (trimmed.startsWith('#') || /^[0-9a-f]{3,8}#?$/i.test(trimmed)) {
+        // Clean up hex to uppercase
+        const cleanHex = normalized.toUpperCase();
+        if (field === 'primary') setCustomPrimaryColor(cleanHex);
+        else if (field === 'secondary') setCustomSecondaryColor(cleanHex);
+        else if (field === 'background') setCustomBackgroundColor(cleanHex);
+      }
+    }
+  };
 
   const handleSelectTheme = (themeKey: string) => {
     setSelectedThemeId(themeKey);
@@ -930,7 +1169,16 @@ function StudioContent() {
       waxSealMonogram:
         waxSealMonogram ||
         `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`,
+      whatsappPhone:
+        sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+          ? whatsappContactPhone.trim()
+          : null,
+      whatsappContactEnabled: sectionsVisibility.whatsapp && whatsappContactEnabled,
     },
+    whatsappPhone:
+      sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+        ? whatsappContactPhone.trim()
+        : null,
     isMultiEvent: selectedPackage !== 'basic' && isMultiEvent,
     isVip: selectedPackage === 'luxury-vip',
     enableRoyalShimmer: selectedPackage === 'luxury-vip' ? enableRoyalShimmer : false,
@@ -944,7 +1192,25 @@ function StudioContent() {
     sections: livePreviewSections,
   };
 
+  const detectedWeddingCoords = useMemo(() => {
+    if (googleMapsUrl) {
+      const fromUrl = extractCoordinatesFromUrl(googleMapsUrl);
+      if (fromUrl) return fromUrl;
+    }
+    return resolveCityCoordinates(`${venueNameAr} ${addressAr}`);
+  }, [googleMapsUrl, venueNameAr, addressAr]);
+
   const livePreviewEvents: any[] = useMemo(() => {
+    const weddingUrl = sectionsVisibility.map ? googleMapsUrl : '';
+    const weddingExtracted = weddingUrl ? extractCoordinatesFromUrl(weddingUrl) : null;
+    const weddingCity = !weddingExtracted
+      ? resolveCityCoordinates(`${venueNameAr} ${addressAr}`)
+      : null;
+    const weddingLat = weddingExtracted?.latitude ?? weddingCity?.latitude ?? null;
+    const weddingLng = weddingExtracted?.longitude ?? weddingCity?.longitude ?? null;
+    const weddingOsmUrl =
+      weddingLat && weddingLng ? getOpenStreetMapUrl(weddingLat, weddingLng) : null;
+
     if (selectedPackage === 'basic') {
       return [
         {
@@ -955,29 +1221,51 @@ function StudioContent() {
           startTime: '08:00 م',
           venueNameAr: sectionsVisibility.venue ? venueNameAr || 'قاعة الحفل الملكية' : '',
           addressAr: sectionsVisibility.venue ? addressAr || 'القاهرة، مصر' : '',
-          googleMapsUrl: sectionsVisibility.map ? googleMapsUrl : '',
+          googleMapsUrl: weddingUrl,
+          latitude: weddingLat,
+          longitude: weddingLng,
+          openStreetMapUrl: weddingOsmUrl,
           isVisible: sectionsVisibility.venue !== false,
         },
       ];
     }
 
-    // For wedding-journey and luxury-vip: Return enabled journey events
+    // For wedding-journey and luxury-vip: Return enabled journey events with resolved location
     return journeyEvents
       .filter((ev) => ev.enabled)
-      .map((ev) => ({
-        id: ev.id,
-        type: ev.type,
-        titleAr: ev.titleAr,
-        date: ev.type === 'wedding' ? eventDate : ev.date,
-        startTime: ev.time,
-        venueNameAr: ev.type === 'wedding' ? (venueNameAr || ev.venueNameAr) : ev.venueNameAr,
-        addressAr: ev.type === 'wedding' ? (addressAr || ev.addressAr) : ev.addressAr,
-        googleMapsUrl:
-          ev.type === 'wedding' ? (googleMapsUrl || ev.googleMapsUrl) : ev.googleMapsUrl,
-        isVisible: true,
-        isHennaFemaleOnly: ev.isHennaFemaleOnly,
-        dressCodeAr: ev.dressCodeAr,
-      }));
+      .map((ev) => {
+        const evMapUrl =
+          ev.type === 'wedding' ? (googleMapsUrl || ev.googleMapsUrl) : ev.googleMapsUrl;
+        const evVenue =
+          ev.type === 'wedding' ? (venueNameAr || ev.venueNameAr) : ev.venueNameAr;
+        const evAddr =
+          ev.type === 'wedding' ? (addressAr || ev.addressAr) : ev.addressAr;
+        const evExtracted = evMapUrl ? extractCoordinatesFromUrl(evMapUrl) : null;
+        const evCity = !evExtracted
+          ? resolveCityCoordinates(`${evVenue} ${evAddr}`)
+          : null;
+        const evLat = evExtracted?.latitude ?? evCity?.latitude ?? null;
+        const evLng = evExtracted?.longitude ?? evCity?.longitude ?? null;
+        const evOsmUrl =
+          evLat && evLng ? getOpenStreetMapUrl(evLat, evLng) : null;
+
+        return {
+          id: ev.id,
+          type: ev.type,
+          titleAr: ev.titleAr,
+          date: ev.type === 'wedding' ? eventDate : ev.date,
+          startTime: ev.time,
+          venueNameAr: evVenue,
+          addressAr: evAddr,
+          googleMapsUrl: evMapUrl,
+          latitude: evLat,
+          longitude: evLng,
+          openStreetMapUrl: evOsmUrl,
+          isVisible: true,
+          isHennaFemaleOnly: ev.isHennaFemaleOnly,
+          dressCodeAr: ev.dressCodeAr,
+        };
+      });
   }, [
     selectedPackage,
     type,
@@ -1080,7 +1368,7 @@ function StudioContent() {
       </header>
 
       {/* 2. Main Studio Grid: Editor (Left) & Live Phone Preview (Right) */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-6 pb-24 lg:pb-12">
         {/* Template Import Notice */}
         {templateNotice && (
           <div className="mb-6 p-4 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-between gap-4 shadow-xs">
@@ -1204,7 +1492,7 @@ function StudioContent() {
                       className={`relative p-5 rounded-3xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-4 ${
                         isSelected
                           ? isVipTier
-                            ? 'border-amber-400 bg-linear-to-b from-amber-50/80 via-white to-amber-50/40 text-stone-950 shadow-md ring-2 ring-amber-300'
+                            ? 'border-amber-400 bg-gradient-to-b from-amber-50/90 via-white to-amber-50/40 text-stone-950 shadow-md ring-2 ring-amber-300'
                             : isPopularTier
                             ? 'border-[#720925] bg-rose-50/80 text-[#720925] shadow-md ring-2 ring-rose-200'
                             : 'border-stone-800 bg-stone-50 text-stone-900 shadow-md ring-2 ring-stone-200'
@@ -1291,7 +1579,7 @@ function StudioContent() {
               <div
                 className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-center justify-between gap-3 ${
                   selectedPackage === 'luxury-vip'
-                    ? 'bg-linear-to-r from-amber-100/90 via-amber-50 to-rose-50 border-amber-300 text-amber-950'
+                    ? 'bg-gradient-to-r from-amber-100/90 via-amber-50 to-rose-50 border-amber-300 text-amber-950'
                     : selectedPackage === 'wedding-journey'
                     ? 'bg-rose-50 border-rose-200 text-rose-950'
                     : 'bg-stone-100 border-stone-200 text-stone-800'
@@ -1636,6 +1924,46 @@ function StudioContent() {
                             />
                           </div>
                         )}
+
+                        {/* Inline editor inputs if whatsapp section is enabled */}
+                        {sec.key === 'whatsapp' && isEnabled && (
+                          <div className="space-y-2 pt-2">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                              <input
+                                type="tel"
+                                value={whatsappContactPhone}
+                                onChange={(e) => setWhatsappContactPhone(e.target.value)}
+                                placeholder="رقم واتساب أصحاب الفرح (مثال: 201019262075)"
+                                className="flex-1 px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white text-left font-mono dir-ltr"
+                              />
+                              <div className="flex items-center gap-1.5">
+                                {customerPhone && customerPhone !== whatsappContactPhone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setWhatsappContactPhone(customerPhone)}
+                                    className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                                  >
+                                    رقم الحجز
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setWhatsappContactPhone('');
+                                    setSectionsVisibility((p) => ({ ...p, whatsapp: false }));
+                                    setWhatsappContactEnabled(false);
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200 transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  مسح وإلغاء ❌
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-stone-500">
+                              💡 يمكنك كتابة أي رقم بمزاجك، أو مسحه بالكامل لإلغاء زر التواصل نهائياً من الدعوة.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <button
@@ -1952,16 +2280,35 @@ function StudioContent() {
 
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-stone-700 block">أو رفع ملف MP3 من هاتفك/جهازك:</label>
-                      <label className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-dashed border-stone-300 hover:border-amber-500 text-stone-700 hover:text-stone-900 text-xs font-bold cursor-pointer transition-colors">
-                        <Upload className="w-3.5 h-3.5 text-amber-600" />
-                        <span>اختر ملف صوتي من الجهاز 📁</span>
+                      <label className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-dashed text-xs font-bold transition-colors ${
+                        isUploadingAudio
+                          ? 'border-amber-400 bg-amber-50 text-amber-800 cursor-wait'
+                          : 'border-stone-300 hover:border-amber-500 text-stone-700 hover:text-stone-900 cursor-pointer'
+                      }`}>
+                        {isUploadingAudio ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                            <span>جاري حفظ الصوت على السيرفر...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5 text-amber-600" />
+                            <span>اختر ملف صوتي من الجهاز 📁</span>
+                          </>
+                        )}
                         <input
                           type="file"
                           accept="audio/*,.mp3"
                           onChange={handleAudioFileUpload}
+                          disabled={isUploadingAudio}
                           className="hidden"
                         />
                       </label>
+                      {audioUploadSuccess && (
+                        <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
+                          <span>{audioUploadSuccess}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2019,186 +2366,282 @@ function StudioContent() {
                 </div>
               </div>
 
-              {/* 5.2: Real-time Free Color Customizer (الألوان الحرة الملكية) */}
-              <div className="p-5 rounded-2xl bg-[#FAF7F2] border-2 border-amber-300/80 shadow-xs space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-600" />
-                    <h4 className="text-xs sm:text-sm font-black text-stone-900">
-                      ب. تحكّم بدرجات الألوان بحرية كاملة (تتغير وقتياً في الهاتف المقابل 📱):
-                    </h4>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleResetColorsToTheme}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-600 hover:text-stone-900 bg-white px-2.5 py-1 rounded-lg border border-stone-200 transition-colors cursor-pointer"
-                    title="استعادة ألوان القالب الأصلية"
-                  >
-                    <RotateCcw className="w-3 h-3 text-stone-500" />
-                    <span>استعادة ألوان القالب الأصلية</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Primary Color Picker */}
-                  <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-stone-800">
-                        اللون الرئيسي (الثيم والظرف):
-                      </label>
-                      <span className="text-[10px] font-mono font-bold text-stone-400">
-                        {primaryColor}
-                      </span>
-                    </div>
-
+              {/* 5.2: Real-time Color Customizer (Gated to VIP Only) */}
+              {!isVip ? (
+                <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/80 via-stone-50 to-amber-50/50 border-2 border-amber-300 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={primaryColor}
-                        onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl cursor-pointer border border-stone-300 p-0.5 bg-white"
-                        title="اختر درجة اللون بحرية"
-                      />
-                      <input
-                        type="text"
-                        value={primaryColor}
-                        onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono dir-ltr text-center font-bold"
-                        placeholder="#720925"
-                      />
+                      <Crown className="w-4.5 h-4.5 text-amber-600" />
+                      <h4 className="text-xs sm:text-sm font-black text-stone-900">
+                        ب. تحكّم بدرجات الألوان بحرية كاملة (خاص بباقة VIP 👑):
+                      </h4>
                     </div>
+                    <span className="text-[11px] font-extrabold text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                      <Lock className="w-3.5 h-3.5 text-amber-700" /> ميزة حصرية لباقة VIP 👑
+                    </span>
+                  </div>
 
-                    {/* Quick Royal Swatches */}
+                  {/* Explanatory Lock Banner */}
+                  <div className="p-4 rounded-xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
                     <div className="space-y-1">
-                      <span className="text-[10px] text-stone-400 font-bold block">درجات ملكية مقترحة:</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {[
-                          { name: 'عنابي', hex: '#720925' },
-                          { name: 'زمردي', hex: '#064E3B' },
-                          { name: 'كحلي', hex: '#0F172A' },
-                          { name: 'موف', hex: '#4A044E' },
-                          { name: 'أسود', hex: '#18181B' },
-                          { name: 'شوكولاتة', hex: '#3B1E08' },
-                          { name: 'وردي', hex: '#9F1239' },
-                        ].map((swatch) => (
-                          <button
-                            key={swatch.hex}
-                            type="button"
-                            onClick={() => setCustomPrimaryColor(swatch.hex)}
-                            className="w-5 h-5 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 transition-transform"
-                            style={{ backgroundColor: swatch.hex }}
-                            title={`${swatch.name} (${swatch.hex})`}
-                          />
-                        ))}
+                      <p className="text-xs font-bold text-stone-800">
+                        🔒 تخصيص درجات الألوان الحرة (عجلة الألوان / كود Hex) متاح حصرياً مع باقة VIP
+                      </p>
+                      <p className="text-[11px] text-stone-500 leading-relaxed">
+                        تتيح لك باقة VIP حرية اختيار أي درجة لون لثيم الدعوة، الزخارف والختم، ولون بطاقة الدعوة بكل حرية لتناسب ثيم قاعتكم أو فستان العروسة مع انعكاس فوري على المعاينة.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPackage('luxury-vip');
+                        setIsMultiEvent(true);
+                      }}
+                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:brightness-110 text-white font-black text-xs shadow-sm hover:shadow-md transition-all cursor-pointer"
+                    >
+                      <Crown className="w-4 h-4 text-amber-200" />
+                      <span>الترقية لباقة VIP وتفعيل الألوان (150 ج.م) ✨</span>
+                    </button>
+                  </div>
+
+                  {/* Dimmed Preview of color pickers */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 opacity-40 pointer-events-none select-none filter blur-[0.3px]">
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
+                      <span className="text-xs font-bold text-stone-800 block">اللون الرئيسي (الثيم والظرف)</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-[#720925] border border-stone-300 shrink-0" />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#720925</div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Secondary / Gold Accent Picker */}
-                  <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-stone-800">
-                        الذهب والتفاصيل (الختم والزخارف):
-                      </label>
-                      <span className="text-[10px] font-mono font-bold text-stone-400">
-                        {secondaryColor}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={secondaryColor}
-                        onChange={(e) => setCustomSecondaryColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl cursor-pointer border border-stone-300 p-0.5 bg-white"
-                        title="اختر درجة الزخارف والذهب"
-                      />
-                      <input
-                        type="text"
-                        value={secondaryColor}
-                        onChange={(e) => setCustomSecondaryColor(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono dir-ltr text-center font-bold"
-                        placeholder="#D4AF37"
-                      />
-                    </div>
-
-                    {/* Quick Gold Swatches */}
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-stone-400 font-bold block">درجات الذهب المقترحة:</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {[
-                          { name: 'ذهب ملكي', hex: '#D4AF37' },
-                          { name: 'برونز دافئ', hex: '#E0A96D' },
-                          { name: 'ذهب شامبين', hex: '#F59E0B' },
-                          { name: 'بلاتينيوم', hex: '#94A3B8' },
-                          { name: 'روز جولد', hex: '#FDA4AF' },
-                        ].map((swatch) => (
-                          <button
-                            key={swatch.hex}
-                            type="button"
-                            onClick={() => setCustomSecondaryColor(swatch.hex)}
-                            className="w-5 h-5 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 transition-transform"
-                            style={{ backgroundColor: swatch.hex }}
-                            title={`${swatch.name} (${swatch.hex})`}
-                          />
-                        ))}
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
+                      <span className="text-xs font-bold text-stone-800 block">الذهب والتفاصيل (الختم والزخارف)</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-[#D4AF37] border border-stone-300 shrink-0" />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#D4AF37</div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Background Color Picker */}
-                  <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-stone-800">
-                        لون الخلفية (بطاقة الدعوة):
-                      </label>
-                      <span className="text-[10px] font-mono font-bold text-stone-400">
-                        {backgroundColor}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={backgroundColor}
-                        onChange={(e) => setCustomBackgroundColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl cursor-pointer border border-stone-300 p-0.5 bg-white"
-                        title="اختر لون خلفية الدعوة"
-                      />
-                      <input
-                        type="text"
-                        value={backgroundColor}
-                        onChange={(e) => setCustomBackgroundColor(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono dir-ltr text-center font-bold"
-                        placeholder="#FAF7F2"
-                      />
-                    </div>
-
-                    {/* Quick Background Swatches */}
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-stone-400 font-bold block">خلفيات راقية مقترحة:</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {[
-                          { name: 'كريمي عاجي', hex: '#FAF7F2' },
-                          { name: 'أبيض نقي', hex: '#FFFFFF' },
-                          { name: 'بيج هادئ', hex: '#FFFBEB' },
-                          { name: 'دارك مود', hex: '#0F0F11' },
-                          { name: 'رمادي لؤلؤي', hex: '#F8FAFC' },
-                        ].map((swatch) => (
-                          <button
-                            key={swatch.hex}
-                            type="button"
-                            onClick={() => setCustomBackgroundColor(swatch.hex)}
-                            className="w-5 h-5 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 transition-transform"
-                            style={{ backgroundColor: swatch.hex }}
-                            title={`${swatch.name} (${swatch.hex})`}
-                          />
-                        ))}
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
+                      <span className="text-xs font-bold text-stone-800 block">لون الخلفية (بطاقة الدعوة)</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-stone-300 shrink-0" />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#FAF7F2</div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F5] border border-amber-200/70 shadow-xs space-y-4">
+                  {/* VIP Header Bar */}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4.5 h-4.5 text-amber-600 shrink-0" />
+                      <h4 className="text-xs sm:text-sm font-black text-stone-900">
+                        ب. تحكّم بدرجات الألوان بحرية كاملة (تتغير وقتياً في الهاتف المقابل 📱):
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetColorsToTheme}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-stone-950 bg-white px-3 py-1.5 rounded-xl border border-stone-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      title="استعادة ألوان القالب الأصلية"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-stone-500" />
+                      <span>استعادة ألوان القالب الأصلية</span>
+                    </button>
+                  </div>
+
+                  {/* 3 VIP Color Cards matching screenshot */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Card 1: اللون الرئيسي (الثيم والظرف) */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          اللون الرئيسي (الثيم والظرف):
+                        </label>
+                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                          {(customPrimaryColor || primaryColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
+                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
+                        <input
+                          type="text"
+                          value={customPrimaryColor}
+                          onChange={(e) => handleColorInputChange('primary', e.target.value)}
+                          onBlur={(e) => handleColorInputBlur('primary', e.target.value)}
+                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
+                          placeholder="#9C5162 أو 156, 81, 98"
+                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(156, 81, 98) أو 156, 81, 98"
+                        />
+                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
+                        <div
+                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
+                          style={{ backgroundColor: safePickerPrimary }}
+                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
+                        >
+                          <input
+                            type="color"
+                            value={safePickerPrimary}
+                            onChange={(e) => handleColorInputChange('primary', e.target.value.toUpperCase())}
+                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
+                            title="انقر لفتح عجلة الألوان"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Suggested Royal Swatches */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-400 font-bold block">درجات ملكية مقترحة:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'شوكولاتة ملكية', hex: '#3B1E08' },
+                            { name: 'أسود فاخر', hex: '#18181B' },
+                            { name: 'موف ملكي', hex: '#4A044E' },
+                            { name: 'كحلي داكن', hex: '#0F172A' },
+                            { name: 'زمردي ملكي', hex: '#064E3B' },
+                            { name: 'عنابي ملكي', hex: '#720925' },
+                            { name: 'وردي ملكي', hex: '#9C5162' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('primary', swatch.hex)}
+                              className="w-5.5 h-5.5 rounded-full border border-stone-300/80 shadow-2xs cursor-pointer hover:scale-120 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 2: الذهب والتفاصيل (الختم والزخارف) */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          الذهب والتفاصيل (الختم والزخارف):
+                        </label>
+                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                          {(customSecondaryColor || secondaryColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
+                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
+                        <input
+                          type="text"
+                          value={customSecondaryColor}
+                          onChange={(e) => handleColorInputChange('secondary', e.target.value)}
+                          onBlur={(e) => handleColorInputBlur('secondary', e.target.value)}
+                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
+                          placeholder="#D4AF37 أو 212, 175, 55"
+                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(212, 175, 55) أو 212, 175, 55"
+                        />
+                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
+                        <div
+                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
+                          style={{ backgroundColor: safePickerSecondary }}
+                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
+                        >
+                          <input
+                            type="color"
+                            value={safePickerSecondary}
+                            onChange={(e) => handleColorInputChange('secondary', e.target.value.toUpperCase())}
+                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
+                            title="انقر لفتح عجلة الألوان"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Suggested Gold Swatches */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-400 font-bold block">درجات الذهب المقترحة:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'وردي ذهبي', hex: '#FDA4AF' },
+                            { name: 'بلاتينيوم فضي', hex: '#94A3B8' },
+                            { name: 'ذهب كهرماني', hex: '#F59E0B' },
+                            { name: 'برونز دافئ', hex: '#E0A96D' },
+                            { name: 'ذهب ملكي', hex: '#D4AF37' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('secondary', swatch.hex)}
+                              className="w-5.5 h-5.5 rounded-full border border-stone-300/80 shadow-2xs cursor-pointer hover:scale-120 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 3: لون الخلفية (بطاقة الدعوة) */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          لون الخلفية (بطاقة الدعوة):
+                        </label>
+                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                          {(customBackgroundColor || backgroundColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
+                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
+                        <input
+                          type="text"
+                          value={customBackgroundColor}
+                          onChange={(e) => handleColorInputChange('background', e.target.value)}
+                          onBlur={(e) => handleColorInputBlur('background', e.target.value)}
+                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
+                          placeholder="#FAF7F2 أو 250, 247, 242"
+                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(250, 247, 242) أو 250, 247, 242"
+                        />
+                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
+                        <div
+                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
+                          style={{ backgroundColor: safePickerBackground }}
+                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
+                        >
+                          <input
+                            type="color"
+                            value={safePickerBackground}
+                            onChange={(e) => handleColorInputChange('background', e.target.value.toUpperCase())}
+                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
+                            title="انقر لفتح عجلة الألوان"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Suggested Background Swatches */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-400 font-bold block">خلفيات راقية مقترحة:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'أبيض نقي', hex: '#FFFFFF' },
+                            { name: 'دارك مود فاخر', hex: '#18181B' },
+                            { name: 'كريمي عاجي', hex: '#FAF7F2' },
+                            { name: 'أبيض ناعم', hex: '#FFF8F9' },
+                            { name: 'رمادي لؤلؤي', hex: '#F8FAFC' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('background', swatch.hex)}
+                              className="w-5.5 h-5.5 rounded-full border border-stone-300/80 shadow-2xs cursor-pointer hover:scale-120 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 5.3: Arabic Wedding Typography with Live Preview */}
               <div className="space-y-3 pt-2">
@@ -2319,6 +2762,16 @@ function StudioContent() {
                       placeholder="https://maps.google.com/?q=..."
                       className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr font-mono bg-white"
                     />
+                    {detectedWeddingCoords ? (
+                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>تم ضبط الموقع على خرائط جوجل والخريطة التفاعلية بدقة 📍</span>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-stone-400 mt-1">
+                        💡 يمكنك وضع رابط خرائط جوجل أو الإحداثيات مباشرة لفتح اتجاهات الملاحة بدقة لضيوفك.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2409,6 +2862,29 @@ function StudioContent() {
                           </div>
 
                           <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-stone-700 block">تاريخ المناسبة:</label>
+                            <input
+                              type="date"
+                              value={
+                                journeyEvents[activeJourneyEventIndex].date
+                                  ? journeyEvents[activeJourneyEventIndex].date.slice(0, 10)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setJourneyEvents((prev) =>
+                                  prev.map((ev, idx) =>
+                                    idx === activeJourneyEventIndex
+                                      ? { ...ev, date: val ? `${val}T19:00` : ev.date }
+                                      : ev
+                                  )
+                                );
+                              }}
+                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white text-left font-mono dir-ltr"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
                             <label className="text-[11px] font-bold text-stone-700 block">التوقيت والساعة:</label>
                             <input
                               type="text"
@@ -2426,7 +2902,7 @@ function StudioContent() {
                             />
                           </div>
 
-                          <div className="space-y-1 sm:col-span-2">
+                          <div className="space-y-1">
                             <label className="text-[11px] font-bold text-stone-700 block">العنوان أو الحي:</label>
                             <input
                               type="text"
@@ -2441,6 +2917,30 @@ function StudioContent() {
                               }}
                               className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white"
                             />
+                          </div>
+
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[11px] font-bold text-stone-700 block">رابط خريطة Google Maps (اختياري):</label>
+                            <input
+                              type="url"
+                              value={journeyEvents[activeJourneyEventIndex].googleMapsUrl || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setJourneyEvents((prev) =>
+                                  prev.map((ev, idx) =>
+                                    idx === activeJourneyEventIndex ? { ...ev, googleMapsUrl: val } : ev
+                                  )
+                                );
+                              }}
+                              placeholder="https://maps.google.com/?q=..."
+                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white text-left font-mono dir-ltr"
+                            />
+                            {journeyEvents[activeJourneyEventIndex].googleMapsUrl ? (
+                              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg mt-1 font-bold">
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                                <span>جاهز للربط مع جوجل ماب وخريطة OpenStreetMap 🗺️</span>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       )}
@@ -2483,7 +2983,7 @@ function StudioContent() {
 
             {/* Step 6.1: VIP Luxury Suite (متاح ومفعل حصرياً في باقة VIP) */}
             {selectedPackage === 'luxury-vip' ? (
-              <section className="p-6 sm:p-7 rounded-3xl bg-linear-to-b from-amber-50/90 via-white to-amber-50/60 border-2 border-amber-300 shadow-md space-y-6">
+              <section className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-amber-50/90 via-white to-amber-50/60 border-2 border-amber-300 shadow-md space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-amber-200">
                   <div className="flex items-center gap-2.5">
                     <span className="text-2xl">💎</span>
@@ -2654,7 +3154,7 @@ function StudioContent() {
               </section>
             ) : (
               /* VIP Teaser Card if Basic or Wedding Journey is selected */
-              <section className="p-5 sm:p-6 rounded-3xl bg-linear-to-r from-stone-900 to-stone-800 text-white space-y-3 shadow-md">
+              <section className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white space-y-3 shadow-md border border-stone-700">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2.5">
                     <span className="text-2xl">💎</span>
@@ -2911,11 +3411,172 @@ function StudioContent() {
               </div>
             </section>
 
-            {/* Bottom Actions */}
-            <div className="p-6 rounded-3xl bg-linear-to-r from-rose-900 to-[#720925] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-              <div>
-                <h3 className="font-black text-base sm:text-lg">جاهز لاعتماد ونشر دعوتك؟ 💍</h3>
-                <p className="text-xs text-rose-200">
+            {/* 8. زر تواصل المعازيم عبر واتساب مع أصحاب الدعوة (WhatsApp Direct Contact Settings) */}
+            <section className="bg-white rounded-3xl p-5 sm:p-7 border border-stone-200/80 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                    <MessageCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                      <span>زر تواصل المعازيم عبر واتساب مع أصحاب الفرح</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        مباشر 💬
+                      </span>
+                    </h2>
+                    <p className="text-xs text-stone-500">
+                      حدد رقم هاتف بمزاجك، عدّله بأي وقت، أو ألغه بالكامل لحفظ خصوصيتكم
+                    </p>
+                  </div>
+                </div>
+
+                {/* Main Enable / Disable Toggle */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-xs font-bold text-stone-700">
+                    {sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+                      ? 'الزر مفعل بالدعوة'
+                      : 'الزر ملغي / محذوف'}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(
+                        sectionsVisibility.whatsapp &&
+                        whatsappContactEnabled &&
+                        whatsappContactPhone.trim()
+                      )}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setWhatsappContactEnabled(checked);
+                        setSectionsVisibility((prev) => ({ ...prev, whatsapp: checked }));
+                        if (checked && !whatsappContactPhone.trim()) {
+                          setWhatsappContactPhone(customerPhone || '201019262075');
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Status explanation & controls */}
+              {sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim() ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-stone-800 block">
+                        رقم الواتساب لاستقبال رسائل المعازيم (WhatsApp Number):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {customerPhone && customerPhone !== whatsappContactPhone && (
+                          <button
+                            type="button"
+                            onClick={() => setWhatsappContactPhone(customerPhone)}
+                            className="text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                          >
+                            استخدام رقم الحجز ({customerPhone})
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWhatsappContactPhone('');
+                            setWhatsappContactEnabled(false);
+                            setSectionsVisibility((p) => ({ ...p, whatsapp: false }));
+                          }}
+                          className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200 transition-colors cursor-pointer"
+                        >
+                          مسح وإلغاء الزر ❌
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={whatsappContactPhone}
+                        onChange={(e) => setWhatsappContactPhone(e.target.value)}
+                        placeholder="مثال: 201019262075 أو 01019262075 أو +9665..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm font-mono text-left dir-ltr bg-stone-50 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      💡 اكتب كود الدولة بدون مسافات (مثال لمصر: <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-800">201019262075</code> أو <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-800">01019262075</code>).
+                    </p>
+                  </div>
+
+                  {/* Live preview badge matching the user's screenshot */}
+                  <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-stone-700">معاينة شكل الزر في أسفل الدعوة:</span>
+                      {whatsappContactPhone.replace(/[^0-9]/g, '').length >= 5 && (
+                        <a
+                          href={`https://wa.me/${whatsappContactPhone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-emerald-700 hover:underline flex items-center gap-1"
+                        >
+                          <span>تجربة فتح المحادثة</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="text-center py-2">
+                      <p className="text-[11px] text-stone-500 mb-2">لأي استفسار أو تواصل مباشر مع أصحاب الفرح</p>
+                      <div className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#25D366] text-white font-black text-sm shadow-md shadow-emerald-500/20 max-w-sm w-full mx-auto">
+                        <MessageCircle className="w-5 h-5 fill-current" />
+                        <span>تواصل عبر واتساب مع أصحاب الدعوة 💬</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-amber-950 text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-900">
+                    <Info className="w-4 h-4 text-amber-700" />
+                    <span>زر واتساب التواصل ملغي ومخفي تماماً من دعوتك! 🔒</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    لن يظهر أي زر اتصال أو مراسلة في أسفل دعوتك لحفظ خصوصيتكم التامة. لن يتمكن الضيوف إلا من مشاهدة تفاصيل الحفل وتأكيد الحضور فقط.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsappContactPhone(customerPhone || '201019262075');
+                      setWhatsappContactEnabled(true);
+                      setSectionsVisibility((p) => ({ ...p, whatsapp: true }));
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  >
+                    إعادة تفعيل زر الواتساب ➕
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Bottom Actions Card (High-Contrast Burgundy Gold Luxury Styling) */}
+            <div
+              className="relative overflow-hidden p-6 sm:p-8 rounded-3xl text-white flex flex-col sm:flex-row items-center justify-between gap-5 shadow-2xl border-2 border-amber-400/50 bg-gradient-to-r from-[#4A0E17] via-[#720925] to-[#3B0712]"
+              style={{
+                background: 'linear-gradient(135deg, #4A0E17 0%, #720925 50%, #35060F 100%)',
+              }}
+            >
+              {/* Background ambient lighting */}
+              <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 rounded-full bg-rose-500/20 blur-2xl pointer-events-none" />
+
+              <div className="relative z-10 space-y-2 text-right">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-black">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>خطوتك الأخيرة لتفعيل الرابط الملكي</span>
+                </span>
+                <h3 className="font-black text-xl sm:text-2xl text-white font-cairo drop-shadow-xs">
+                  جاهز لاعتماد ونشر دعوتك؟ 💍
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-200 leading-relaxed max-w-xl font-medium">
                   كل تعديلاتك محفوظة في متصفحك. اضغط حفظ لمتابعة الدفع عبر InstaPay وتفعيل الرابط فوراً.
                 </p>
               </div>
@@ -2923,9 +3584,10 @@ function StudioContent() {
               <button
                 type="button"
                 onClick={() => setShowCheckoutModal(true)}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-amber-400 text-stone-950 font-black text-sm shadow-md hover:bg-amber-300 transition-all cursor-pointer whitespace-nowrap"
+                className="relative z-10 w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black text-sm sm:text-base shadow-xl shadow-amber-950/40 hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2 border border-amber-200"
               >
-                حفظ وتفعيل الدعوة 🚀
+                <Sparkles className="w-5 h-5 text-stone-950" />
+                <span>حفظ وتفعيل الدعوة 🚀</span>
               </button>
             </div>
           </div>
@@ -2987,7 +3649,7 @@ function StudioContent() {
 
             {/* Frame Container */}
             {previewViewMode === 'phone' ? (
-              <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[360px] h-[660px] sm:h-[700px] bg-stone-900 rounded-[44px] p-2.5 sm:p-3 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col">
+              <div className="relative mx-auto w-full max-w-[min(340px,calc(100vw-32px))] sm:max-w-[360px] h-[640px] sm:h-[700px] bg-stone-900 rounded-[44px] p-2.5 sm:p-3 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col">
                 {/* Speaker & Camera Notch */}
                 <div className="w-28 sm:w-32 h-3.5 sm:h-4 bg-stone-950 rounded-b-xl mx-auto mb-2 shrink-0 z-50 flex items-center justify-center">
                   <div className="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2" />
@@ -2996,32 +3658,10 @@ function StudioContent() {
 
                 {/* Inner Smartphone Screen Content */}
                 <div
-                  className="relative flex-1 rounded-[32px] sm:rounded-[36px] overflow-y-auto overflow-x-hidden no-scrollbar border border-stone-800/40"
+                  className="relative flex-1 rounded-[32px] sm:rounded-[36px] overflow-y-auto overflow-x-hidden no-scrollbar border border-stone-800/40 [transform:translateZ(0)]"
                   style={{ backgroundColor }}
                 >
-                  {/* Envelope Screen Overlay in Preview */}
-                  {sectionsVisibility.envelope && !envelopePreviewOpen && (
-                    <EnvelopeScreen
-                      coupleNames={
-                        coupleGroomAr || coupleBrideAr
-                          ? `${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}`
-                          : 'أحمد & سارة'
-                      }
-                      onOpen={() => setEnvelopePreviewOpen(true)}
-                      isOpen={envelopePreviewOpen}
-                      primaryColor={primaryColor}
-                      secondaryColor={secondaryColor}
-                      backgroundColor={backgroundColor}
-                      textColor={textColor}
-                      themeSlug={activeTheme.slug}
-                      weddingMessageAr={sectionsVisibility.message ? customWeddingMessage : ''}
-                      eventDate={eventDate}
-                      invitationTitle={title}
-                      waxSealMonogram={livePreviewInvitation.waxSealMonogram}
-                    />
-                  )}
-
-                  {/* Main Rendered Invitation Body */}
+                  {/* Main Rendered Invitation Body (Controls Envelope inside) */}
                   <InvitationRenderer
                     invitation={livePreviewInvitation}
                     events={livePreviewEvents}
@@ -3029,38 +3669,18 @@ function StudioContent() {
                     sections={livePreviewSections}
                     isPreview={true}
                     hidePreviewBanner={true}
+                    isEnvelopeOpen={envelopePreviewOpen}
+                    onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
                   />
                 </div>
               </div>
             ) : (
               /* Fluid edge-to-edge frame */
               <div
-                className="relative w-full h-[660px] sm:h-[700px] rounded-3xl shadow-xl border-2 border-stone-300 overflow-y-auto overflow-x-hidden no-scrollbar"
+                className="relative w-full h-[640px] sm:h-[700px] rounded-3xl shadow-xl border-2 border-stone-300 overflow-y-auto overflow-x-hidden no-scrollbar [transform:translateZ(0)]"
                 style={{ backgroundColor }}
               >
-                {/* Envelope Screen Overlay in Preview */}
-                {sectionsVisibility.envelope && !envelopePreviewOpen && (
-                  <EnvelopeScreen
-                    coupleNames={
-                      coupleGroomAr || coupleBrideAr
-                        ? `${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}`
-                        : 'أحمد & سارة'
-                    }
-                    onOpen={() => setEnvelopePreviewOpen(true)}
-                    isOpen={envelopePreviewOpen}
-                    primaryColor={primaryColor}
-                    secondaryColor={secondaryColor}
-                    backgroundColor={backgroundColor}
-                    textColor={textColor}
-                    themeSlug={activeTheme.slug}
-                    weddingMessageAr={sectionsVisibility.message ? customWeddingMessage : ''}
-                    eventDate={eventDate}
-                    invitationTitle={title}
-                    waxSealMonogram={livePreviewInvitation.waxSealMonogram}
-                  />
-                )}
-
-                {/* Main Rendered Invitation Body */}
+                {/* Main Rendered Invitation Body (Controls Envelope inside) */}
                 <InvitationRenderer
                   invitation={livePreviewInvitation}
                   events={livePreviewEvents}
@@ -3068,6 +3688,8 @@ function StudioContent() {
                   sections={livePreviewSections}
                   isPreview={true}
                   hidePreviewBanner={true}
+                  isEnvelopeOpen={envelopePreviewOpen}
+                  onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
                 />
               </div>
             )}
@@ -3078,6 +3700,44 @@ function StudioContent() {
           </div>
         </div>
       </main>
+
+      {/* Floating Mobile Studio Quick Bar (for phone users) */}
+      <div className="lg:hidden fixed bottom-4 inset-x-3 sm:inset-x-6 z-40 animate-fade-in-up">
+        <div className="bg-stone-950/95 backdrop-blur-xl border border-amber-400/40 rounded-2xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between gap-2">
+          {/* Toggle Tab */}
+          <div className="flex items-center bg-stone-900 p-1 rounded-xl text-xs font-bold border border-stone-800">
+            <button
+              type="button"
+              onClick={() => setActiveTab('editor')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                activeTab === 'editor' ? 'bg-amber-400 text-stone-950 font-black shadow-xs' : 'text-stone-400 hover:text-white'
+              }`}
+            >
+              المحرر ✍️
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'preview' ? 'bg-amber-400 text-stone-950 font-black shadow-xs' : 'text-stone-400 hover:text-white'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>المعاينة 📱</span>
+            </button>
+          </div>
+
+          {/* Quick Activate */}
+          <button
+            type="button"
+            onClick={() => setShowCheckoutModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-stone-950 text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-stone-950" />
+            <span>حفظ وتفعيل 🚀</span>
+          </button>
+        </div>
+      </div>
 
       {/* 3. Checkout & Payment Proof Upload Modal (الميزة المركزية للدفع والإيصال) */}
       {showCheckoutModal && (

@@ -86,7 +86,7 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
 
           {/* Left Column: Live Interactive Demo Mockup */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-[300px] sm:max-w-sm">
+            <div className="relative w-full max-w-[280px] min-[360px]:max-w-[300px] sm:max-w-sm">
               {/* Phone Frame */}
               <div className="relative mx-auto border-[8px] sm:border-[10px] border-stone-800 rounded-[38px] sm:rounded-[44px] shadow-2xl bg-[#0F0F10] overflow-hidden aspect-[9/18]">
                 {/* Speaker pill */}

@@ -50,14 +50,16 @@ export const rsvpRateLimiter = rateLimit({
  */
 export async function authenticateJWT(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : (req.query.token as string | undefined);
+
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: 'غير مصرح - يرجى تسجيل الدخول أولاً',
     });
   }
-
-  const token = authHeader.split(' ')[1];
   const payload = verifyToken(token);
 
   if (!payload) {

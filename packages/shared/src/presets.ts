@@ -66,7 +66,7 @@ export const WEDDING_MUSIC_PRESETS: WeddingMusicPreset[] = [
     title: 'موسيقى بيانو ليلة العمر الهادئة',
     artist: 'أوركسترا كلاسيك',
     category: 'romantic',
-    url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-113264.mp3',
+    url: '/audio/presets/piano-romance.mp3',
     durationHint: 'هادئة ورومانسية',
   },
   {
@@ -74,7 +74,7 @@ export const WEDDING_MUSIC_PRESETS: WeddingMusicPreset[] = [
     title: 'عزف كمان ملكي ساحر (Royal Violin)',
     artist: 'كمان رومانسي',
     category: 'romantic',
-    url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b671a5ea.mp3?filename=wedding-violin-romance.mp3',
+    url: '/audio/presets/royal-violin.mp3',
     durationHint: 'فخامة ملكية',
   },
   {
@@ -82,7 +82,7 @@ export const WEDDING_MUSIC_PRESETS: WeddingMusicPreset[] = [
     title: 'زفة مصرية كلاسيكية مبهجة',
     artist: 'تراث مصري أصيل',
     category: 'zaffa',
-    url: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3?filename=arabic-oriental-celebration.mp3',
+    url: '/audio/presets/egyptian-celebration.mp3',
     durationHint: 'إيقاع شرقي احتفالي',
   },
   {
@@ -90,7 +90,7 @@ export const WEDDING_MUSIC_PRESETS: WeddingMusicPreset[] = [
     title: 'دف إسلامي هادئ ومبارك (بدون معازف)',
     artist: 'أناشيد إسلامية',
     category: 'islamic',
-    url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=islamic-peaceful-duff.mp3',
+    url: '/audio/presets/islamic-duff.mp3',
     durationHint: 'إيقاع دف وقور ومبارك',
   },
   {
@@ -110,3 +110,20 @@ export const WEDDING_MUSIC_PRESETS: WeddingMusicPreset[] = [
     durationHint: 'عرض الدعوة بهدوء بدون موسيقى',
   },
 ];
+
+export const DEFAULT_MUSIC_PRESET_URLS: string[] = [
+  '/audio/presets/piano-romance.mp3',
+  '/audio/presets/royal-violin.mp3',
+  '/audio/presets/egyptian-celebration.mp3',
+  '/audio/presets/islamic-duff.mp3',
+];
+
+export function isDefaultMusicPreset(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return true;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'silent') return true;
+  return DEFAULT_MUSIC_PRESET_URLS.some(
+    (presetUrl) => trimmed === presetUrl || trimmed.endsWith(presetUrl)
+  );
+}
+

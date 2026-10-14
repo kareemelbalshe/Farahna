@@ -283,7 +283,7 @@ export function DemoGallery({
                 <div className="p-5 pt-0 space-y-2">
                   <Link
                     href={`/create?template=${demo.slug}&package=${demo.packageId}&theme=${demo.themeSlug}&type=${demo.type}&groom=${encodeURIComponent(demo.groomName)}&bride=${encodeURIComponent(demo.brideName)}&venue=${encodeURIComponent(demo.venue)}&city=${encodeURIComponent(demo.city)}`}
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 active:scale-95 border border-amber-400 cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 active:scale-95 border border-amber-400 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-stone-950" />
                     <span>ابدأ تصميم دعوتك بهذا النموذج 🪄</span>

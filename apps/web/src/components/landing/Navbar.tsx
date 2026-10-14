@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Heart, MessageCircle, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Sparkles, Menu, X } from 'lucide-react';
 import { getWhatsAppUrl, createInquiryWhatsAppMessage } from '@/lib/whatsapp';
 
 interface NavbarProps {
@@ -10,75 +10,123 @@ interface NavbarProps {
 }
 
 export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const whatsappUrl = getWhatsAppUrl(whatsappNumber, createInquiryWhatsAppMessage());
+
+  const navLinks = [
+    { href: '#journey', label: 'رحلة الفرح' },
+    { href: '#themes', label: 'نماذج التصاميم' },
+    { href: '#features', label: 'المميزات' },
+    { href: '#how-it-works', label: 'كيف نعمل؟' },
+    { href: '#pricing', label: 'الأسعار' },
+    { href: '#faq', label: 'الأسئلة الشائعة' },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-stone-200/60 shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shadow-rose-950/20 border border-amber-300/40 group-hover:scale-105 transition-transform">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl overflow-hidden shadow-md shadow-rose-950/20 border border-amber-300/40 group-hover:scale-105 transition-transform">
             <img src="/favicon.png" alt="فرحنا - Farahna" className="w-full h-full object-cover" />
           </div>
           <div>
-            <span className="text-2xl font-black tracking-tight text-[#720925] flex items-center gap-1.5 font-cairo">
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-[#720925] flex items-center gap-1.5 font-cairo">
               فرحنا
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-normal">
+              <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-normal">
                 Farahna
               </span>
             </span>
-            <p className="text-[11px] text-stone-500 font-medium">دعوات أفراح إلكترونية مخصصة</p>
+            <p className="text-[10px] sm:text-[11px] text-stone-500 font-medium">دعوات أفراح إلكترونية مخصصة</p>
           </div>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-700">
-          <a href="#journey" className="hover:text-[#720925] transition-colors">
-            رحلة الفرح
-          </a>
-          <a href="#themes" className="hover:text-[#720925] transition-colors">
-            نماذج التصاميم
-          </a>
-          <a href="#features" className="hover:text-[#720925] transition-colors">
-            المميزات
-          </a>
-          <a href="#how-it-works" className="hover:text-[#720925] transition-colors">
-            كيف نعمل؟
-          </a>
-          <a href="#pricing" className="hover:text-[#720925] transition-colors">
-            الأسعار
-          </a>
-          <a href="#faq" className="hover:text-[#720925] transition-colors">
-            الأسئلة الشائعة
-          </a>
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-stone-700">
+          {navLinks.map((link) => (
+            <a key={link.href} href={link.href} className="hover:text-[#720925] transition-colors">
+              {link.label}
+            </a>
+          ))}
         </nav>
 
-        {/* Action Buttons */}
+        {/* Action Buttons & Mobile Hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/create"
-            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition-all active:scale-95 border border-amber-400"
           >
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
-            <span>صمم دعوتك بنفسك 🪄</span>
+            <span className="hidden xs:inline">صمم دعوتك</span>
+            <span className="xs:hidden">صمم</span>
+            <span>🪄</span>
           </Link>
+
           <Link
             href="/admin/login"
             className="hidden lg:inline-flex text-xs font-bold text-stone-600 hover:text-stone-900 px-2.5 py-2 rounded-lg hover:bg-stone-100 transition-colors"
           >
             لوحة الإدارة
           </Link>
+
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full burgundy-gradient-bg text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-950/20 hover:shadow-rose-950/30 hover:opacity-95 transition-all active:scale-95"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full burgundy-gradient-bg text-white font-bold text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:shadow-rose-950/30 hover:opacity-95 transition-all active:scale-95"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
             <span>واتساب</span>
           </a>
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            aria-label="فتح القائمة"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5 text-stone-900" /> : <Menu className="w-5 h-5 text-stone-900" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-stone-200 p-4 space-y-3 animate-fade-in shadow-xl">
+          <nav className="flex flex-col space-y-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs text-stone-700 hover:bg-stone-100 hover:text-[#720925] transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl burgundy-gradient-bg text-white font-bold text-xs shadow-md shadow-rose-950/20"
+            >
+              <MessageCircle className="w-4 h-4 fill-current" />
+              <span>تواصل مع المصمم عبر واتساب 💬</span>
+            </a>
+            <Link
+              href="/admin/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-center py-2 text-xs font-bold text-stone-500 hover:text-stone-900"
+            >
+              دخول لوحة تحكم الإدارة
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

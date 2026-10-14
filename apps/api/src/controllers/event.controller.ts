@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
-import { isValidSafeUrl, normalizeWebUrl } from '@farahna/shared';
+import {
+  isValidSafeUrl,
+  normalizeWebUrl,
+  extractCoordinatesFromUrl,
+  resolveCityCoordinates,
+  getOpenStreetMapUrl,
+  isValidCoordinates,
+} from '@farahna/shared';
 
 export async function createEvent(req: Request, res: Response, next: NextFunction) {
   try {
@@ -20,6 +27,30 @@ export async function createEvent(req: Request, res: Response, next: NextFunctio
     if (rest.googleMapsUrl) rest.googleMapsUrl = normalizeWebUrl(rest.googleMapsUrl);
     if (rest.openStreetMapUrl) rest.openStreetMapUrl = normalizeWebUrl(rest.openStreetMapUrl);
     if (rest.imageUrl) rest.imageUrl = normalizeWebUrl(rest.imageUrl);
+
+    if (
+      (!rest.latitude || !isValidCoordinates(rest.latitude, rest.longitude)) &&
+      rest.googleMapsUrl
+    ) {
+      const extracted = extractCoordinatesFromUrl(rest.googleMapsUrl);
+      if (extracted) {
+        rest.latitude = extracted.latitude;
+        rest.longitude = extracted.longitude;
+      }
+    }
+    if (
+      (!rest.latitude || !isValidCoordinates(rest.latitude, rest.longitude)) &&
+      (rest.venueNameAr || rest.addressAr)
+    ) {
+      const city = resolveCityCoordinates(`${rest.venueNameAr || ''} ${rest.addressAr || ''}`);
+      if (city) {
+        rest.latitude = city.latitude;
+        rest.longitude = city.longitude;
+      }
+    }
+    if (!rest.openStreetMapUrl && isValidCoordinates(rest.latitude, rest.longitude)) {
+      rest.openStreetMapUrl = getOpenStreetMapUrl(rest.latitude, rest.longitude);
+    }
 
     const event = await prisma.invitationEvent.create({
       data: {
@@ -68,6 +99,30 @@ export async function updateEvent(req: Request, res: Response, next: NextFunctio
     if (rest.googleMapsUrl !== undefined) rest.googleMapsUrl = normalizeWebUrl(rest.googleMapsUrl);
     if (rest.openStreetMapUrl !== undefined) rest.openStreetMapUrl = normalizeWebUrl(rest.openStreetMapUrl);
     if (rest.imageUrl !== undefined) rest.imageUrl = normalizeWebUrl(rest.imageUrl);
+
+    if (
+      rest.googleMapsUrl &&
+      (!rest.latitude || !isValidCoordinates(rest.latitude, rest.longitude))
+    ) {
+      const extracted = extractCoordinatesFromUrl(rest.googleMapsUrl);
+      if (extracted) {
+        rest.latitude = extracted.latitude;
+        rest.longitude = extracted.longitude;
+      }
+    }
+    if (
+      (!rest.latitude || !isValidCoordinates(rest.latitude, rest.longitude)) &&
+      (rest.venueNameAr || rest.addressAr)
+    ) {
+      const city = resolveCityCoordinates(`${rest.venueNameAr || ''} ${rest.addressAr || ''}`);
+      if (city) {
+        rest.latitude = city.latitude;
+        rest.longitude = city.longitude;
+      }
+    }
+    if (!rest.openStreetMapUrl && isValidCoordinates(rest.latitude, rest.longitude)) {
+      rest.openStreetMapUrl = getOpenStreetMapUrl(rest.latitude, rest.longitude);
+    }
 
     const event = await prisma.invitationEvent.update({
       where: { id },

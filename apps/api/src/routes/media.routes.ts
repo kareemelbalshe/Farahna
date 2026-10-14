@@ -5,6 +5,7 @@ import {
   servePublicMedia,
   serveSecureMedia,
   getInvitationMedia,
+  getAllMedia,
   deleteMedia,
 } from '../controllers/media.controller';
 import { authenticateJWT, requireRole } from '../middleware/auth';
@@ -20,8 +21,9 @@ router.get('/secure/*', authenticateJWT, requireRole(['super_admin', 'admin']), 
 // 3. Public get media for an invitation
 router.get('/invitation/:invitationId', getInvitationMedia);
 
-// 4. Authenticated upload & delete operations
+// 4. Authenticated upload & list & delete operations
 router.use(authenticateJWT);
+router.get('/', requireRole(['super_admin', 'admin', 'editor']), getAllMedia);
 router.post('/upload', requireRole(['super_admin', 'admin', 'editor']), uploadMiddleware, uploadMedia);
 router.delete('/:id', requireRole(['super_admin', 'admin', 'editor']), deleteMedia);
 

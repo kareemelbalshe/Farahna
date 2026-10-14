@@ -155,7 +155,7 @@ export function InvitationTypes({ whatsappNumber = '201019262075' }: InvitationT
                 <div className="pt-6 space-y-2">
                   <Link
                     href={`/create?type=${t.id}`}
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all border border-amber-400"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all border border-amber-400"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-stone-950" />
                     <span>ابدأ تصميم دعوة {t.category} 🪄</span>

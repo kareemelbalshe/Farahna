@@ -2,17 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCountdown, formatArabicDate, getAutoRenewingDemoDate } from '@/lib/date';
-import { Calendar } from 'lucide-react';
+import { Calendar, Sparkles } from 'lucide-react';
 
 interface CountdownTimerProps {
   eventDate: string | Date;
   primaryColor?: string;
+  secondaryColor?: string;
+  isDark?: boolean;
   autoRenew?: boolean;
 }
 
 export function CountdownTimer({
   eventDate,
   primaryColor = '#720925',
+  secondaryColor = '#D4AF37',
+  isDark = false,
   autoRenew = false,
 }: CountdownTimerProps) {
   // If autoRenew is true, initialize with an active future date if eventDate has passed
@@ -67,76 +71,117 @@ export function CountdownTimer({
 
   const formattedDate = formatArabicDate(activeDate);
 
+  // Format single digits with leading zero for aesthetic balance (01 instead of 1)
+  const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
+
+  const units = [
+    { label: 'يوم', value: pad(timeLeft.days), key: 'days' },
+    { label: 'ساعة', value: pad(timeLeft.hours), key: 'hours' },
+    { label: 'دقيقة', value: pad(timeLeft.minutes), key: 'minutes' },
+    { label: 'ثانية', value: pad(timeLeft.seconds), key: 'seconds' },
+  ];
+
   return (
-    <section className="py-8 px-4 max-w-3xl mx-auto text-center space-y-6">
-      <div className="space-y-1">
+    <section className="relative py-8 px-4 max-w-2xl mx-auto text-center space-y-5">
+      {/* Soft Ambient Glow Aura behind timer */}
+      <div
+        className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-36 rounded-full blur-3xl opacity-25 pointer-events-none -z-10"
+        style={{ backgroundColor: secondaryColor || '#D4AF37' }}
+      />
+
+      {/* Header Info */}
+      <div className="space-y-2">
         {formattedDate && (
-          <span
-            suppressHydrationWarning
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 theme-badge"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            {formattedDate}
-          </span>
+          <div className="flex items-center justify-center">
+            <span
+              suppressHydrationWarning
+              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs border transition-all backdrop-blur-md"
+              style={{
+                backgroundColor: isDark ? 'rgba(212, 175, 55, 0.12)' : '#FEFBF5',
+                borderColor: isDark ? 'rgba(212, 175, 55, 0.4)' : '#F0E2C8',
+                color: isDark ? '#F5D77F' : '#8A5D14',
+                boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.4)' : '0 1px 4px rgba(212,175,55,0.1)',
+              }}
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>{formattedDate}</span>
+              <Sparkles className="w-3 h-3 text-amber-400 shrink-0 opacity-80" />
+            </span>
+          </div>
         )}
-        <h3 className="text-xl font-black text-stone-800 font-cairo theme-heading">
+
+        <h3
+          className="text-lg sm:text-2xl font-black font-cairo tracking-tight"
+          style={{
+            color: isDark ? '#FFFFFF' : '#1A1819',
+            textShadow: isDark ? '0 2px 14px rgba(0,0,0,0.8)' : undefined,
+          }}
+        >
           باقي على ليلة العمر ومشاركتكم فرحتنا ❤️
         </h3>
       </div>
 
       {timeLeft.isPassed && !autoRenew ? (
-        <div className="p-6 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-lg theme-card">
+        <div className="p-6 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-lg">
           🎉 اليوم فرحتنا... مستنيينكم تنورونا وتشاركونا أجمل لحظات حياتنا!
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-md mx-auto">
-          {/* Days */}
-          <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200/80 shadow-xs sm:shadow-sm space-y-0.5 sm:space-y-1 theme-card">
-            <span
-              suppressHydrationWarning
-              className="text-xl sm:text-4xl font-black font-cairo block leading-tight"
-              style={{ color: primaryColor }}
+        /* Luxury Royal Timer Grid */
+        <div className="grid grid-cols-4 gap-1.5 min-[360px]:gap-2 sm:gap-3.5 max-w-sm sm:max-w-md mx-auto items-stretch">
+          {units.map((unit) => (
+            <div
+              key={unit.key}
+              className="relative rounded-2xl sm:rounded-3xl p-1.5 min-[360px]:p-2.5 sm:p-4 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 border shadow-lg group hover:-translate-y-0.5 hover:shadow-xl"
+              style={{
+                background: isDark
+                  ? 'linear-gradient(165deg, rgba(28, 26, 33, 0.95) 0%, rgba(14, 13, 17, 0.98) 100%)'
+                  : 'linear-gradient(165deg, #FFFFFF 0%, #FAF8F4 100%)',
+                borderColor: isDark
+                  ? 'rgba(212, 175, 55, 0.38)'
+                  : 'rgba(212, 175, 55, 0.32)',
+                boxShadow: isDark
+                  ? '0 12px 30px -5px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 0 16px rgba(212, 175, 55, 0.08)'
+                  : '0 10px 24px -5px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(212, 175, 55, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.9)',
+              }}
             >
-              {timeLeft.days}
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-stone-500 theme-muted">يوم</span>
-          </div>
+              {/* Fine Top Gold Foil Shimmer Line */}
+              <div className="absolute inset-x-2 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300/60 to-transparent pointer-events-none" />
 
-          {/* Hours */}
-          <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200/80 shadow-xs sm:shadow-sm space-y-0.5 sm:space-y-1 theme-card">
-            <span
-              suppressHydrationWarning
-              className="text-xl sm:text-4xl font-black font-cairo block leading-tight"
-              style={{ color: primaryColor }}
-            >
-              {timeLeft.hours}
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-stone-500 theme-muted">ساعة</span>
-          </div>
+              {/* Number Display */}
+              <span
+                suppressHydrationWarning
+                className="text-xl min-[360px]:text-2xl sm:text-4xl lg:text-5xl font-black font-cairo tracking-tight tabular-nums block leading-none py-0.5 sm:py-1 drop-shadow-sm"
+                style={{
+                  color: isDark ? '#F5D77F' : primaryColor || '#720925',
+                  textShadow: isDark
+                    ? '0 2px 10px rgba(212, 175, 55, 0.35)'
+                    : '0 1px 2px rgba(0, 0, 0, 0.06)',
+                }}
+              >
+                {unit.value}
+              </span>
 
-          {/* Minutes */}
-          <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200/80 shadow-xs sm:shadow-sm space-y-0.5 sm:space-y-1 theme-card">
-            <span
-              suppressHydrationWarning
-              className="text-xl sm:text-4xl font-black font-cairo block leading-tight"
-              style={{ color: primaryColor }}
-            >
-              {timeLeft.minutes}
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-stone-500 theme-muted">دقيقة</span>
-          </div>
+              {/* Subtle Luxury Divider Bar */}
+              <div
+                className="w-5 sm:w-7 h-[1px] my-1 sm:my-1.5 opacity-60"
+                style={{
+                  background: isDark
+                    ? 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent)'
+                    : 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.45), transparent)',
+                }}
+              />
 
-          {/* Seconds */}
-          <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200/80 shadow-xs sm:shadow-sm space-y-0.5 sm:space-y-1 theme-card">
-            <span
-              suppressHydrationWarning
-              className="text-xl sm:text-4xl font-black font-cairo block leading-tight"
-              style={{ color: primaryColor }}
-            >
-              {timeLeft.seconds}
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-stone-500 theme-muted">ثانية</span>
-          </div>
+              {/* Unit Label */}
+              <span
+                className="text-[10px] sm:text-xs font-bold font-cairo tracking-wide block"
+                style={{
+                  color: isDark ? '#E5DDD0' : '#6B6358',
+                }}
+              >
+                {unit.label}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </section>

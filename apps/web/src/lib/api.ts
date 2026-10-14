@@ -24,6 +24,18 @@ export async function fetchPreviewInvitation(token: string) {
   }
 }
 
+export async function fetchPrivateGuestList(token: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/public/guests/${token}`, {
+      cache: 'no-store',
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching private guest list:', error);
+    return { success: false, message: 'تعذر الاتصال بالخادم لجلب كشف المعازيم' };
+  }
+}
+
 export async function submitPublicRsvp(invitationId: string, data: any) {
   const res = await fetch(`${API_BASE_URL}/public/invitations/${invitationId}/rsvp`, {
     method: 'POST',

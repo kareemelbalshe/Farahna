@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
 import { nanoid } from 'nanoid';
-import { DEFAULT_SECTIONS, generateInvitationSlug } from '@farahna/shared';
+import {
+  DEFAULT_SECTIONS,
+  generateInvitationSlug,
+  extractCoordinatesFromUrl,
+  resolveCityCoordinates,
+  getOpenStreetMapUrl,
+  isValidCoordinates,
+} from '@farahna/shared';
 import { storageService } from '../services/storage';
 import { sendPaymentProofNotification } from '../services/email.service';
 
@@ -447,12 +454,41 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
     }
 
     // 5. Resolve Dates
+    // 5. Resolve Dates
     const parsedEventDate =
       invInput.eventDate && !isNaN(new Date(invInput.eventDate).getTime())
         ? new Date(invInput.eventDate)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    // 6. Create Draft Invitation + Order + Payment in Transaction
+    // 6. Handle Custom Audio Buffer if provided as base64
+    let initialMusicUrl =
+      invInput.musicUrl && invInput.musicUrl.trim()
+        ? invInput.musicUrl.trim()
+        : invInput.backgroundMusicUrl && invInput.backgroundMusicUrl.trim()
+        ? invInput.backgroundMusicUrl.trim()
+        : null;
+
+    let base64AudioData: { buffer: Buffer; mimeType: string; originalName: string } | null = null;
+    if (initialMusicUrl && initialMusicUrl.startsWith('data:audio/')) {
+      try {
+        const matches = initialMusicUrl.match(/^data:([A-Za-z0-9-+/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const ext = mimeType.includes('wav') ? 'wav' : mimeType.includes('ogg') ? 'ogg' : 'mp3';
+          base64AudioData = {
+            buffer,
+            mimeType,
+            originalName: `${(invInput.musicTitle || 'custom-audio').replace(/[^a-zA-Z0-9\u0600-\u06FF_-]/g, '_')}-${Date.now()}.${ext}`,
+          };
+          initialMusicUrl = null;
+        }
+      } catch (err) {
+        console.error('Failed to parse base64 audio:', err);
+      }
+    }
+
+    // 7. Create Draft Invitation + Order + Payment in Transaction
     const result = await prisma.$transaction(async (tx) => {
       const inv = await tx.invitation.create({
         data: {
@@ -476,23 +512,35 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
           coverImageUrl: invInput.coverImageUrl || null,
           coupleImageUrl: invInput.coupleImageUrl || null,
           galleryImages: Array.isArray(invInput.galleryImages) ? invInput.galleryImages : [],
-          musicUrl:
-            invInput.musicUrl && invInput.musicUrl.trim()
-              ? invInput.musicUrl.trim()
-              : invInput.backgroundMusicUrl && invInput.backgroundMusicUrl.trim()
-              ? invInput.backgroundMusicUrl.trim()
-              : null,
+          musicUrl: initialMusicUrl,
           musicTitle: invInput.musicTitle || 'موسيقى ليلة العمر',
           themeId: finalThemeId,
-          themeConfig: {
-            fontFamily: invInput.fontFamily || "'Cairo', sans-serif",
-            selectedPackage: packageId,
-            ...(invInput.themeConfig || {}),
-            customOgImageUrl:
-              invInput.customOgImageUrl ||
-              invInput.themeConfig?.customOgImageUrl ||
-              null,
-          },
+          themeConfig: (() => {
+            const isVipTier = packageId === 'luxury-vip';
+            const baseConfig: any = {
+              fontFamily: invInput.fontFamily || "'Cairo', sans-serif",
+              selectedPackage: packageId,
+              ...(invInput.themeConfig || {}),
+              customOgImageUrl:
+                invInput.customOgImageUrl ||
+                invInput.themeConfig?.customOgImageUrl ||
+                null,
+              whatsappPhone:
+                invInput.whatsappPhone !== undefined
+                  ? (invInput.whatsappPhone && String(invInput.whatsappPhone).trim() ? String(invInput.whatsappPhone).trim() : null)
+                  : invInput.themeConfig?.whatsappPhone || null,
+              whatsappContactEnabled:
+                invInput.whatsappContactEnabled !== undefined
+                  ? Boolean(invInput.whatsappContactEnabled)
+                  : invInput.themeConfig?.whatsappContactEnabled !== false,
+            };
+            if (!isVipTier) {
+              delete baseConfig.primaryColor;
+              delete baseConfig.secondaryColor;
+              delete baseConfig.backgroundColor;
+            }
+            return baseConfig;
+          })(),
           isMultiEvent: Boolean(invInput.isMultiEvent),
           rsvpEnabled: invInput.rsvpEnabled !== undefined ? Boolean(invInput.rsvpEnabled) : true,
           countdownEnabled:
@@ -504,6 +552,68 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
           eventDate: parsedEventDate,
         },
       });
+
+      // Save custom audio file to storage if provided as base64
+      if (base64AudioData) {
+        try {
+          const stored = await storageService.saveFile({
+            buffer: base64AudioData.buffer,
+            originalName: base64AudioData.originalName,
+            mimeType: base64AudioData.mimeType,
+            category: 'music',
+            invitationId: inv.id,
+          });
+
+          await tx.invitation.update({
+            where: { id: inv.id },
+            data: { musicUrl: stored.url },
+          });
+
+          await tx.media.create({
+            data: {
+              invitationId: inv.id,
+              type: 'audio',
+              category: 'music',
+              filePath: stored.filePath,
+              fileName: stored.fileName,
+              originalName: stored.originalName,
+              mimeType: stored.mimeType,
+              sizeBytes: stored.sizeBytes,
+              url: stored.url,
+              isPublic: true,
+            },
+          });
+        } catch (err) {
+          console.error('Failed to save base64 audio to storage:', err);
+        }
+      } else if (initialMusicUrl && initialMusicUrl.startsWith('/api/media/')) {
+        // Link pre-uploaded custom audio to this invitation
+        const matchedMedia = await tx.media.findFirst({
+          where: { url: initialMusicUrl },
+        });
+        if (matchedMedia) {
+          await tx.media.update({
+            where: { id: matchedMedia.id },
+            data: { invitationId: inv.id },
+          });
+        } else {
+          const relPath = initialMusicUrl.replace(/^\/api\/media\/(public|secure)\//, '');
+          await tx.media.create({
+            data: {
+              invitationId: inv.id,
+              type: 'audio',
+              category: 'music',
+              filePath: relPath,
+              fileName: relPath.split('/').pop() || 'audio.mp3',
+              originalName: invInput.musicTitle || 'custom-audio.mp3',
+              mimeType: 'audio/mpeg',
+              sizeBytes: 0,
+              url: initialMusicUrl,
+              isPublic: true,
+            },
+          });
+        }
+      }
 
       // Seed sections with client custom visibility toggles
       const clientSections = Array.isArray(invInput.sections) ? invInput.sections : [];
@@ -535,8 +645,109 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
         data: sectionsToCreate,
       });
 
-      // Seed primary event if venue info provided
-      if (invInput.venueNameAr || invInput.addressAr || invInput.venueAddressAr) {
+      // Seed primary event or journey events
+      const clientEvents = Array.isArray(invInput.events) ? invInput.events : [];
+      if (clientEvents.length > 0) {
+        for (let idx = 0; idx < clientEvents.length; idx++) {
+          const ev = clientEvents[idx];
+          const eventDateParsed =
+            ev.date && !isNaN(new Date(ev.date).getTime())
+              ? new Date(ev.date)
+              : parsedEventDate;
+          const eventType =
+            ev.type === 'katbketab'
+              ? 'katb_ketab'
+              : ['engagement', 'henna', 'katb_ketab', 'wedding', 'reception', 'custom'].includes(
+                  ev.type
+                )
+              ? ev.type
+              : 'wedding';
+
+          let evLat =
+            typeof ev.latitude === 'number' && isValidCoordinates(ev.latitude, ev.longitude)
+              ? ev.latitude
+              : null;
+          let evLng =
+            typeof ev.longitude === 'number' && isValidCoordinates(ev.latitude, ev.longitude)
+              ? ev.longitude
+              : null;
+          const evMapUrl =
+            ev.googleMapsUrl || (ev.type === 'wedding' ? invInput.googleMapsUrl : null) || null;
+          if (!evLat && evMapUrl) {
+            const extracted = extractCoordinatesFromUrl(evMapUrl);
+            if (extracted) {
+              evLat = extracted.latitude;
+              evLng = extracted.longitude;
+            }
+          }
+          const evVenue = ev.venueNameAr || invInput.venueNameAr || 'قاعة الحفل';
+          const evAddr = ev.addressAr || invInput.addressAr || 'القاهرة، مصر';
+          if (!evLat) {
+            const city = resolveCityCoordinates(`${evVenue} ${evAddr}`);
+            if (city) {
+              evLat = city.latitude;
+              evLng = city.longitude;
+            }
+          }
+          const evOsmUrl =
+            ev.openStreetMapUrl || (evLat && evLng ? getOpenStreetMapUrl(evLat, evLng) : null);
+
+          await tx.invitationEvent.create({
+            data: {
+              invitationId: inv.id,
+              type: eventType,
+              titleAr:
+                ev.titleAr ||
+                (ev.type === 'wedding'
+                  ? invInput.title || 'حفل الزفاف المبارك'
+                  : 'مناسبة الفرح'),
+              date: eventDateParsed,
+              startTime: ev.startTime || ev.time || '08:00 م',
+              endTime: ev.endTime || null,
+              venueNameAr: evVenue,
+              addressAr: evAddr,
+              googleMapsUrl: evMapUrl,
+              latitude: evLat,
+              longitude: evLng,
+              openStreetMapUrl: evOsmUrl,
+              sortOrder: idx,
+              isVisible: ev.isVisible !== false,
+              isHennaFemaleOnly: Boolean(ev.isHennaFemaleOnly),
+              dressCodeAr: ev.dressCodeAr || null,
+            },
+          });
+        }
+      } else if (invInput.venueNameAr || invInput.addressAr || invInput.venueAddressAr || invInput.googleMapsUrl) {
+        let evLat =
+          typeof invInput.latitude === 'number' &&
+          isValidCoordinates(invInput.latitude, invInput.longitude)
+            ? invInput.latitude
+            : null;
+        let evLng =
+          typeof invInput.longitude === 'number' &&
+          isValidCoordinates(invInput.latitude, invInput.longitude)
+            ? invInput.longitude
+            : null;
+        const evMapUrl = invInput.googleMapsUrl || null;
+        if (!evLat && evMapUrl) {
+          const extracted = extractCoordinatesFromUrl(evMapUrl);
+          if (extracted) {
+            evLat = extracted.latitude;
+            evLng = extracted.longitude;
+          }
+        }
+        const evVenue = invInput.venueNameAr || 'قاعة الحفل';
+        const evAddr = invInput.addressAr || invInput.venueAddressAr || 'القاهرة، مصر';
+        if (!evLat) {
+          const city = resolveCityCoordinates(`${evVenue} ${evAddr}`);
+          if (city) {
+            evLat = city.latitude;
+            evLng = city.longitude;
+          }
+        }
+        const evOsmUrl =
+          invInput.openStreetMapUrl || (evLat && evLng ? getOpenStreetMapUrl(evLat, evLng) : null);
+
         await tx.invitationEvent.create({
           data: {
             invitationId: inv.id,
@@ -544,9 +755,12 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
             titleAr: invInput.title || `حفل الزفاف المبارك`,
             date: parsedEventDate,
             startTime: invInput.startTime || '08:00 م',
-            venueNameAr: invInput.venueNameAr || 'قاعة الحفل',
-            addressAr: invInput.addressAr || invInput.venueAddressAr || 'القاهرة، مصر',
-            googleMapsUrl: invInput.googleMapsUrl || null,
+            venueNameAr: evVenue,
+            addressAr: evAddr,
+            googleMapsUrl: evMapUrl,
+            latitude: evLat,
+            longitude: evLng,
+            openStreetMapUrl: evOsmUrl,
           },
         });
       }
@@ -619,4 +833,150 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
     next(error);
   }
 }
+
+export async function uploadPublicAudio(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'لم يتم إرسال أي ملف صوتي' });
+    }
+
+    const validation = storageService.validateFile({
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    });
+
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.error });
+    }
+
+    const stored = await storageService.saveFile({
+      buffer: req.file.buffer,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      category: 'music',
+    });
+
+    const media = await prisma.media.create({
+      data: {
+        filePath: stored.filePath,
+        fileName: stored.fileName,
+        originalName: stored.originalName,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
+        url: stored.url,
+        type: 'audio',
+        category: 'music',
+        isPublic: true,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: media.id,
+        url: stored.url,
+        fileName: stored.fileName,
+        originalName: stored.originalName,
+        sizeBytes: stored.sizeBytes,
+      },
+      message: 'تم رفع وتخزين المقطع الصوتي على السيرفر بنجاح',
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'فشل رفع الملف الصوتي',
+    });
+  }
+}
+
+/**
+ * Get private guest list & RSVP responses for the couple / host only
+ * Secured via unguessable invitation previewToken or private key
+ */
+export async function getPrivateGuestList(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'رمز الوصول غير صالح' });
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        OR: [
+          { previewToken: token },
+          ...(isUuid ? [{ id: token }] : []),
+          { slug: token },
+        ],
+        isDeleted: null,
+      },
+      include: {
+        events: {
+          where: { isVisible: true },
+          orderBy: { sortOrder: 'asc' },
+        },
+        sections: {
+          where: { sectionKey: 'rsvp' },
+        },
+        customer: {
+          select: { name: true, phone: true },
+        },
+      },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({
+        success: false,
+        message: 'عذراً، لم يتم العثور على كشف المعازيم المطلوب. يرجى التأكد من الرابط الخاص بك.',
+      });
+    }
+
+    const rsvps = await prisma.rSVP.findMany({
+      where: { invitationId: invitation.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const attendingCount = rsvps.filter((r) => r.attendanceStatus === 'attending').length;
+    const notAttendingCount = rsvps.filter((r) => r.attendanceStatus === 'not_attending').length;
+    const maybeCount = rsvps.filter((r) => r.attendanceStatus === 'maybe').length;
+    const totalGuests = rsvps
+      .filter((r) => r.attendanceStatus === 'attending')
+      .reduce((sum, r) => sum + (r.guestCount || 1), 0);
+
+    const isSectionActive = invitation.sections?.[0] ? invitation.sections[0].isEnabled : true;
+
+    return res.json({
+      success: true,
+      data: {
+        invitation: {
+          id: invitation.id,
+          title: invitation.title,
+          slug: invitation.slug,
+          type: invitation.type,
+          coupleGroomAr: invitation.coupleGroomAr,
+          coupleBrideAr: invitation.coupleBrideAr,
+          eventDate: invitation.eventDate,
+          coverImageUrl: invitation.coverImageUrl,
+          rsvpEnabled: invitation.rsvpEnabled && isSectionActive,
+          previewToken: invitation.previewToken,
+          events: invitation.events,
+          customer: invitation.customer,
+        },
+        stats: {
+          totalResponses: rsvps.length,
+          attendingCount,
+          notAttendingCount,
+          maybeCount,
+          totalGuests,
+        },
+        rsvps,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
 

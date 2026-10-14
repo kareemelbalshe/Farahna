@@ -15,6 +15,14 @@ export const ALLOWED_AUDIO_MIMES = [
   'audio/mpeg',
   'audio/mp3',
   'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/ogg',
+  'audio/m4a',
+  'audio/x-m4a',
+  'audio/mp4',
+  'audio/aac',
+  'audio/webm',
 ];
 
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -24,10 +32,19 @@ export class LocalStorageService implements IStorageService {
   private baseStorageDir: string;
 
   constructor(customStoragePath?: string) {
-    this.baseStorageDir =
-      customStoragePath ||
-      process.env.STORAGE_PATH ||
-      path.resolve(process.cwd(), 'storage');
+    if (customStoragePath) {
+      this.baseStorageDir = path.resolve(customStoragePath);
+    } else {
+      let candidate = process.env.STORAGE_PATH || 'storage';
+      const cwd = process.cwd();
+      if (
+        candidate === 'apps/api/storage' &&
+        (cwd.endsWith(path.join('apps', 'api')) || cwd.endsWith('apps/api') || cwd.endsWith('apps\\api'))
+      ) {
+        candidate = 'storage';
+      }
+      this.baseStorageDir = path.resolve(candidate);
+    }
 
     // Ensure base storage directory exists
     if (!fs.existsSync(this.baseStorageDir)) {
@@ -124,35 +141,24 @@ export class LocalStorageService implements IStorageService {
     const targetDir = path.join(this.baseStorageDir, subDir);
     await fs.promises.mkdir(targetDir, { recursive: true });
 
-    // 3. Process & Optimize buffer (if image, optimize with sharp)
+    // 3. Process & Optimize buffer (if image, aggressively compress with sharp to WebP)
     const isImage = ALLOWED_IMAGE_MIMES.includes(mimeType);
     let finalBuffer = buffer;
     let finalMime = mimeType;
     let extension = path.extname(originalName).replace('.', '').toLowerCase() || 'bin';
 
     if (isImage) {
-      try {
-        // Resize if width > 2000 or height > 2000, and convert to WebP for maximum compression
-        const image = sharp(buffer);
-        const metadata = await image.metadata();
+      const optimized = await this.optimizeImageBuffer(buffer, category);
+      finalBuffer = optimized.buffer;
+      finalMime = optimized.mimeType;
+      extension = optimized.extension;
 
-        if ((metadata.width && metadata.width > 2000) || (metadata.height && metadata.height > 2000)) {
-          image.resize({
-            width: 2000,
-            height: 2000,
-            fit: 'inside',
-            withoutEnlargement: true,
-          });
-        }
-
-        // Convert to WebP for modern performance, quality 85
-        finalBuffer = await image.webp({ quality: 85 }).toBuffer();
-        finalMime = 'image/webp';
-        extension = 'webp';
-      } catch (err) {
-        // If sharp processing encounters an edge case, fallback to original buffer
-        finalBuffer = buffer;
-      }
+      const savedPercent = buffer.length > finalBuffer.length
+        ? (((buffer.length - finalBuffer.length) / buffer.length) * 100).toFixed(1)
+        : '0.0';
+      console.log(
+        `⚡ [Storage] Optimized ${originalName} (${category}): ${(buffer.length / 1024).toFixed(1)} KB -> ${(finalBuffer.length / 1024).toFixed(1)} KB (${savedPercent}% space saved)`
+      );
     }
 
     // 4. Generate Safe Unique Filename (UUID/nanoid) to prevent Path Traversal
@@ -196,6 +202,19 @@ export class LocalStorageService implements IStorageService {
     }
   }
 
+  public async deleteDirectory(relativePath: string): Promise<boolean> {
+    try {
+      const absolutePath = this.getAbsoluteFilePath(relativePath);
+      if (fs.existsSync(absolutePath)) {
+        await fs.promises.rm(absolutePath, { recursive: true, force: true });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  }
+
   public getAbsoluteFilePath(relativePath: string): string {
     if (!relativePath || typeof relativePath !== 'string') {
       throw new Error('المسار غير صالح');
@@ -224,5 +243,92 @@ export class LocalStorageService implements IStorageService {
     }
 
     return absolutePath;
+  }
+
+  /**
+   * Ultra-efficient image optimization & space-saving compressor:
+   * 1. Auto-rotates image according to EXIF orientation.
+   * 2. Strips all unnecessary camera/GPS bloat and metadata.
+   * 3. Resizes down to category-tailored maximum dimensions.
+   * 4. Converts to high-efficiency WebP with maximum compression effort (effort: 6).
+   * 5. Progressive multi-pass compression if the resulting WebP exceeds the size ceiling.
+   */
+  public async optimizeImageBuffer(
+    buffer: Buffer,
+    category?: string
+  ): Promise<{ buffer: Buffer; mimeType: string; extension: string }> {
+    try {
+      // 1. Determine optimal max dimensions and target quality based on category
+      let maxWidth = 1280;
+      let maxHeight = 1280;
+      let targetQuality = 78;
+
+      if (category === 'payment_proof') {
+        // Payment receipts don't need giant dimensions, just crisp readable text
+        maxWidth = 1000;
+        maxHeight = 1000;
+        targetQuality = 72;
+      } else if (category === 'theme') {
+        maxWidth = 800;
+        maxHeight = 800;
+        targetQuality = 80;
+      } else if (category === 'gallery') {
+        maxWidth = 1200;
+        maxHeight = 1200;
+        targetQuality = 76;
+      } else if (category === 'cover') {
+        maxWidth = 1280;
+        maxHeight = 1280;
+        targetQuality = 78;
+      }
+
+      // 2. Initial pass with Sharp
+      const pipeline = sharp(buffer)
+        .rotate() // Auto-orient based on EXIF before stripping metadata
+        .resize({
+          width: maxWidth,
+          height: maxHeight,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({
+          quality: targetQuality,
+          effort: 6, // Maximum compression effort (0-6)
+          smartSubsample: true,
+        });
+
+      let optimized = await pipeline.toBuffer();
+
+      // 3. Multi-pass aggressive compression if still larger than target ceiling
+      // Receipts: max 150KB, General images: max 280KB
+      const maxAllowedBytes = category === 'payment_proof' ? 150 * 1024 : 280 * 1024;
+      if (optimized.length > maxAllowedBytes) {
+        optimized = await sharp(optimized)
+          .resize({
+            width: Math.min(maxWidth, 1000),
+            height: Math.min(maxHeight, 1000),
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp({
+            quality: 68,
+            effort: 6,
+          })
+          .toBuffer();
+      }
+
+      return {
+        buffer: optimized,
+        mimeType: 'image/webp',
+        extension: 'webp',
+      };
+    } catch (err) {
+      console.error('Image compression failed, falling back to original buffer:', err);
+      return {
+        buffer,
+        mimeType: 'image/webp',
+        extension: 'webp',
+      };
+    }
   }
 }

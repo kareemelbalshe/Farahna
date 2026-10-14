@@ -15,6 +15,8 @@ import {
   HelpCircle,
   Info,
   Type,
+  Calendar,
+  Layers,
 } from 'lucide-react';
 import {
   ARABIC_WEDDING_FONTS,
@@ -23,42 +25,136 @@ import {
   transliterateArabicToSlug,
 } from '@farahna/shared';
 
+export interface InvitationTypeOption {
+  id: 'wedding' | 'engagement' | 'katb_ketab' | 'henna' | 'custom';
+  title: string;
+  subtitle: string;
+  icon: string;
+  badge: string;
+  slugPrefix: string;
+  defaultTitlePrefix: string;
+  person1Label: string;
+  person2Label: string;
+  person1Placeholder: string;
+  person2Placeholder: string;
+  isCouple: boolean;
+  guidance: string;
+}
+
+const INVITATION_TYPES: InvitationTypeOption[] = [
+  {
+    id: 'wedding',
+    title: 'دعوة زفاف وفرح',
+    subtitle: 'ليلة العمر وحفل الزفاف الرسمي',
+    icon: '👑',
+    badge: 'الأكثر طلباً',
+    slugPrefix: '/invitation/wedding/',
+    defaultTitlePrefix: 'دعوة زفاف',
+    person1Label: 'اسم العريس (عربي): *',
+    person2Label: 'اسم العروسة (عربي): *',
+    person1Placeholder: 'أحمد محمود',
+    person2Placeholder: 'سارة إبراهيم',
+    isCouple: true,
+    guidance: 'حفل الزفاف الرسمي يشمل تفاصيل الزفة، القاعة، عداد تنازلي، وخريطة الموقع وتأكيد الحضور.',
+  },
+  {
+    id: 'engagement',
+    title: 'دعوة خطوبة',
+    subtitle: 'حفل خطوبة مبارك وقراءة فاتحة',
+    icon: '💍',
+    badge: 'خطوبة مباركة',
+    slugPrefix: '/invitation/engagement/',
+    defaultTitlePrefix: 'دعوة خطوبة مباركة',
+    person1Label: 'اسم العريس (عربي): *',
+    person2Label: 'اسم العروسة (عربي): *',
+    person1Placeholder: 'أحمد محمود',
+    person2Placeholder: 'سارة إبراهيم',
+    isCouple: true,
+    guidance: 'دعوة خطوبة أنيقة ومميزة لمشاركة فرحة الخطوبة وتلبيس الدبل مع الأهل والأصدقاء.',
+  },
+  {
+    id: 'katb_ketab',
+    title: 'دعوة كتب كتاب',
+    subtitle: 'عقد قران ومباركة دينية',
+    icon: '📜',
+    badge: 'عقد قران',
+    slugPrefix: '/invitation/katb_ketab/',
+    defaultTitlePrefix: 'دعوة عقد قران مبارك',
+    person1Label: 'اسم العريس (عربي): *',
+    person2Label: 'اسم العروسة (عربي): *',
+    person1Placeholder: 'أحمد محمود',
+    person2Placeholder: 'سارة إبراهيم',
+    isCouple: true,
+    guidance: 'دعوة عقد القران بآيات قرآنية وتفاصيل المسجد أو القاعة، وتهاني الأهل والأحباب.',
+  },
+  {
+    id: 'henna',
+    title: 'دعوة ليلة حنة',
+    subtitle: 'ليلة حنة خاصة بالسيدات',
+    icon: '🌿',
+    badge: 'حنة العروسة',
+    slugPrefix: '/invitation/henna/',
+    defaultTitlePrefix: 'دعوة ليلة حنة',
+    person1Label: 'اسم العروسة (عربي): *',
+    person2Label: 'اسم العريس (اختياري):',
+    person1Placeholder: 'سارة إبراهيم',
+    person2Placeholder: 'أحمد محمود (اختياري)',
+    isCouple: false,
+    guidance: 'تتضمن خيار خصوصية السيدات التامة لمنع تداول الموقع أو الصور إلا للمدعوات فقط.',
+  },
+  {
+    id: 'custom',
+    title: 'مناسبة خاصة / احتفال',
+    subtitle: 'تخرج، استقبال، عقيقة وسبوع، تكريم، عيد ميلاد',
+    icon: '✨',
+    badge: 'مناسبة مخصصة',
+    slugPrefix: '/invitation/custom/',
+    defaultTitlePrefix: 'دعوة حفل واحتفال خاص',
+    person1Label: 'اسم صاحب المناسبة / المحتفى به: *',
+    person2Label: 'الاسم الثاني أو الجهة المنظمة (اختياري):',
+    person1Placeholder: 'د. أحمد محمود',
+    person2Placeholder: 'عائلة محمود / كلية الهندسة',
+    isCouple: false,
+    guidance: 'مناسبة خاصة مرنة لأي فعالية عائلية أو رسمية (حفل تخرج، استقبال، سبوع مولود، عيد ميلاد، إيفنت VIP).',
+  },
+];
+
 const PACKAGES_CONFIG = [
   {
     id: 'basic',
-    name: 'باقة المناسبة الواحدة',
+    name: 'باقة المناسبة الفردية',
     price: '50 ج.م',
     icon: '🌸',
     color: 'border-stone-300 text-stone-800',
     activeColor: 'border-amber-600 bg-amber-50/70 text-amber-950 shadow-md',
     badge: 'مناسبة واحدة فقط',
-    summary: 'فرح أو خطوبة أو كتب كتاب واحد — بدون تبويبات متعددة',
+    summary: 'حدث واحد محدد (فرح، أو خطوبة، أو كتب كتاب، أو حنة، أو احتفال خاص) برابط مستقل وسريع',
     defaultMultiEvent: false,
-    guidance: '💡 نصيحة الأدمن: اختر مناسبة واحدة فقط (فرح أو خطوبة أو كتب كتاب). لا تقم بتفعيل التبويبات المتعددة حتى تظل الدعوة بسيطة ومطابقة للباقة.',
+    guidance: '💡 نصيحة الأدمن: مناسبة واحدة مستقلة ومباشرة بدون تبويبات متعددة حتى تظل الدعوة بسيطة وسريعة.',
   },
   {
     id: 'wedding-journey',
-    name: 'باقة رحلة الفرح الشاملة',
+    name: 'باقة الفعاليات المتعددة (الرحلة الشاملة)',
     price: '95 ج.م',
     icon: '👑',
     color: 'border-stone-300 text-stone-800',
     activeColor: 'border-rose-900 bg-rose-50/70 text-[#720925] shadow-md',
     badge: 'الأكثر طلباً والأفضل قيمة 👑',
-    summary: 'حتى 4 مناسبات (خطوبة + حنة + كتب كتاب + فرح) برابط واحد',
+    summary: 'حتى 4 فعاليات ومناسبات مختلفة (مثل خطوبة + حنة + كتب كتاب + فرح، أو استقبال + حفل رئيسي) برابط موحد',
     defaultMultiEvent: true,
-    guidance: '💡 نصيحة الأدمن: قم بتفعيل رحلة الفرح المتعددة، وأضف تفاصيل الخطوبة والحنة وكتب الكتاب، وفعل خيار فتح الظرف وتأكيد الحضور (RSVP).',
+    guidance: '💡 نصيحة الأدمن: تتيح تفعيل تبويبات رحلة الفعاليات، وإضافة مواعيد مختلفة لكل حدث، وتأكيد الحضور (RSVP) لكل فقرة.',
   },
   {
     id: 'luxury-vip',
-    name: 'باقة التصميم الخاص VIP',
+    name: 'باقة التصميم الخاص الملكي VIP',
     price: '150 ج.م',
     icon: '💎',
     color: 'border-stone-300 text-stone-800',
     activeColor: 'border-amber-500 bg-amber-50/70 text-stone-900 shadow-md',
     badge: 'فخامة ملكية وتخصيص كامل 💎',
-    summary: 'تخصيص كامل للألوان + ليلة الحنة للسيدات بخصوصية تامة + جاليري صور غير محدود',
+    summary: 'تخصيص كامل لكافة الألوان، خطوط عربية ملكية، خصوصية تامة، وألبوم صور احترافي مفتوح لأي مناسبة',
     defaultMultiEvent: true,
-    guidance: '💡 نصيحة الأدمن: باقة VIP تتيح لك تخصيص ألوان وثيم خاص للعروسين، وتفعيل تنبيه خصوصية ليلة الحنة للسيدات، ورفع ألبوم صور عالي الدقة لجلسة التصوير.',
+    guidance: '💡 نصيحة الأدمن: باقة VIP تتيح لك تخصيص كامل للألوان والأصول، ورفع ألبوم صور عالي الدقة لجلسة التصوير.',
   },
 ];
 
@@ -70,25 +166,30 @@ export default function NewInvitationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Selected Package State
+  // 1. Occasion / Invitation Type State (Defaults to 'wedding' but fully selectable at top)
+  const [type, setType] = useState<'wedding' | 'engagement' | 'katb_ketab' | 'henna' | 'custom'>('wedding');
+
+  // 2. Selected Package State
   const [selectedPackage, setSelectedPackage] = useState<string>('wedding-journey');
 
-  // Customer Mode State: 'quick' (no customer required) | 'existing' | 'new'
+  // 3. Customer Mode State: 'quick' (no customer required) | 'existing' | 'new'
   const [customerMode, setCustomerMode] = useState<'quick' | 'existing' | 'new'>('quick');
   const [customerId, setCustomerId] = useState('');
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
-  // Invitation Form State
+  // 4. Invitation Form State
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [type, setType] = useState('wedding');
   const [coupleGroomAr, setCoupleGroomAr] = useState('');
   const [coupleBrideAr, setCoupleBrideAr] = useState('');
   const [eventDate, setEventDate] = useState('2026-11-20T19:00:00');
   const [themeId, setThemeId] = useState('');
   const [isMultiEvent, setIsMultiEvent] = useState(true);
   const [selectedFont, setSelectedFont] = useState("'Cairo', sans-serif");
+
+  const currentTypeConfig = INVITATION_TYPES.find((t) => t.id === type) || INVITATION_TYPES[0];
+  const currentPkg = PACKAGES_CONFIG.find((p) => p.id === selectedPackage) || PACKAGES_CONFIG[1];
 
   useEffect(() => {
     Promise.all([adminFetch('/customers'), adminFetch('/themes')]).then(
@@ -106,6 +207,24 @@ export default function NewInvitationPage() {
     );
   }, []);
 
+  // When changing invitation type
+  const handleTypeSelect = (selectedType: 'wedding' | 'engagement' | 'katb_ketab' | 'henna' | 'custom') => {
+    setType(selectedType);
+    const newConfig = INVITATION_TYPES.find((t) => t.id === selectedType);
+    if (!newConfig) return;
+
+    // Update suggested title if not heavily customized
+    if (coupleGroomAr || coupleBrideAr) {
+      if (selectedType === 'henna') {
+        setTitle(`${newConfig.defaultTitlePrefix} ${coupleBrideAr || coupleGroomAr} 🌿`);
+      } else if (selectedType === 'custom') {
+        setTitle(`${newConfig.defaultTitlePrefix} - ${coupleGroomAr || coupleBrideAr} ✨`);
+      } else {
+        setTitle(`${newConfig.defaultTitlePrefix} ${coupleGroomAr} & ${coupleBrideAr} ❤️`);
+      }
+    }
+  };
+
   const handlePackageSelect = (pkgId: string) => {
     setSelectedPackage(pkgId);
     const target = PACKAGES_CONFIG.find((p) => p.id === pkgId);
@@ -114,15 +233,23 @@ export default function NewInvitationPage() {
     }
   };
 
-  // Auto-fill suggested slug & title from couple names
-  const handleCoupleNameChange = (groom: string, bride: string) => {
-    setCoupleGroomAr(groom);
-    setCoupleBrideAr(bride);
-    if (!title && (groom || bride)) {
-      setTitle(`دعوة زفاف ${groom} & ${bride} ❤️`);
+  // Auto-fill suggested slug & title from names
+  const handleNameChange = (val1: string, val2: string) => {
+    setCoupleGroomAr(val1);
+    setCoupleBrideAr(val2);
+
+    if (!title && (val1 || val2)) {
+      if (type === 'henna') {
+        setTitle(`${currentTypeConfig.defaultTitlePrefix} ${val2 || val1} 🌿`);
+      } else if (type === 'custom') {
+        setTitle(`${currentTypeConfig.defaultTitlePrefix} - ${val1 || val2} ✨`);
+      } else {
+        setTitle(`${currentTypeConfig.defaultTitlePrefix} ${val1} & ${val2} ❤️`);
+      }
     }
+
     if (!slug) {
-      const generatedSlug = generateInvitationSlug(groom, bride);
+      const generatedSlug = generateInvitationSlug(val1, val2);
       setSlug(generatedSlug);
     }
   };
@@ -157,7 +284,7 @@ export default function NewInvitationPage() {
             name: newCustomerName.trim(),
             phone: newCustomerPhone.trim(),
             whatsapp: newCustomerPhone.trim(),
-            notes: `تم إنشاؤه تلقائياً أثناء إنشاء دعوة ${title || 'جديدة'}`,
+            notes: `تم إنشاؤه تلقائياً أثناء إنشاء دعوة ${title || currentTypeConfig.title}`,
             source: 'website',
           }),
         });
@@ -170,7 +297,6 @@ export default function NewInvitationPage() {
           return;
         }
       }
-      // If customerMode === 'quick', leave resolvedCustomerId empty so backend auto-assigns fast guest!
 
       // 2. Sanitize Slug
       const cleanSlug = (slug || generateInvitationSlug(coupleGroomAr, coupleBrideAr))
@@ -181,11 +307,13 @@ export default function NewInvitationPage() {
 
       const payload = {
         customerId: resolvedCustomerId || undefined,
-        title: title || `دعوة فرح - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''}`,
+        title:
+          title ||
+          `${currentTypeConfig.title} - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''}`,
         slug: cleanSlug || `farah-${Date.now().toString().slice(-6)}`,
         type,
-        coupleGroomAr: coupleGroomAr || 'العريس',
-        coupleBrideAr: coupleBrideAr || 'العروس',
+        coupleGroomAr: coupleGroomAr || (type === 'custom' ? 'المحتفى به' : 'العريس'),
+        coupleBrideAr: coupleBrideAr || (type === 'custom' ? 'المناسبة' : 'العروس'),
         eventDate: new Date(eventDate).toISOString(),
         themeId: themeId || (themes[0]?.id || 'theme-royal-burgundy'),
         isMultiEvent,
@@ -214,10 +342,8 @@ export default function NewInvitationPage() {
     }
   };
 
-  const currentPkg = PACKAGES_CONFIG.find((p) => p.id === selectedPackage) || PACKAGES_CONFIG[1];
-
   return (
-    <div className="max-w-3xl mx-auto space-y-6 text-right font-cairo">
+    <div className="max-w-4xl mx-auto space-y-6 text-right font-cairo">
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
@@ -228,9 +354,9 @@ export default function NewInvitationPage() {
           <ArrowRight className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-black text-stone-900">إنشاء وتجهيز دعوة جديدة 🪄</h1>
-          <p className="text-xs text-stone-500">
-            حدد باقة العميل وأدخل البيانات الأساسية، وسيتم فتح المحرر المرئي التفاعلي لضبط كافة التفاصيل
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900">إنشاء وتجهيز دعوة جديدة 🪄</h1>
+          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+            اختر نوع المناسبة بدقة (زفاف، خطوبة، كتب كتاب، حنة، أو مناسبة خاصة) وحدد الباقة المناسبة للعميل
           </p>
         </div>
       </div>
@@ -242,15 +368,85 @@ export default function NewInvitationPage() {
           </div>
         )}
 
-        {/* 1. Package Selection Cards */}
+        {/* STEP 1: Occasion & Invitation Type Selection (Crucial!) */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-black text-stone-900 block flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-xs sm:text-sm font-black text-stone-900 block flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#720925]" />
+              <span>١. حدد نوع المناسبة والدعوة: *</span>
+            </label>
+            <span className="text-xs font-black text-white bg-[#720925] px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
+              <span>{currentTypeConfig.icon}</span>
+              <span>النوع المحدد: {currentTypeConfig.title}</span>
+            </span>
+          </div>
+          <p className="text-[11px] text-stone-500">
+            حدد نوع الحدث بدقة ليتم تهيئة رابط الدعوة ({currentTypeConfig.slugPrefix}) والكلمات والنصوص المخصصة تلقائياً
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+            {INVITATION_TYPES.map((t) => {
+              const isSelected = type === t.id;
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => handleTypeSelect(t.id)}
+                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-2 relative text-right ${
+                    isSelected
+                      ? 'border-[#720925] bg-rose-50/70 text-[#720925] shadow-xs'
+                      : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 text-stone-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">{t.icon}</span>
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        isSelected
+                          ? 'bg-[#720925] text-white'
+                          : 'bg-stone-100 text-stone-600'
+                      }`}
+                    >
+                      {t.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="font-black text-xs text-stone-900 leading-tight">
+                      {t.title}
+                    </h3>
+                    <p className="text-[10px] text-stone-500 mt-0.5 line-clamp-2 leading-tight">
+                      {t.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="pt-1.5 border-t border-stone-200/60 font-mono text-[10px] text-stone-400 dir-ltr text-right truncate">
+                    {t.slugPrefix}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 text-xs flex items-start gap-2">
+            <Info className="w-4 h-4 text-[#720925] shrink-0 mt-0.5" />
+            <span className="leading-relaxed">
+              <strong>توجيه النظام:</strong> {currentTypeConfig.guidance} رابط الدعوة سيبدأ تلقائياً بـ{' '}
+              <code className="font-mono text-[#720925] font-bold dir-ltr inline-block">
+                {currentTypeConfig.slugPrefix}
+              </code>
+            </span>
+          </div>
+        </div>
+
+        {/* STEP 2: Package Selection Cards */}
+        <div className="space-y-3 pt-4 border-t border-stone-100">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <label className="text-xs sm:text-sm font-black text-stone-900 block flex items-center gap-2">
               <Crown className="w-4 h-4 text-[#720925]" />
-              <span>١. حدد باقة الدعوة المطلوبة للعميل: *</span>
+              <span>٢. حدد باقة الدعوة والتسعير: *</span>
             </label>
             <span className="text-[11px] font-bold text-rose-800 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-              الباقة المحددة: {currentPkg.name} ({currentPkg.price})
+              الباقة: {currentPkg.name} ({currentPkg.price})
             </span>
           </div>
 
@@ -293,12 +489,12 @@ export default function NewInvitationPage() {
         </div>
 
         <form onSubmit={handleCreate} className="space-y-6">
-          {/* 2. Customer Assignment (Optional & Fast) */}
+          {/* STEP 3: Customer Assignment */}
           <div className="space-y-3 pt-4 border-t border-stone-100">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-stone-900 block flex items-center gap-2">
+              <label className="text-xs sm:text-sm font-black text-stone-900 block flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-[#720925]" />
-                <span>٢. ربط الدعوة بالعميل (اختياري لسرعة الإنجاز):</span>
+                <span>٣. ربط الدعوة بالعميل (اختياري لسرعة الإنجاز):</span>
               </label>
               <span className="text-[10px] text-stone-400">
                 يمكنك إنشاء الدعوة فوراً بدون عميل مسبق
@@ -353,10 +549,9 @@ export default function NewInvitationPage() {
                     onChange={(e) => setCustomerId(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
                   >
-                    <option value="">-- اختر العميل المسجل --</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name} ({c.phone})
+                        {c.name} — {c.phone} {c.notes ? `(${c.notes})` : ''}
                       </option>
                     ))}
                   </select>
@@ -366,19 +561,19 @@ export default function NewInvitationPage() {
 
             {/* New Customer Inline Fields */}
             {customerMode === 'new' && (
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-200/80">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-stone-700 block">اسم العميل:</label>
+                  <label className="text-[11px] font-bold text-stone-700 block">اسم العميل بالكامل: *</label>
                   <input
                     type="text"
                     value={newCustomerName}
                     onChange={(e) => setNewCustomerName(e.target.value)}
-                    placeholder="مثال: أحمد محمود"
+                    placeholder="مثال: محمد صلاح"
                     className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-stone-700 block">رقم هاتف / واتساب:</label>
+                  <label className="text-[11px] font-bold text-stone-700 block">رقم هاتف / واتساب: *</label>
                   <input
                     type="tel"
                     value={newCustomerPhone}
@@ -397,33 +592,42 @@ export default function NewInvitationPage() {
             )}
           </div>
 
-          {/* 3. Couple Names */}
+          {/* STEP 4: Names & Title & Slug */}
           <div className="space-y-3 pt-4 border-t border-stone-100">
-            <label className="text-xs font-black text-stone-900 block flex items-center gap-2">
-              <Heart className="w-4 h-4 text-[#720925]" />
-              <span>٣. بيانات العروسين وعنوان الدعوة: *</span>
+            <label className="text-xs sm:text-sm font-black text-stone-900 block flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-[#720925]" />
+                <span>٤. بيانات أصحاب المناسبة وعنوان الدعوة: *</span>
+              </span>
+              <span className="text-[11px] text-stone-500 font-normal">
+                (المناسبة الحالية: <strong>{currentTypeConfig.title}</strong>)
+              </span>
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">اسم العريس (عربي): *</label>
+                <label className="text-xs font-bold text-stone-700 block">
+                  {currentTypeConfig.person1Label}
+                </label>
                 <input
                   type="text"
                   required
                   value={coupleGroomAr}
-                  onChange={(e) => handleCoupleNameChange(e.target.value, coupleBrideAr)}
-                  placeholder="أحمد محمود"
+                  onChange={(e) => handleNameChange(e.target.value, coupleBrideAr)}
+                  placeholder={currentTypeConfig.person1Placeholder}
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">اسم العروسة (عربي): *</label>
+                <label className="text-xs font-bold text-stone-700 block">
+                  {currentTypeConfig.person2Label}
+                </label>
                 <input
                   type="text"
-                  required
+                  required={currentTypeConfig.isCouple}
                   value={coupleBrideAr}
-                  onChange={(e) => handleCoupleNameChange(coupleGroomAr, e.target.value)}
-                  placeholder="سارة إبراهيم"
+                  onChange={(e) => handleNameChange(coupleGroomAr, e.target.value)}
+                  placeholder={currentTypeConfig.person2Placeholder}
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs"
                 />
               </div>
@@ -437,19 +641,25 @@ export default function NewInvitationPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="مثال: دعوة زفاف أحمد وسارة ❤️"
+                placeholder={`مثال: ${currentTypeConfig.defaultTitlePrefix} أحمد وسارة ❤️`}
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs"
               />
             </div>
 
-            {/* Slug */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-700 block">
-                الرابط المختصر الفريد (Slug بالإنجليزية والأرقام): *
-              </label>
+            {/* Slug with DYNAMIC Prefix matching the chosen type */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-stone-700 block">
+                  الرابط المختصر الفريد (Slug بالإنجليزية والأرقام): *
+                </label>
+                <span className="text-[11px] font-mono text-[#720925] font-bold">
+                  {currentTypeConfig.slugPrefix}
+                </span>
+              </div>
+
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-mono">
-                  /invitation/{type}/
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-mono select-none">
+                  {currentTypeConfig.slugPrefix}
                 </span>
                 <input
                   type="text"
@@ -459,10 +669,17 @@ export default function NewInvitationPage() {
                   maxLength={60}
                   value={slug}
                   onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  placeholder="ahmed-sara"
-                  className="w-full pl-44 pr-4 py-2.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr"
+                  placeholder={
+                    type === 'custom'
+                      ? 'dr-ahmed-graduation'
+                      : type === 'henna'
+                      ? 'sara-henna-night'
+                      : 'ahmed-sara'
+                  }
+                  className="w-full pl-52 pr-4 py-2.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr"
                 />
               </div>
+
               {slug && slug.length < 3 && (
                 <span className="text-[10px] text-amber-700 block">⚠️ الرابط يجب أن يكون 3 أحرف على الأقل</span>
               )}
@@ -472,23 +689,9 @@ export default function NewInvitationPage() {
             </div>
           </div>
 
-          {/* 4. Type & Theme & Date */}
+          {/* STEP 5: Design Theme & Date */}
           <div className="space-y-3 pt-4 border-t border-stone-100">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">نوع الدعوة:</label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
-                >
-                  <option value="wedding">زفاف وفرح (Wedding)</option>
-                  <option value="engagement">خطوبة (Engagement)</option>
-                  <option value="henna">ليلة حنة (Henna)</option>
-                  <option value="katb_ketab">كتب كتاب (Katb Ketab)</option>
-                </select>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-stone-700 block">ثيم التصميم الأولي:</label>
                 <select
@@ -543,12 +746,12 @@ export default function NewInvitationPage() {
               />
               <div>
                 <span className="text-xs font-bold text-amber-950 block">
-                  تفعيل رحلة الفرح المتعددة (Multi-Event Tabs)
+                  تفعيل رحلة الفعاليات المتعددة (Multi-Event Tabs)
                 </span>
                 <span className="text-[11px] text-amber-800">
                   {selectedPackage === 'basic'
                     ? '⚠️ ملحوظة: باقة المناسبة الواحدة (50 ج.م) لا تدعم تبويبات متعددة، ويفضل تركها غير مفعلة.'
-                    : 'يتيح إضافة الخطوبة والحنة وكتب الكتاب والفرح في نفس الدعوة برابط موحد'}
+                    : 'يتيح إضافة أكثر من فعالية (مثل كتب كتاب + حنة + فرح، أو حفل استقبال + عشاء) برابط موحد'}
                 </span>
               </div>
             </label>
@@ -561,7 +764,7 @@ export default function NewInvitationPage() {
               disabled={submitting}
               className="w-full py-4 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:opacity-95 transition-opacity cursor-pointer disabled:opacity-50"
             >
-              {submitting ? 'جاري تجهيز الدعوة والمحرر...' : 'إنشاء الدعوة والانتقال إلى المحرر المرئي التفاعلي 🪄'}
+              {submitting ? 'جاري تجهيز الدعوة والمحرر...' : `إنشاء ${currentTypeConfig.title} والانتقال إلى المحرر المرئي التفاعلي 🪄`}
             </button>
           </div>
         </form>
