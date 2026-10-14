@@ -210,9 +210,17 @@ export function InvitationRenderer({
     (safeInv as any).themeConfig?.waxSealMonogram ||
     null;
 
+  const isEnvelopeActive = Boolean(
+    safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen
+  );
+
   return (
     <div
-      className={`min-h-screen transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
+      className={`${
+        isPreview && isEnvelopeActive
+          ? 'h-full max-h-full overflow-hidden'
+          : 'min-h-screen'
+      } transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
         isDark ? 'invitation-dark-theme dark' : ''
       }`}
       style={{
@@ -282,11 +290,13 @@ export function InvitationRenderer({
 
       {/* Main Invitation Layout Container */}
       <main
-        className={
+        className={`${
+          isPreview && isEnvelopeActive ? 'hidden' : ''
+        } ${
           isPreview
             ? 'w-full mx-auto px-2 py-3 space-y-4 max-w-full'
             : 'max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up'
-        }
+        }`}
       >
         {/* VIP Crown Badge */}
         {isVip && (
