@@ -1819,7 +1819,7 @@ function StudioContent() {
               </div>
 
               {/* Grid of Section Toggles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 pt-1">
                 {[
                   {
                     key: 'envelope',
@@ -1891,17 +1891,18 @@ function StudioContent() {
                   return (
                     <div
                       key={sec.key}
-                      className={`p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 overflow-hidden ${
                         isEnabled
                           ? 'bg-stone-50/70 border-stone-200 hover:border-amber-300'
                           : 'bg-rose-50/30 border-dashed border-rose-200 opacity-75'
                       }`}
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-stone-900">{sec.title}</span>
+                      {/* Top Header: Title, Status Badge, and Toggle Action */}
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+                          <span className="text-xs font-black text-stone-900 leading-snug">{sec.title}</span>
                           <span
-                            className={`text-[9px] font-bold px-2 py-0.2 rounded-full ${
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                               isEnabled
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-rose-100 text-rose-800 border border-rose-200'
@@ -1910,80 +1911,82 @@ function StudioContent() {
                             {isEnabled ? 'مُفعّل' : 'محذوف من الدعوة'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-stone-500 leading-snug">{sec.desc}</p>
 
-                        {/* Inline editor inputs if parents section is enabled */}
-                        {sec.key === 'parents' && isEnabled && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                            <input
-                              type="text"
-                              value={parentsGroomAr}
-                              onChange={(e) => setParentsGroomAr(e.target.value)}
-                              placeholder="أهل العريس: نجل الأستاذ..."
-                              className="px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white"
-                            />
-                            <input
-                              type="text"
-                              value={parentsBrideAr}
-                              onChange={(e) => setParentsBrideAr(e.target.value)}
-                              placeholder="أهل العروسة: كريمة المهندس..."
-                              className="px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white"
-                            />
-                          </div>
-                        )}
-
-                        {/* Inline editor inputs if whatsapp section is enabled */}
-                        {sec.key === 'whatsapp' && isEnabled && (
-                          <div className="space-y-2 pt-2">
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                              <input
-                                type="tel"
-                                value={whatsappContactPhone}
-                                onChange={(e) => setWhatsappContactPhone(e.target.value)}
-                                placeholder="رقم واتساب أصحاب الفرح (مثال: 201019262075)"
-                                className="flex-1 px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white text-left font-mono dir-ltr"
-                              />
-                              <div className="flex items-center gap-1.5">
-                                {customerPhone && customerPhone !== whatsappContactPhone && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setWhatsappContactPhone(customerPhone)}
-                                    className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
-                                  >
-                                    رقم الحجز
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setWhatsappContactPhone('');
-                                    setSectionsVisibility((p) => ({ ...p, whatsapp: false }));
-                                    setWhatsappContactEnabled(false);
-                                  }}
-                                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200 transition-colors cursor-pointer whitespace-nowrap"
-                                >
-                                  مسح وإلغاء ❌
-                                </button>
-                              </div>
-                            </div>
-                            <p className="text-[10px] text-stone-500">
-                              💡 يمكنك كتابة أي رقم بمزاجك، أو مسحه بالكامل لإلغاء زر التواصل نهائياً من الدعوة.
-                            </p>
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection(sec.key)}
+                          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold shrink-0 transition-all cursor-pointer whitespace-nowrap self-start ${
+                            isEnabled
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                              : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs'
+                          }`}
+                        >
+                          {isEnabled ? 'حذف السكشن ❌' : 'استعادة السكشن ➕'}
+                        </button>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => toggleSection(sec.key)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
-                          isEnabled
-                            ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                            : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs'
-                        }`}
-                      >
-                        {isEnabled ? 'حذف السكشن ❌' : 'استعادة السكشن ➕'}
-                      </button>
+                      {/* Description */}
+                      <p className="text-[11px] text-stone-500 leading-snug break-words">{sec.desc}</p>
+
+                      {/* Inline editor inputs if parents section is enabled */}
+                      {sec.key === 'parents' && isEnabled && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-stone-200/60 w-full">
+                          <input
+                            type="text"
+                            value={parentsGroomAr}
+                            onChange={(e) => setParentsGroomAr(e.target.value)}
+                            placeholder="أهل العريس: نجل الأستاذ..."
+                            className="w-full min-w-0 px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white"
+                          />
+                          <input
+                            type="text"
+                            value={parentsBrideAr}
+                            onChange={(e) => setParentsBrideAr(e.target.value)}
+                            placeholder="أهل العروسة: كريمة المهندس..."
+                            className="w-full min-w-0 px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white"
+                          />
+                        </div>
+                      )}
+
+                      {/* Inline editor inputs if whatsapp section is enabled */}
+                      {sec.key === 'whatsapp' && isEnabled && (
+                        <div className="space-y-1.5 pt-2 border-t border-stone-200/60 w-full">
+                          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 w-full">
+                            <input
+                              type="tel"
+                              value={whatsappContactPhone}
+                              onChange={(e) => setWhatsappContactPhone(e.target.value)}
+                              placeholder="رقم الواتساب (مثال: 201019262075)"
+                              className="min-w-0 flex-1 px-2.5 py-1.5 rounded-xl border border-stone-300 text-xs bg-white text-left font-mono dir-ltr"
+                            />
+                            <div className="flex items-center gap-1 shrink-0">
+                              {customerPhone && customerPhone !== whatsappContactPhone && (
+                                <button
+                                  type="button"
+                                  onClick={() => setWhatsappContactPhone(customerPhone)}
+                                  className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  رقم الحجز
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setWhatsappContactPhone('');
+                                  setSectionsVisibility((p) => ({ ...p, whatsapp: false }));
+                                  setWhatsappContactEnabled(false);
+                                }}
+                                className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200 transition-colors cursor-pointer whitespace-nowrap"
+                              >
+                                مسح وإلغاء ❌
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-stone-500 leading-tight">
+                            💡 يمكنك كتابة أي رقم بمزاجك، أو مسحه بالكامل لإلغاء زر التواصل نهائياً من الدعوة.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
