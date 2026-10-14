@@ -370,7 +370,10 @@ case "${1:-}" in
 
         echo ""
         echo -e "${CYAN}[3/6] Restarting containers with updated images...${NC}"
-        $COMPOSE_PROD up -d --force-recreate --no-build
+        # Gracefully stop & remove old containers to prevent fixed container_name conflict
+        $COMPOSE_PROD rm -f -s api web nginx 2>/dev/null || true
+        docker rm -f farahna_api farahna_web farahna_nginx 2>/dev/null || true
+        $COMPOSE_PROD up -d --no-build
         wait_for_healthy "api" 120
 
         echo ""
