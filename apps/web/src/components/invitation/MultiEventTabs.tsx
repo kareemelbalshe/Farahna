@@ -14,6 +14,7 @@ interface MultiEventTabsProps {
   primaryColor?: string;
   secondaryColor?: string;
   initialEventId?: string;
+  isPreview?: boolean;
 }
 
 export function MultiEventTabs({
@@ -23,6 +24,7 @@ export function MultiEventTabs({
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
   initialEventId,
+  isPreview = false,
 }: MultiEventTabsProps) {
   // Filter only visible events (respecting isVisible flag)
   const visibleEvents = (events || []).filter((ev) => ev.isVisible !== false);
@@ -39,14 +41,14 @@ export function MultiEventTabs({
     visibleEvents.find((e) => e.id === selectedEventId) || visibleEvents[0];
 
   return (
-    <section className="py-10 px-4 max-w-4xl mx-auto space-y-8">
+    <section className={`mx-auto ${isPreview ? 'py-4 px-2 max-w-full space-y-4' : 'py-10 px-4 max-w-4xl space-y-8'}`}>
       {/* Title */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-1.5">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
           مواعيد فرحتنا
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-cairo">
+        <h2 className={`font-black text-stone-900 font-cairo ${isPreview ? 'text-lg min-[360px]:text-xl' : 'text-2xl sm:text-3xl'}`}>
           جدول مناسبات رحلة الفرح
         </h2>
         <p className="text-xs sm:text-sm text-stone-500">
@@ -55,7 +57,7 @@ export function MultiEventTabs({
       </div>
 
       {/* Navigation Tabs (Only Visible Events) */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 min-[360px]:gap-2 sm:gap-3">
         {visibleEvents.map((ev) => {
           const isSelected = ev.id === activeEvent.id;
           const labelInfo = EVENT_TYPE_LABELS[ev.type] || { icon: '✨', ar: ev.titleAr };
@@ -66,7 +68,9 @@ export function MultiEventTabs({
               key={ev.id}
               type="button"
               onClick={() => setSelectedEventId(ev.id)}
-              className={`px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-xs cursor-pointer ${
+              className={`rounded-2xl font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-xs cursor-pointer ${
+                isPreview ? 'px-3 py-2 text-xs' : 'px-5 py-3 text-xs sm:text-sm'
+              } ${
                 isSelected
                   ? 'text-white shadow-lg shadow-rose-950/20 scale-105'
                   : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200'
@@ -96,6 +100,7 @@ export function MultiEventTabs({
           coupleNames={coupleNames}
           primaryColor={primaryColor}
           secondaryColor={secondaryColor}
+          isPreview={isPreview}
         />
       </div>
     </section>
@@ -108,12 +113,14 @@ function SingleEventCard({
   coupleNames,
   primaryColor,
   secondaryColor = '#D4AF37',
+  isPreview = false,
 }: {
   invitationId?: string;
   event: InvitationEventDTO;
   coupleNames: string;
   primaryColor: string;
   secondaryColor?: string;
+  isPreview?: boolean;
 }) {
   const labelInfo = EVENT_TYPE_LABELS[event.type] || { icon: '👑', ar: event.titleAr };
 
@@ -125,7 +132,9 @@ function SingleEventCard({
 
   return (
     <div
-      className="rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden p-6 sm:p-10 space-y-6 transition-colors duration-300"
+      className={`border border-stone-200/90 shadow-xl overflow-hidden transition-colors duration-300 ${
+        isPreview ? 'rounded-2xl p-3.5 sm:p-5 space-y-4' : 'rounded-3xl p-6 sm:p-10 space-y-6'
+      }`}
       style={{
         backgroundColor: eventCardBg,
         color: eventTextColor,

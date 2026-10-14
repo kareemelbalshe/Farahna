@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Sparkles, Heart, Crown, Music } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { formatArabicDate } from '@/lib/date';
@@ -8,6 +8,8 @@ import { playThemeMelody } from '@/lib/themeAudio';
 
 interface EnvelopeScreenProps {
   coupleNames: string;
+  coupleGroomAr?: string | null;
+  coupleBrideAr?: string | null;
   onOpen: () => void;
   isOpen: boolean;
   primaryColor?: string;
@@ -19,12 +21,15 @@ interface EnvelopeScreenProps {
   eventDate?: string | null;
   invitationTitle?: string | null;
   waxSealMonogram?: string | null;
+  isPreview?: boolean;
 }
 
 type OpenStage = 'closed' | 'unsealing' | 'flap_open' | 'card_up' | 'revealing';
 
 export function EnvelopeScreen({
   coupleNames,
+  coupleGroomAr,
+  coupleBrideAr,
   onOpen,
   isOpen,
   primaryColor = '#720925',
@@ -36,15 +41,19 @@ export function EnvelopeScreen({
   eventDate,
   invitationTitle,
   waxSealMonogram,
+  isPreview = false,
 }: EnvelopeScreenProps) {
   const [openStage, setOpenStage] = useState<OpenStage>('closed');
 
   if (isOpen) return null;
 
+  const hasTriggeredRef = useRef(false);
+
   const isDark = Boolean(
     (backgroundColor &&
       ['#0', '#1', '#2', 'black'].some((p) => backgroundColor.toLowerCase().startsWith(p))) ||
-      themeSlug === 'elegant-gold'
+      themeSlug === 'elegant-gold' ||
+      themeSlug === 'egyptian-oriental'
   );
 
   const formattedDate = eventDate ? formatArabicDate(eventDate) : '';
@@ -193,11 +202,13 @@ export function EnvelopeScreen({
   const palette = resolveThemePalette();
 
   const handleOpenClick = () => {
-    if (openStage !== 'closed') {
-      // If user taps again while opening, immediately complete and reveal
+    // If user taps again while opening, immediately complete and reveal
+    if (hasTriggeredRef.current || openStage !== 'closed') {
       onOpen();
       return;
     }
+
+    hasTriggeredRef.current = true;
 
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
@@ -208,8 +219,8 @@ export function EnvelopeScreen({
       return;
     }
 
-    // Step 1: Start unsealing & play music immediately
-    setOpenStage('unsealing');
+    // Step 1: Immediate unseal sound & flap flip start (instant feedback on click 1)
+    setOpenStage('flap_open');
 
     try {
       const slugKey = (
@@ -225,7 +236,7 @@ export function EnvelopeScreen({
       // Safe audio fallback
     }
 
-    // Initial golden sparkle burst
+    // Initial golden sparkle burst on seal break
     try {
       confetti({
         particleCount: 40,
@@ -235,54 +246,86 @@ export function EnvelopeScreen({
       });
     } catch (e) {}
 
-    // Step 2: Open Flap 180deg (100ms)
-    setTimeout(() => {
-      setOpenStage('flap_open');
-    }, 100);
-
-    // Step 3: Card slides up smoothly (250ms)
+    // Step 2: Flap completes 180deg flip (480ms) -> now Inner Card slides up
     setTimeout(() => {
       setOpenStage('card_up');
-    }, 250);
+    }, 480);
 
-    // Festive confetti burst from both sides (350ms)
+    // Step 3: Festive confetti burst from both sides once card is elevated (880ms)
     setTimeout(() => {
       try {
         confetti({
-          particleCount: 50,
+          particleCount: 45,
           angle: 60,
-          spread: 65,
-          origin: { x: 0.2, y: 0.6 },
+          spread: 60,
+          origin: { x: 0.25, y: 0.55 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
         confetti({
-          particleCount: 50,
+          particleCount: 45,
           angle: 120,
-          spread: 65,
-          origin: { x: 0.8, y: 0.6 },
+          spread: 60,
+          origin: { x: 0.75, y: 0.55 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
       } catch (e) {}
-    }, 350);
+    }, 880);
 
-    // Step 4: Smoothly fade & scale envelope to reveal full page (850ms)
+    // Step 4: Smoothly fade & scale envelope to reveal full page (1400ms)
     setTimeout(() => {
       setOpenStage('revealing');
-    }, 850);
+    }, 1400);
 
-    // Step 5: Transition complete -> unmount and hand over to page (1150ms)
+    // Step 5: Transition complete -> unmount and hand over to page (1850ms)
     setTimeout(() => {
       onOpen();
-    }, 1150);
+    }, 1850);
+  };
+
+  const handleUserAction = (e?: React.SyntheticEvent) => {
+    if (e && 'stopPropagation' in e) {
+      e.stopPropagation();
+    }
+    handleOpenClick();
   };
 
   const isFlapOpen = openStage === 'flap_open' || openStage === 'card_up' || openStage === 'revealing';
   const isCardUp = openStage === 'card_up' || openStage === 'revealing';
   const isRevealing = openStage === 'revealing';
 
+  const groom = coupleGroomAr?.trim() || '';
+  const bride = coupleBrideAr?.trim() || '';
+  const hasSplitNames = Boolean(groom && bride);
+
+  // Clean any accidental trailing ellipsis from inputs/mock data
+  const cleanGroom = groom.replace(/(\.{2,}|…)$/, '').trim();
+  const cleanBride = bride.replace(/(\.{2,}|…)$/, '').trim();
+  const cleanCoupleNames = (coupleNames || '').replace(/(\.{2,}|…)$/, '').trim();
+
+  // Dynamic font sizing based on length & preview mode
+  const getCoupleNamesClass = () => {
+    const totalLen = hasSplitNames
+      ? `${cleanGroom} & ${cleanBride}`.length
+      : cleanCoupleNames.length;
+
+    if (isPreview) {
+      if (totalLen > 30) return 'text-xs min-[360px]:text-sm leading-snug';
+      if (totalLen > 18) return 'text-sm min-[360px]:text-base leading-snug';
+      return 'text-base min-[360px]:text-lg leading-snug';
+    }
+    // Full standalone view
+    if (totalLen > 30) return 'text-base sm:text-2xl md:text-3xl leading-snug';
+    if (totalLen > 18) return 'text-lg sm:text-3xl md:text-4xl leading-snug';
+    return 'text-xl sm:text-4xl md:text-5xl leading-snug';
+  };
+
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 select-none overflow-hidden transition-all duration-350 ease-out ${
+      className={`${
+        isPreview ? 'absolute inset-0' : 'fixed inset-0'
+      } z-50 flex flex-col items-center justify-between p-3 select-none overflow-y-auto no-scrollbar transition-all duration-450 ease-out ${
+        isPreview ? 'py-3.5 px-2.5 sm:px-3' : 'sm:p-6'
+      } ${
         isRevealing ? 'opacity-0 scale-102 pointer-events-none' : 'opacity-100 scale-100'
       }`}
       style={{
@@ -296,48 +339,72 @@ export function EnvelopeScreen({
     >
       {/* Royal Ambient Glow Aura Orbs */}
       <div
-        className="absolute w-[520px] h-[520px] rounded-full blur-3xl opacity-30 pointer-events-none -z-10 animate-pulse"
+        className={`absolute rounded-full blur-3xl opacity-30 pointer-events-none -z-10 animate-pulse ${
+          isPreview ? 'w-64 h-64' : 'w-[520px] h-[520px]'
+        }`}
         style={{ backgroundColor: palette.glowOrb }}
       />
       <div
-        className="absolute w-[320px] h-[320px] rounded-full blur-2xl opacity-25 pointer-events-none -z-10"
+        className={`absolute rounded-full blur-2xl opacity-25 pointer-events-none -z-10 ${
+          isPreview ? 'w-44 h-44' : 'w-[320px] h-[320px]'
+        }`}
         style={{ backgroundColor: palette.envelopeBorder }}
       />
 
-      <div className="relative w-full max-w-lg mx-auto text-center flex flex-col items-center justify-center space-y-4 sm:space-y-6 max-h-[96vh]">
+      <div
+        className={`relative w-full mx-auto my-auto text-center flex flex-col items-center justify-center transition-all ${
+          isPreview
+            ? 'max-w-[320px] space-y-2 min-[360px]:space-y-3'
+            : 'max-w-lg space-y-4 sm:space-y-6 max-h-[96vh]'
+        }`}
+      >
         {/* Header Ribbon / Greetings */}
         <div
-          className={`space-y-1.5 sm:space-y-2 w-full transition-all duration-300 ease-out ${
+          className={`w-full transition-all duration-300 ease-out px-2 ${
+            isPreview ? 'space-y-1' : 'space-y-1.5 sm:space-y-2'
+          } ${
             openStage !== 'closed'
               ? 'opacity-0 -translate-y-3 pointer-events-none'
               : 'opacity-100 translate-y-0'
           }`}
         >
-          {/* Top Royal Badge (NO SPINNING ICON) */}
+          {/* Top Royal Badge */}
           <div
-            className={`inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${palette.badgeBg}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border shadow-md backdrop-blur-md transition-all max-w-[96%] ${
+              isPreview ? 'px-2.5 py-0.5' : 'px-3 sm:px-5 py-1 sm:py-1.5 shadow-lg'
+            } ${palette.badgeBg}`}
           >
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-xs sm:text-sm font-black font-cairo">
+            <Sparkles className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'} text-amber-400 shrink-0`} />
+            <span className={`${isPreview ? 'text-[10px]' : 'text-[11px] sm:text-sm'} font-black font-cairo truncate`}>
               دعوة خاصة وفرحة لا تكتمل إلا بوجودكم ❤️
             </span>
-            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Crown className={`${isPreview ? 'w-2.5 h-2.5' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'} text-amber-400 shrink-0`} />
           </div>
 
           {/* Couple Names */}
           <h1
-            className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-cairo tracking-tight drop-shadow-md pt-0.5 leading-snug px-2 break-words"
+            className={`font-black font-cairo tracking-tight drop-shadow-md pt-0.5 px-2 break-words max-w-full ${getCoupleNamesClass()}`}
             style={{
               color: isDark ? '#FFFFFF' : '#1A1819',
               textShadow: isDark ? '0 2px 14px rgba(212,175,55,0.35)' : undefined,
             }}
           >
-            {coupleNames || 'العروسين'}
+            {hasSplitNames ? (
+              <span className="inline-flex items-center justify-center flex-wrap gap-x-1.5 gap-y-0.5">
+                <span>{cleanGroom}</span>
+                <span className="font-amiri font-normal text-amber-500 text-[1.1em] px-0.5">&amp;</span>
+                <span>{cleanBride}</span>
+              </span>
+            ) : (
+              <span>{cleanCoupleNames || 'العروسين'}</span>
+            )}
           </h1>
 
           {/* Subtitle / Occasion */}
           <p
-            className="text-xs sm:text-sm font-amiri font-bold tracking-wide"
+            className={`${
+              isPreview ? 'text-[10px] min-[360px]:text-[11px] line-clamp-1' : 'text-[11px] sm:text-sm'
+            } font-amiri font-bold tracking-wide px-2 break-words`}
             style={{ color: isDark ? '#F5D77F' : secondaryColor || '#D4AF37' }}
           >
             {invitationTitle || 'يسعدنا ويشرفنا حضوركم ومشاركتنا ليلة العمر ❖'}
@@ -346,14 +413,22 @@ export function EnvelopeScreen({
 
         {/* 3D Envelope Perspective Container */}
         <div
-          className="relative mx-auto w-[280px] min-[360px]:w-[320px] sm:w-[390px] h-[185px] min-[360px]:h-[210px] sm:h-[245px] cursor-pointer group shrink-0"
+          className={`relative mx-auto max-w-full cursor-pointer group shrink-0 transition-all ${
+            isPreview
+              ? 'w-[260px] min-[360px]:w-[280px] h-[160px] min-[360px]:h-[175px]'
+              : 'w-[min(92vw,290px)] min-[380px]:w-[320px] sm:w-[390px] h-[190px] min-[380px]:h-[210px] sm:h-[245px]'
+          }`}
           style={{ perspective: '1200px' }}
-          onClick={handleOpenClick}
+          onClick={handleUserAction}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleUserAction(e);
+          }}
           role="button"
           tabIndex={0}
           aria-label="افتح الظرف الملكي"
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleOpenClick();
+            if (e.key === 'Enter' || e.key === ' ') handleUserAction(e);
           }}
         >
           {/* Inner Golden Glow Emitter (Lights up when opened) */}
@@ -368,9 +443,15 @@ export function EnvelopeScreen({
 
           {/* 1. Inner Luxury Card (Slides UP gracefully out of the pocket) */}
           <div
-            className={`absolute inset-x-3 bottom-2 h-[170px] min-[360px]:h-[195px] sm:h-[225px] rounded-2xl border-2 shadow-2xl p-3 sm:p-5 flex flex-col justify-between text-center transition-all z-25 ${
+            className={`absolute inset-x-2.5 sm:inset-x-3 bottom-2 rounded-2xl border-2 shadow-2xl p-2.5 sm:p-5 flex flex-col justify-between text-center transition-all z-25 ${
+              isPreview
+                ? 'h-[145px] min-[360px]:h-[155px]'
+                : 'h-[170px] min-[360px]:h-[195px] sm:h-[225px]'
+            } ${
               isCardUp
-                ? '-translate-y-16 min-[360px]:-translate-y-20 sm:-translate-y-28 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
+                ? isPreview
+                  ? '-translate-y-14 min-[360px]:-translate-y-16 scale-[1.02] shadow-[0_15px_35px_rgba(0,0,0,0.5),0_0_20px_rgba(212,175,55,0.4)]'
+                  : '-translate-y-16 min-[360px]:-translate-y-20 sm:-translate-y-28 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
                 : 'translate-y-0 opacity-95'
             }`}
             style={{
@@ -385,42 +466,44 @@ export function EnvelopeScreen({
             {/* Top Bismillah / Verse Excerpt */}
             {verseExcerpt ? (
               <div className="space-y-0.5">
-                <span className="text-[11px] sm:text-xs text-amber-900 font-amiri font-bold tracking-widest block opacity-85">
+                <span className="text-[10px] sm:text-xs text-amber-900 font-amiri font-bold tracking-widest block opacity-85">
                   ﷽
                 </span>
-                <p className="text-[10px] sm:text-[11px] text-stone-800 font-amiri font-bold leading-relaxed line-clamp-2 px-1">
+                <p className="text-[9px] min-[360px]:text-[10px] sm:text-[11px] text-stone-800 font-amiri font-bold leading-relaxed line-clamp-2 px-1">
                   «{verseExcerpt}»
                 </p>
               </div>
             ) : (
               <div className="py-0.5">
-                <span className="text-[11px] text-amber-900 font-amiri font-bold tracking-widest block">
+                <span className="text-[10px] sm:text-[11px] text-amber-900 font-amiri font-bold tracking-widest block">
                   ✨ دعوة خاصة ومباركة لحضور الحفل ✨
                 </span>
               </div>
             )}
 
             {/* Couple names on card */}
-            <div className="py-1 border-y border-amber-300/80 my-auto">
+            <div className="py-0.5 sm:py-1 border-y border-amber-300/80 my-auto">
               <span
-                className="text-base sm:text-xl font-black font-cairo block leading-snug px-1 break-words"
+                className={`font-black font-cairo block leading-snug px-1 break-words ${
+                  isPreview ? 'text-xs min-[360px]:text-sm' : 'text-sm min-[360px]:text-base sm:text-xl'
+                }`}
                 style={{ color: '#720925' }}
               >
                 {coupleNames}
               </span>
-              <span className="text-[10px] sm:text-[11px] font-amiri font-bold text-amber-800 block mt-0.5">
+              <span className="text-[9px] min-[360px]:text-[10px] sm:text-[11px] font-amiri font-bold text-amber-800 block mt-0.5 truncate">
                 {invitationTitle || 'نتشرف بحضوركم ومشاركتنا فرحتنا'}
               </span>
             </div>
 
             {/* Bottom event date */}
             {formattedDate ? (
-              <div className="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] text-stone-700 font-cairo font-bold">
+              <div className="flex items-center justify-center gap-1.5 text-[8px] min-[360px]:text-[9px] sm:text-[10px] text-stone-700 font-cairo font-bold">
                 <span>📅</span>
                 <span>{formattedDate}</span>
               </div>
             ) : (
-              <span className="text-[9px] text-stone-500 font-cairo font-bold">
+              <span className="text-[8px] min-[360px]:text-[9px] text-stone-500 font-cairo font-bold">
                 أهلاً وسهلاً بكم في ليلتنا المباركة
               </span>
             )}
@@ -439,25 +522,27 @@ export function EnvelopeScreen({
           >
             {/* Fine Luxury Arabesque Corner Filigree */}
             <div
-              className="absolute top-2 left-2 w-7 h-7 border-t-2 border-l-2 rounded-tl-lg pointer-events-none"
+              className="absolute top-2 left-2 w-6 h-6 sm:w-7 sm:h-7 border-t-2 border-l-2 rounded-tl-lg pointer-events-none"
               style={{ borderColor: palette.envelopeBorder }}
             />
             <div
-              className="absolute top-2 right-2 w-7 h-7 border-t-2 border-r-2 rounded-tr-lg pointer-events-none"
+              className="absolute top-2 right-2 w-6 h-6 sm:w-7 sm:h-7 border-t-2 border-r-2 rounded-tr-lg pointer-events-none"
               style={{ borderColor: palette.envelopeBorder }}
             />
             <div
-              className="absolute bottom-2 left-2 w-7 h-7 border-b-2 border-l-2 rounded-bl-lg pointer-events-none"
+              className="absolute bottom-2 left-2 w-6 h-6 sm:w-7 sm:h-7 border-b-2 border-l-2 rounded-bl-lg pointer-events-none"
               style={{ borderColor: palette.envelopeBorder }}
             />
             <div
-              className="absolute bottom-2 right-2 w-7 h-7 border-b-2 border-r-2 rounded-br-lg pointer-events-none"
+              className="absolute bottom-2 right-2 w-6 h-6 sm:w-7 sm:h-7 border-b-2 border-r-2 rounded-br-lg pointer-events-none"
               style={{ borderColor: palette.envelopeBorder }}
             />
 
             {/* Envelope Bottom Pocket Triangle Fold */}
             <div
-              className="absolute inset-x-0 bottom-0 h-32 sm:h-38 border-t"
+              className={`absolute inset-x-0 bottom-0 border-t ${
+                isPreview ? 'h-26 min-[360px]:h-28' : 'h-32 sm:h-38'
+              }`}
               style={{
                 clipPath: 'polygon(0 100%, 100% 100%, 50% 22%)',
                 background: palette.envelopeBodyGradient,
@@ -467,7 +552,7 @@ export function EnvelopeScreen({
             />
             {/* Left Pocket Triangle */}
             <div
-              className="absolute inset-y-0 left-0 w-32 sm:w-40"
+              className="absolute inset-y-0 left-0 w-28 sm:w-40"
               style={{
                 clipPath: 'polygon(0 0, 0 100%, 100% 50%)',
                 background: palette.envelopeBodyGradient,
@@ -476,7 +561,7 @@ export function EnvelopeScreen({
             />
             {/* Right Pocket Triangle */}
             <div
-              className="absolute inset-y-0 right-0 w-32 sm:w-40"
+              className="absolute inset-y-0 right-0 w-28 sm:w-40"
               style={{
                 clipPath: 'polygon(100% 0, 100% 100%, 0 50%)',
                 background: palette.envelopeBodyGradient,
@@ -487,68 +572,142 @@ export function EnvelopeScreen({
 
           {/* 3. Envelope Top Flap with 3D Flip Action */}
           <div
-            className="absolute inset-x-0 top-0 h-28 sm:h-34 transition-transform ease-in-out pointer-events-none"
+            className={`absolute inset-x-0 top-0 pointer-events-none ${
+              isPreview ? 'h-[92px] min-[360px]:h-[100px]' : 'h-[110px] sm:h-[135px]'
+            }`}
             style={{
               transformOrigin: 'top center',
               transformStyle: 'preserve-3d',
+              WebkitTransformStyle: 'preserve-3d',
               transform: isFlapOpen ? 'rotateX(180deg)' : 'rotateX(0deg)',
-              transitionDuration: '400ms',
-              zIndex: isFlapOpen ? 15 : 40,
+              transition: 'transform 480ms cubic-bezier(0.25, 1, 0.5, 1)',
+              zIndex: openStage === 'closed' || openStage === 'flap_open' ? 40 : 20,
             }}
           >
             {/* Front of Flap (Face shown when closed) */}
             <div
-              className="absolute inset-0 shadow-lg border-b-2"
+              className="absolute inset-0"
               style={{
-                clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
                 backfaceVisibility: 'hidden',
-                background: palette.envelopeBodyGradient,
-                borderColor: palette.envelopeBorder,
+                WebkitBackfaceVisibility: 'hidden',
+                transform: 'translateZ(1px)',
+                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))',
               }}
             >
-              {/* Flap Gold Foil Trim Line */}
-              <div
-                className="absolute inset-x-3 top-1 h-24"
-                style={{
-                  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                  background: `linear-gradient(to bottom, transparent, ${palette.envelopeBorder}40)`,
-                }}
-              />
+              <svg
+                className="w-full h-full overflow-visible"
+                viewBox="0 0 300 130"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="envelopeFlapFrontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={palette.flapColor} />
+                    <stop offset="65%" stopColor={palette.envelopeBody} />
+                    <stop offset="100%" stopColor={palette.flapLiningBg} />
+                  </linearGradient>
+                </defs>
+                {/* Main Flap Body with Smooth Rounded Corners and Gold Border */}
+                <path
+                  d="M 1,16 C 1,7.5 7.5,1 16,1 L 284,1 C 292.5,1 299,7.5 299,16 L 156,122 Q 150,128 144,122 L 1,16 Z"
+                  fill="url(#envelopeFlapFrontGrad)"
+                  stroke={palette.envelopeBorder}
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {/* Luxury Gold Foil Accent Stitching */}
+                <path
+                  d="M 16,10 L 284,10 L 154,113 Q 150,117 146,113 L 16,10"
+                  fill="none"
+                  stroke={palette.envelopeBorder}
+                  strokeWidth="1.2"
+                  strokeOpacity="0.5"
+                  strokeDasharray="4 3"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
             </div>
 
             {/* Inside of Flap (Revealed when opened 180deg) */}
             <div
-              className="absolute inset-0 border-t shadow-inner"
+              className="absolute inset-0"
               style={{
-                clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                transform: 'rotateY(180deg) rotateZ(180deg)',
                 backfaceVisibility: 'hidden',
-                background: palette.flapLiningBg,
-                borderColor: `${palette.envelopeBorder}60`,
+                WebkitBackfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg) translateZ(1px)',
+                filter: 'drop-shadow(0 -4px 6px rgba(0,0,0,0.3))',
               }}
-            />
+            >
+              <svg
+                className="w-full h-full overflow-visible"
+                viewBox="0 0 300 130"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="envelopeFlapBackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={palette.flapLiningBg} />
+                    <stop offset="100%" stopColor={palette.envelopeBody} />
+                  </linearGradient>
+                </defs>
+                {/* Inside Flap Surface */}
+                <path
+                  d="M 1,16 C 1,7.5 7.5,1 16,1 L 284,1 C 292.5,1 299,7.5 299,16 L 156,122 Q 150,128 144,122 L 1,16 Z"
+                  fill="url(#envelopeFlapBackGrad)"
+                  stroke={palette.envelopeBorder}
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {/* Luxury Royal Lining Inlay */}
+                <path
+                  d="M 18,12 L 282,12 L 154,112 Q 150,116 146,112 L 18,12 Z"
+                  fill={`${palette.envelopeBorder}14`}
+                  stroke={palette.envelopeBorder}
+                  strokeWidth="1.2"
+                  strokeOpacity="0.55"
+                  strokeDasharray="4 2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {/* Symmetrical Royal Wedding Crest Motif at Center */}
+                <path
+                  d="M 150,40 L 154,48 L 163,49 L 156,55 L 158,64 L 150,59 L 142,64 L 144,55 L 137,49 L 146,48 Z"
+                  fill={palette.envelopeBorder}
+                  opacity="0.75"
+                />
+              </svg>
+            </div>
           </div>
 
           {/* 4. Luxury 3D Wax Seal Stamp (ختم الشمع الملكي) */}
           <div
-            className={`absolute top-[48%] sm:top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 transition-all ${
+            role="button"
+            tabIndex={0}
+            aria-label="ختم الشمع الملكي"
+            onClick={handleUserAction}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleUserAction(e);
+            }}
+            className={`absolute top-[48%] sm:top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer transition-all ${
               isFlapOpen
-                ? 'opacity-0 scale-50 -translate-y-12 pointer-events-none'
-                : 'opacity-100 scale-100 group-hover:scale-105'
+                ? 'opacity-0 scale-50 -translate-y-6 pointer-events-none'
+                : 'opacity-100 scale-100 hover:scale-105 active:scale-95'
             }`}
-            style={{ transitionDuration: '450ms' }}
+            style={{ transitionDuration: '300ms' }}
           >
             {/* Satin Ribbon Tails cascading down */}
             <div className="absolute top-[80%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 pointer-events-none -z-10">
               <div
-                className="w-2.5 sm:w-3 h-8 sm:h-10 shadow-md transform -rotate-12 origin-top"
+                className={`shadow-md transform -rotate-12 origin-top ${
+                  isPreview ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
+                }`}
                 style={{
                   background: palette.ribbonBg,
                   clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
                 }}
               />
               <div
-                className="w-2.5 sm:w-3 h-8 sm:h-10 shadow-md transform rotate-12 origin-top"
+                className={`shadow-md transform rotate-12 origin-top ${
+                  isPreview ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
+                }`}
                 style={{
                   background: palette.ribbonBg,
                   clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
@@ -558,7 +717,11 @@ export function EnvelopeScreen({
 
             {/* Wax Seal Circle Stamp */}
             <div
-              className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-transform"
+              className={`relative rounded-full flex items-center justify-center transition-transform shadow-xl ${
+                isPreview
+                  ? 'w-14 h-14 min-[360px]:w-16 min-[360px]:h-16'
+                  : 'w-18 h-18 sm:w-24 sm:h-24'
+              }`}
               style={{
                 background: palette.sealBg,
                 border: `2px solid ${palette.sealBorder}`,
@@ -567,11 +730,11 @@ export function EnvelopeScreen({
             >
               {/* Organic Melted Wax Outer Rings */}
               <div
-                className="absolute inset-1.5 rounded-full border border-dashed opacity-75"
+                className="absolute inset-1 rounded-full border border-dashed opacity-75"
                 style={{ borderColor: palette.sealIconColor }}
               />
               <div
-                className="absolute inset-3 rounded-full border opacity-50"
+                className="absolute inset-2 rounded-full border opacity-50"
                 style={{ borderColor: palette.sealIconColor }}
               />
 
@@ -579,7 +742,9 @@ export function EnvelopeScreen({
               <div className="flex flex-col items-center justify-center space-y-0.5">
                 {waxSealMonogram ? (
                   <span
-                    className="text-base sm:text-xl font-black font-cairo tracking-widest drop-shadow-md"
+                    className={`font-black font-cairo tracking-widest drop-shadow-md ${
+                      isPreview ? 'text-xs min-[360px]:text-sm' : 'text-sm sm:text-xl'
+                    }`}
                     style={{ color: palette.sealIconColor }}
                   >
                     {waxSealMonogram}
@@ -587,11 +752,11 @@ export function EnvelopeScreen({
                 ) : (
                   <>
                     <Crown
-                      className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-sm"
+                      className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-5 sm:h-5'} drop-shadow-sm`}
                       style={{ color: palette.sealIconColor }}
                     />
                     <Heart
-                      className="w-4 h-4 sm:w-4.5 sm:h-4.5 drop-shadow-sm fill-current"
+                      className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} drop-shadow-sm fill-current`}
                       style={{ color: palette.sealIconColor }}
                     />
                   </>
@@ -602,13 +767,27 @@ export function EnvelopeScreen({
         </div>
 
         {/* CTA Open Button with Gold Shimmer & Music Cue */}
-        <div className="space-y-2 pt-1 w-full max-w-sm sm:max-w-md mx-auto">
+        <div
+          className={`w-full mx-auto px-2 ${
+            isPreview
+              ? 'max-w-[280px] min-[360px]:max-w-[300px] space-y-1.5 pt-0.5'
+              : 'max-w-[min(92vw,360px)] sm:max-w-md space-y-2 pt-1'
+          }`}
+        >
           {/* Main Luxury "اضغط" Button */}
           <button
             type="button"
-            onClick={handleOpenClick}
+            onClick={handleUserAction}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleUserAction(e);
+            }}
             disabled={openStage === 'revealing'}
-            className="relative group overflow-hidden w-full py-3.5 sm:py-4 px-6 sm:px-8 rounded-full font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer ring-2 ring-amber-400/60 ring-offset-2 ring-offset-black/50"
+            className={`relative group overflow-hidden w-full rounded-full font-black flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-300 transform active:scale-[0.98] cursor-pointer ring-2 ring-amber-400/60 ring-offset-2 ring-offset-black/50 ${
+              isPreview
+                ? 'py-2.5 px-3 text-xs'
+                : 'py-3 sm:py-3.5 px-4 sm:px-8 text-xs min-[360px]:text-sm sm:text-base'
+            }`}
             style={{
               background: palette.buttonBg,
               color: palette.buttonText,
@@ -619,22 +798,22 @@ export function EnvelopeScreen({
             {/* Continuous Shimmer Light Sweep Effect */}
             <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-gold-shimmer pointer-events-none" />
 
-            <Crown className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 drop-shadow-sm" />
+            <Crown className={`${isPreview ? 'w-3.5 h-3.5' : 'w-4 h-4 sm:w-5 sm:h-5'} shrink-0 drop-shadow-sm`} />
             <span className="tracking-wide">
               {openStage === 'closed'
                 ? 'اضغط لفض الختم وفتح الدعوة الملكية 💌'
                 : 'جاري فتح الدعوة الملكية... ✨'}
             </span>
-            <Heart className="w-3.5 h-3.5 shrink-0 fill-current opacity-80" />
+            <Heart className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0 fill-current opacity-80`} />
           </button>
 
           {/* Calming Music Cue Hint (NO SPINNING/BOUNCING) */}
           <div
-            className={`flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold ${
-              isDark ? 'text-amber-300/80' : 'text-stone-600'
-            }`}
+            className={`flex items-center justify-center gap-1 font-semibold ${
+              isPreview ? 'text-[10px]' : 'text-[11px] sm:text-xs'
+            } ${isDark ? 'text-amber-300/80' : 'text-stone-600'}`}
           >
-            <Music className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <Music className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-amber-500 shrink-0`} />
             <span>(يبدأ عزف الموسيقى الهادئة فور فض الختم ✨)</span>
           </div>
         </div>

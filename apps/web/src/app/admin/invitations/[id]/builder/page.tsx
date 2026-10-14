@@ -2260,12 +2260,14 @@ export default function VisualInvitationBuilderPage() {
             {/* Inner Live Screen */}
             <div
               key={envelopeResetKey}
-              className="flex-1 overflow-y-auto no-scrollbar"
+              className="relative flex-1 overflow-y-auto no-scrollbar"
               style={{
                 backgroundColor:
                   invitation.themeConfig?.backgroundColor ||
                   invitation.theme?.config?.backgroundColor ||
                   '#FAF7F2',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
               }}
             >
               <InvitationRenderer

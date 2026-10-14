@@ -6,6 +6,7 @@ interface DressCodeSectionProps {
   isHennaFemaleOnly?: boolean;
   notesAr?: string | null;
   secondaryColor?: string;
+  isPreview?: boolean;
 }
 
 export function DressCodeSection({
@@ -13,12 +14,13 @@ export function DressCodeSection({
   isHennaFemaleOnly = false,
   notesAr,
   secondaryColor = '#D4AF37',
+  isPreview = false,
 }: DressCodeSectionProps) {
   if (!dressCodeAr && !isHennaFemaleOnly && !notesAr) return null;
 
   return (
-    <section className="py-8 px-4 max-w-2xl mx-auto space-y-4 text-center">
-      <div className="p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-stone-200/90 shadow-sm space-y-4 theme-card">
+    <section className={`mx-auto text-center ${isPreview ? 'py-3 px-2 max-w-full space-y-3' : 'py-8 px-4 max-w-2xl space-y-4'}`}>
+      <div className={`bg-white/90 backdrop-blur-md border border-stone-200/90 shadow-sm theme-card ${isPreview ? 'p-3.5 rounded-2xl space-y-3' : 'p-6 rounded-3xl space-y-4'}`}>
         {/* Henna Female Only Banner */}
         {isHennaFemaleOnly && (
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-xs mx-auto">

@@ -14,6 +14,7 @@ export interface InteractiveMapSectionProps {
   primaryColor?: string;
   secondaryColor?: string;
   invitationId?: string;
+  isPreview?: boolean;
 }
 
 export function InteractiveMapSection({
@@ -26,15 +27,16 @@ export function InteractiveMapSection({
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
   invitationId,
+  isPreview = false,
 }: InteractiveMapSectionProps) {
   return (
-    <section className="py-8 px-4 max-w-3xl mx-auto space-y-5 text-right font-cairo">
+    <section className={`mx-auto text-right font-cairo ${isPreview ? 'py-4 px-2 max-w-full space-y-3' : 'py-8 px-4 max-w-3xl space-y-5'}`}>
       <div className="text-center space-y-1.5">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold theme-badge">
           <MapPin className="w-3.5 h-3.5 text-amber-700" />
           <span>موقع المناسبة والوصول</span>
         </span>
-        <h3 className="text-2xl sm:text-3xl font-black text-stone-900 theme-heading">
+        <h3 className={`font-black text-stone-900 theme-heading ${isPreview ? 'text-lg min-[360px]:text-xl' : 'text-2xl sm:text-3xl'}`}>
           خريطة الوصول التفاعلية
         </h3>
         <p className="text-xs text-stone-500 theme-muted">

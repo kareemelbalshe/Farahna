@@ -6,6 +6,7 @@ interface ParentsSectionProps {
   parentsBrideAr?: string | null;
   primaryColor?: string;
   secondaryColor?: string;
+  isPreview?: boolean;
 }
 
 export function ParentsSection({
@@ -13,12 +14,13 @@ export function ParentsSection({
   parentsBrideAr,
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
+  isPreview = false,
 }: ParentsSectionProps) {
   if (!parentsGroomAr && !parentsBrideAr) return null;
 
   return (
-    <section className="py-8 px-4 max-w-2xl mx-auto text-center font-cairo">
-      <div className="p-6 sm:p-8 rounded-3xl bg-white/90 backdrop-blur-md border border-stone-200 shadow-sm space-y-4 theme-card">
+    <section className={`mx-auto text-center font-cairo ${isPreview ? 'py-3 px-2 max-w-full' : 'py-8 px-4 max-w-2xl'}`}>
+      <div className={`bg-white/90 backdrop-blur-md border border-stone-200 shadow-sm theme-card ${isPreview ? 'p-3.5 rounded-2xl space-y-2.5' : 'p-6 sm:p-8 rounded-3xl space-y-4'}`}>
         <div className="inline-flex items-center justify-center gap-2 px-4 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold theme-badge mx-auto">
           <Users className="w-4 h-4 text-amber-600" />
           <span>دعوة كريمة من عائلتي العروسين</span>

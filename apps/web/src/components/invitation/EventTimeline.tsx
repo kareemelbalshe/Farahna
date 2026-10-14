@@ -11,6 +11,7 @@ interface EventTimelineProps {
   events: InvitationEventDTO[];
   primaryColor?: string;
   coupleNames?: string;
+  isPreview?: boolean;
 }
 
 export function EventTimeline({
@@ -18,6 +19,7 @@ export function EventTimeline({
   events,
   primaryColor = '#720925',
   coupleNames = 'العروسين',
+  isPreview = false,
 }: EventTimelineProps) {
   // Filter only visible events (respecting isVisible flag)
   const visibleEvents = (events || [])
@@ -27,13 +29,13 @@ export function EventTimeline({
   if (visibleEvents.length <= 1) return null;
 
   return (
-    <section className="py-12 px-4 max-w-4xl mx-auto space-y-8 text-right">
-      <div className="text-center space-y-2">
+    <section className={`mx-auto text-right ${isPreview ? 'py-4 px-2 max-w-full space-y-4' : 'py-12 px-4 max-w-4xl space-y-8'}`}>
+      <div className="text-center space-y-1.5">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
           مواعيد الفرح
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-cairo">
+        <h2 className={`font-black text-stone-900 font-cairo ${isPreview ? 'text-lg min-[360px]:text-xl' : 'text-2xl sm:text-3xl'}`}>
           خطة مواعيد وأيام المناسبات كاملة
         </h2>
         <p className="text-xs sm:text-sm text-stone-500">
@@ -41,7 +43,7 @@ export function EventTimeline({
         </p>
       </div>
 
-      <div className="relative border-r-2 border-amber-300 mr-4 sm:mr-8 space-y-8 pr-6 sm:pr-10">
+      <div className={`relative border-r-2 border-amber-300 ${isPreview ? 'mr-2 space-y-4 pr-3.5' : 'mr-4 sm:mr-8 space-y-8 pr-6 sm:pr-10'}`}>
         {visibleEvents.map((ev, idx) => {
           const labelInfo = EVENT_TYPE_LABELS[ev.type] || { icon: '🎉', ar: ev.titleAr };
           const override = ev.themeOverride as Record<string, any> | undefined;

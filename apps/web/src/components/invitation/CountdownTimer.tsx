@@ -10,6 +10,7 @@ interface CountdownTimerProps {
   secondaryColor?: string;
   isDark?: boolean;
   autoRenew?: boolean;
+  isPreview?: boolean;
 }
 
 export function CountdownTimer({
@@ -18,6 +19,7 @@ export function CountdownTimer({
   secondaryColor = '#D4AF37',
   isDark = false,
   autoRenew = false,
+  isPreview = false,
 }: CountdownTimerProps) {
   // If autoRenew is true, initialize with an active future date if eventDate has passed
   const [activeDate, setActiveDate] = useState<Date | string>(() => {
@@ -82,7 +84,13 @@ export function CountdownTimer({
   ];
 
   return (
-    <section className="relative py-8 px-4 max-w-2xl mx-auto text-center space-y-5">
+    <section
+      className={`relative mx-auto text-center ${
+        isPreview
+          ? 'py-4 px-2 max-w-full space-y-3'
+          : 'py-8 px-4 max-w-2xl space-y-5'
+      }`}
+    >
       {/* Soft Ambient Glow Aura behind timer */}
       <div
         className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-36 rounded-full blur-3xl opacity-25 pointer-events-none -z-10"
@@ -90,12 +98,12 @@ export function CountdownTimer({
       />
 
       {/* Header Info */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {formattedDate && (
           <div className="flex items-center justify-center">
             <span
               suppressHydrationWarning
-              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs border transition-all backdrop-blur-md"
+              className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold shadow-xs border transition-all backdrop-blur-md"
               style={{
                 backgroundColor: isDark ? 'rgba(212, 175, 55, 0.12)' : '#FEFBF5',
                 borderColor: isDark ? 'rgba(212, 175, 55, 0.4)' : '#F0E2C8',
@@ -111,7 +119,9 @@ export function CountdownTimer({
         )}
 
         <h3
-          className="text-lg sm:text-2xl font-black font-cairo tracking-tight"
+          className={`font-black font-cairo tracking-tight ${
+            isPreview ? 'text-sm min-[360px]:text-base' : 'text-lg sm:text-2xl'
+          }`}
           style={{
             color: isDark ? '#FFFFFF' : '#1A1819',
             textShadow: isDark ? '0 2px 14px rgba(0,0,0,0.8)' : undefined,
@@ -122,16 +132,18 @@ export function CountdownTimer({
       </div>
 
       {timeLeft.isPassed && !autoRenew ? (
-        <div className="p-6 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-lg">
+        <div className="p-4 rounded-2xl bg-amber-100 text-amber-900 border border-amber-300 font-black text-sm">
           🎉 اليوم فرحتنا... مستنيينكم تنورونا وتشاركونا أجمل لحظات حياتنا!
         </div>
       ) : (
         /* Luxury Royal Timer Grid */
-        <div className="grid grid-cols-4 gap-1.5 min-[360px]:gap-2 sm:gap-3.5 max-w-sm sm:max-w-md mx-auto items-stretch">
+        <div className="grid grid-cols-4 gap-1 min-[360px]:gap-1.5 max-w-sm mx-auto items-stretch">
           {units.map((unit) => (
             <div
               key={unit.key}
-              className="relative rounded-2xl sm:rounded-3xl p-1.5 min-[360px]:p-2.5 sm:p-4 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 border shadow-lg group hover:-translate-y-0.5 hover:shadow-xl"
+              className={`relative rounded-xl min-[360px]:rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all duration-300 border shadow-md group ${
+                isPreview ? 'p-1 min-[360px]:p-1.5' : 'p-1.5 min-[360px]:p-2.5 sm:p-4 sm:rounded-3xl hover:-translate-y-0.5 hover:shadow-xl'
+              }`}
               style={{
                 background: isDark
                   ? 'linear-gradient(165deg, rgba(28, 26, 33, 0.95) 0%, rgba(14, 13, 17, 0.98) 100%)'
@@ -150,7 +162,11 @@ export function CountdownTimer({
               {/* Number Display */}
               <span
                 suppressHydrationWarning
-                className="text-xl min-[360px]:text-2xl sm:text-4xl lg:text-5xl font-black font-cairo tracking-tight tabular-nums block leading-none py-0.5 sm:py-1 drop-shadow-sm"
+                className={`font-black font-cairo tracking-tight tabular-nums block leading-none py-0.5 drop-shadow-sm ${
+                  isPreview
+                    ? 'text-lg min-[360px]:text-xl'
+                    : 'text-xl min-[360px]:text-2xl sm:text-4xl lg:text-5xl sm:py-1'
+                }`}
                 style={{
                   color: isDark ? '#F5D77F' : primaryColor || '#720925',
                   textShadow: isDark
@@ -163,7 +179,7 @@ export function CountdownTimer({
 
               {/* Subtle Luxury Divider Bar */}
               <div
-                className="w-5 sm:w-7 h-[1px] my-1 sm:my-1.5 opacity-60"
+                className="w-4 min-[360px]:w-5 h-[1px] my-0.5 min-[360px]:my-1 opacity-60"
                 style={{
                   background: isDark
                     ? 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent)'
@@ -173,7 +189,9 @@ export function CountdownTimer({
 
               {/* Unit Label */}
               <span
-                className="text-[10px] sm:text-xs font-bold font-cairo tracking-wide block"
+                className={`font-bold font-cairo tracking-wide block ${
+                  isPreview ? 'text-[9px] min-[360px]:text-[10px]' : 'text-[10px] sm:text-xs'
+                }`}
                 style={{
                   color: isDark ? '#E5DDD0' : '#6B6358',
                 }}

@@ -9,6 +9,7 @@ interface CoverHeroSectionProps {
   invitationType?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  isPreview?: boolean;
 }
 
 export function CoverHeroSection({
@@ -17,6 +18,7 @@ export function CoverHeroSection({
   invitationType = 'wedding',
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
+  isPreview = false,
 }: CoverHeroSectionProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -38,10 +40,22 @@ export function CoverHeroSection({
   const hasValidCover = Boolean(coverImageUrl && !imageError);
 
   return (
-    <section className="relative text-center pt-8 pb-4 px-4 max-w-4xl mx-auto space-y-6">
+    <section
+      className={`relative text-center mx-auto ${
+        isPreview
+          ? 'pt-4 pb-2 px-2 max-w-full space-y-3'
+          : 'pt-8 pb-4 px-4 max-w-4xl space-y-6'
+      }`}
+    >
       {/* Cover Image banner if provided and loaded successfully */}
       {hasValidCover && (
-        <div className="relative w-full h-48 sm:h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl mb-6">
+        <div
+          className={`relative w-full rounded-2xl overflow-hidden shadow-md ${
+            isPreview
+              ? 'h-36 min-[360px]:h-44 mb-3'
+              : 'h-48 sm:h-64 md:h-80 rounded-3xl shadow-xl mb-6'
+          }`}
+        >
           <img
             src={coverImageUrl!}
             alt={invitationTitle || 'غلاف الدعوة'}
@@ -50,8 +64,8 @@ export function CoverHeroSection({
             onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          <div className="absolute bottom-4 inset-x-0 text-center">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs sm:text-sm font-bold shadow-lg">
+          <div className="absolute bottom-3 inset-x-0 text-center">
+            <span className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold shadow-lg">
               {getBadgeText(invitationType)}
             </span>
           </div>
@@ -59,8 +73,12 @@ export function CoverHeroSection({
       )}
 
       {/* Bismillah & Ornamentation */}
-      <div className="flex flex-col items-center justify-center space-y-3">
-        <span className="text-xl sm:text-2xl lg:text-3xl text-stone-800 font-amiri font-bold tracking-wider theme-heading">
+      <div className="flex flex-col items-center justify-center space-y-2">
+        <span
+          className={`text-stone-800 font-amiri font-bold tracking-wider theme-heading ${
+            isPreview ? 'text-lg min-[360px]:text-xl' : 'text-xl sm:text-2xl lg:text-3xl'
+          }`}
+        >
           بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
         </span>
 

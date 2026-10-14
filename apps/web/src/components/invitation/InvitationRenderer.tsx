@@ -253,6 +253,8 @@ export function InvitationRenderer({
       {safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen && (
         <EnvelopeScreen
           coupleNames={coupleNames}
+          coupleGroomAr={safeInv.coupleGroomAr}
+          coupleBrideAr={safeInv.coupleBrideAr}
           onOpen={handleOpenEnvelope}
           isOpen={isEnvelopeOpen}
           primaryColor={primaryColor}
@@ -264,6 +266,7 @@ export function InvitationRenderer({
           eventDate={effectiveEventDate}
           invitationTitle={safeInv.title}
           waxSealMonogram={waxSealMonogram}
+          isPreview={isPreview}
         />
       )}
 
@@ -273,11 +276,18 @@ export function InvitationRenderer({
           musicUrl={safeInv.musicUrl.trim()}
           musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}
           shouldAutoTrigger={audioTriggered}
+          isPreview={isPreview}
         />
       )}
 
       {/* Main Invitation Layout Container */}
-      <main className="max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up">
+      <main
+        className={
+          isPreview
+            ? 'w-full mx-auto px-2 py-3 space-y-4 max-w-full'
+            : 'max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up'
+        }
+      >
         {/* VIP Crown Badge */}
         {isVip && (
           <div className="text-center pt-1 animate-fade-in">
@@ -295,6 +305,7 @@ export function InvitationRenderer({
             invitationType={safeInv.type}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
+            isPreview={isPreview}
           />
         )}
 
@@ -307,6 +318,7 @@ export function InvitationRenderer({
             coupleBrideEn={safeInv.coupleBrideEn}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
+            isPreview={isPreview}
           />
         )}
 
@@ -315,6 +327,7 @@ export function InvitationRenderer({
           <WeddingMessageSection
             weddingMessageAr={safeInv.weddingMessageAr}
             secondaryColor={secondaryColor}
+            isPreview={isPreview}
           />
         )}
 
@@ -326,6 +339,7 @@ export function InvitationRenderer({
             secondaryColor={secondaryColor}
             isDark={isDark}
             autoRenew={isDemo}
+            isPreview={isPreview}
           />
         )}
 
@@ -338,6 +352,7 @@ export function InvitationRenderer({
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             initialEventId={initialEventId}
+            isPreview={isPreview}
           />
         )}
 
@@ -348,6 +363,7 @@ export function InvitationRenderer({
             events={visibleEvents}
             coupleNames={coupleNames}
             primaryColor={primaryColor}
+            isPreview={isPreview}
           />
         )}
 
@@ -359,6 +375,7 @@ export function InvitationRenderer({
               parentsBrideAr={safeInv.parentsBrideAr}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
+              isPreview={isPreview}
             />
           )}
 
@@ -372,6 +389,7 @@ export function InvitationRenderer({
               coupleNames={coupleNames}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
+              isPreview={isPreview}
             />
           )}
 
@@ -382,6 +400,7 @@ export function InvitationRenderer({
             <PhotoGallery
               images={safeInv.galleryImages.filter((img) => typeof img === 'string' && img.trim().length > 0)}
               coupleName={coupleNames}
+              isPreview={isPreview}
             />
           )}
 
@@ -393,6 +412,7 @@ export function InvitationRenderer({
               primaryEvent={primaryEvent}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
+              isPreview={isPreview}
             />
           )}
 
@@ -408,6 +428,7 @@ export function InvitationRenderer({
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             invitationId={safeInv.id}
+            isPreview={isPreview}
           />
         )}
 
@@ -419,6 +440,7 @@ export function InvitationRenderer({
               dressCodeAr={primaryEvent.dressCodeAr}
               isHennaFemaleOnly={primaryEvent.isHennaFemaleOnly}
               secondaryColor={secondaryColor}
+              isPreview={isPreview}
             />
           )}
 
@@ -549,6 +571,7 @@ export function InvitationRenderer({
             invitationType={safeInv.type}
             groomName={safeInv.coupleGroomAr}
             brideName={safeInv.coupleBrideAr}
+            isPreview={isPreview}
           />
         )}
       </main>

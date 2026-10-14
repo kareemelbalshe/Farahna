@@ -6,9 +6,10 @@ import { Camera, Sparkles, X } from 'lucide-react';
 interface PhotoGalleryProps {
   images: string[];
   coupleName: string;
+  isPreview?: boolean;
 }
 
-export function PhotoGallery({ images, coupleName }: PhotoGalleryProps) {
+export function PhotoGallery({ images, coupleName, isPreview = false }: PhotoGalleryProps) {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [failedIndices, setFailedIndices] = useState<Record<number, boolean>>({});
 
@@ -21,13 +22,13 @@ export function PhotoGallery({ images, coupleName }: PhotoGalleryProps) {
   if (displayableImages.length === 0) return null;
 
   return (
-    <section className="py-12 px-4 max-w-4xl mx-auto space-y-8 font-cairo">
-      <div className="text-center space-y-2">
+    <section className={`mx-auto font-cairo ${isPreview ? 'py-4 px-2 max-w-full space-y-4' : 'py-12 px-4 max-w-4xl space-y-8'}`}>
+      <div className="text-center space-y-1.5">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold theme-badge">
           <Camera className="w-3.5 h-3.5 text-amber-600" />
           أجمل الذكريات
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-900 theme-heading">
+        <h2 className={`font-black text-stone-900 theme-heading ${isPreview ? 'text-lg min-[360px]:text-xl' : 'text-2xl sm:text-3xl'}`}>
           معرض صور العروسين
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 theme-muted">
@@ -36,7 +37,7 @@ export function PhotoGallery({ images, coupleName }: PhotoGalleryProps) {
       </div>
 
       {/* Images Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
+      <div className={`grid gap-2 min-[360px]:gap-2.5 sm:gap-4 ${isPreview ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3'}`}>
         {validImages.map((img, idx) => {
           if (failedIndices[idx]) return null;
           return (

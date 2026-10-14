@@ -8,6 +8,7 @@ interface CouplePhotoSectionProps {
   coupleNames: string;
   primaryColor?: string;
   secondaryColor?: string;
+  isPreview?: boolean;
 }
 
 export function CouplePhotoSection({
@@ -15,14 +16,20 @@ export function CouplePhotoSection({
   coupleNames,
   primaryColor = '#720925',
   secondaryColor = '#D4AF37',
+  isPreview = false,
 }: CouplePhotoSectionProps) {
   const [imageError, setImageError] = useState(false);
 
   if (!coupleImageUrl || imageError) return null;
 
   return (
-    <section className="py-8 px-4 max-w-xl mx-auto text-center space-y-4">
-      <div className="relative mx-auto w-64 h-64 sm:w-80 sm:h-80 rounded-full p-2.5 shadow-2xl border-4" style={{ borderColor: secondaryColor }}>
+    <section className={`mx-auto text-center ${isPreview ? 'py-4 px-2 max-w-full space-y-3' : 'py-8 px-4 max-w-xl space-y-4'}`}>
+      <div
+        className={`relative mx-auto rounded-full shadow-2xl border-4 ${
+          isPreview ? 'w-40 h-40 min-[360px]:w-48 min-[360px]:h-48 p-1.5' : 'w-64 h-64 sm:w-80 sm:h-80 p-2.5'
+        }`}
+        style={{ borderColor: secondaryColor }}
+      >
         <div className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-inner">
           <img
             src={coupleImageUrl}

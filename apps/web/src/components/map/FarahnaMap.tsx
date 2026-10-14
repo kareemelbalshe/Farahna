@@ -47,6 +47,7 @@ export interface FarahnaMapProps {
   className?: string;
   showCardHeader?: boolean;
   invitationId?: string;
+  isPreview?: boolean;
 }
 
 export function FarahnaMap({
@@ -61,6 +62,7 @@ export function FarahnaMap({
   className = '',
   showCardHeader = false,
   invitationId,
+  isPreview = false,
 }: FarahnaMapProps) {
   const [copied, setCopied] = useState(false);
   const [isInView, setIsInView] = useState(false);

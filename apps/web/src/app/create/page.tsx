@@ -534,8 +534,10 @@ function StudioContent() {
       const cityParam = searchParams.get('city');
 
       if (templateParam || packageParam || themeParam || typeParam || groomParam) {
-        // Find matching demo template if available
-        const matchedDemo = DEFAULT_DEMOS.find((d) => d.slug === templateParam);
+        // Find matching demo template if available (flexible prefix matching)
+        const matchedDemo = DEFAULT_DEMOS.find(
+          (d) => d.slug === templateParam || (templateParam && templateParam.startsWith(d.slug))
+        );
 
         const MOCK_MAP: Record<string, any> = {
           'omar-salma': MOCK_OMAR_SALMA,
@@ -543,7 +545,10 @@ function StudioContent() {
           'mariam-youssef': MOCK_MARIAM_YOUSSEF,
           'karim-nada': MOCK_KARIM_NADA,
         };
-        const matchedMock = templateParam ? MOCK_MAP[templateParam] : null;
+        const matchedMockKey = templateParam
+          ? Object.keys(MOCK_MAP).find((k) => templateParam === k || templateParam.startsWith(k))
+          : null;
+        const matchedMock = matchedMockKey ? MOCK_MAP[matchedMockKey] : null;
 
         const targetPackage =
           packageParam ||
@@ -1297,33 +1302,34 @@ function StudioContent() {
       )}
       {/* 1. Studio Sticky Topbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo & Studio Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
               href="/"
-              className="p-2 text-stone-400 hover:text-stone-800 rounded-xl hover:bg-stone-100 transition-colors"
+              className="p-1.5 sm:p-2 text-stone-400 hover:text-stone-800 rounded-xl hover:bg-stone-100 transition-colors shrink-0"
               title="العودة للرئيسية"
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-black text-[#720925]">
-                  استوديو صمم دعوتك بنفسك 🪄
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-sm min-[390px]:text-base sm:text-2xl font-black text-[#720925] truncate">
+                  <span className="sm:hidden">استوديو صمم دعوتك 🪄</span>
+                  <span className="hidden sm:inline">استوديو صمم دعوتك بنفسك 🪄</span>
                 </span>
-                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-[#720925] border border-rose-200">
+                <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-[#720925] border border-rose-200 shrink-0">
                   بدون تسجيل دخول
                 </span>
               </div>
-              <p className="text-[11px] text-stone-500 hidden sm:block">
+              <p className="text-[11px] text-stone-500 hidden sm:block truncate">
                 صمم كل تفاصيل فرحتك بالكامل، وشاهد المعاينة الحية خطوة بخطوة 💍
               </p>
             </div>
           </div>
 
           {/* Actions & Auto-Save Badge */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {lastSavedTime && (
               <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
                 <Save className="w-3.5 h-3.5 text-emerald-600" />
@@ -1332,11 +1338,11 @@ function StudioContent() {
             )}
 
             {/* Mobile View Toggle */}
-            <div className="flex lg:hidden bg-stone-100 p-1 rounded-xl text-xs font-bold">
+            <div className="flex lg:hidden bg-stone-100 p-0.5 sm:p-1 rounded-xl text-[11px] sm:text-xs font-bold shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('editor')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all ${
                   activeTab === 'editor' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
                 }`}
               >
@@ -1345,11 +1351,11 @@ function StudioContent() {
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all flex items-center gap-1 ${
                   activeTab === 'preview' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>المعاينة</span>
               </button>
             </div>
@@ -1358,10 +1364,11 @@ function StudioContent() {
             <button
               type="button"
               onClick={() => setShowCheckoutModal(true)}
-              className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:opacity-95 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-3 sm:px-7 py-2 sm:py-3 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:opacity-95 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>حفظ وتفعيل الدعوة 🚀</span>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+              <span className="hidden sm:inline">حفظ وتفعيل الدعوة 🚀</span>
+              <span className="inline sm:hidden">حفظ 🚀</span>
             </button>
           </div>
         </div>
@@ -3649,17 +3656,21 @@ function StudioContent() {
 
             {/* Frame Container */}
             {previewViewMode === 'phone' ? (
-              <div className="relative mx-auto w-full max-w-[min(340px,calc(100vw-32px))] sm:max-w-[360px] h-[640px] sm:h-[700px] bg-stone-900 rounded-[44px] p-2.5 sm:p-3 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col">
+              <div className="relative mx-auto w-full max-w-[min(345px,calc(100vw-24px))] sm:max-w-[370px] h-[600px] min-[390px]:h-[660px] sm:h-[720px] bg-stone-900 rounded-[40px] sm:rounded-[46px] p-2.5 sm:p-3 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col">
                 {/* Speaker & Camera Notch */}
-                <div className="w-28 sm:w-32 h-3.5 sm:h-4 bg-stone-950 rounded-b-xl mx-auto mb-2 shrink-0 z-50 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2" />
-                  <div className="w-8 sm:w-10 h-1 bg-stone-800 rounded-full" />
+                <div className="w-24 sm:w-32 h-3.5 sm:h-4 bg-stone-950 rounded-b-xl mx-auto mb-2 shrink-0 z-50 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-stone-900 mr-1.5 sm:mr-2" />
+                  <div className="w-7 sm:w-10 h-1 bg-stone-800 rounded-full" />
                 </div>
 
                 {/* Inner Smartphone Screen Content */}
                 <div
-                  className="relative flex-1 rounded-[32px] sm:rounded-[36px] overflow-y-auto overflow-x-hidden no-scrollbar border border-stone-800/40 [transform:translateZ(0)]"
-                  style={{ backgroundColor }}
+                  className="relative flex-1 rounded-[28px] sm:rounded-[36px] overflow-y-auto overflow-x-hidden no-scrollbar border border-stone-800/40 overscroll-contain"
+                  style={{
+                    backgroundColor,
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)',
+                  }}
                 >
                   {/* Main Rendered Invitation Body (Controls Envelope inside) */}
                   <InvitationRenderer
@@ -3673,12 +3684,19 @@ function StudioContent() {
                     onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
                   />
                 </div>
+
+                {/* Home Indicator Bar */}
+                <div className="w-28 sm:w-32 h-1 bg-stone-700/60 rounded-full mx-auto mt-2 shrink-0 pointer-events-none" />
               </div>
             ) : (
               /* Fluid edge-to-edge frame */
               <div
-                className="relative w-full h-[640px] sm:h-[700px] rounded-3xl shadow-xl border-2 border-stone-300 overflow-y-auto overflow-x-hidden no-scrollbar [transform:translateZ(0)]"
-                style={{ backgroundColor }}
+                className="relative w-full h-[580px] min-[390px]:h-[640px] sm:h-[700px] rounded-2xl sm:rounded-3xl shadow-xl border-2 border-stone-300 overflow-y-auto overflow-x-hidden no-scrollbar"
+                style={{
+                  backgroundColor,
+                  transform: 'translateZ(0)',
+                  WebkitTransform: 'translateZ(0)',
+                }}
               >
                 {/* Main Rendered Invitation Body (Controls Envelope inside) */}
                 <InvitationRenderer
@@ -3702,10 +3720,10 @@ function StudioContent() {
       </main>
 
       {/* Floating Mobile Studio Quick Bar (for phone users) */}
-      <div className="lg:hidden fixed bottom-4 inset-x-3 sm:inset-x-6 z-40 animate-fade-in-up">
-        <div className="bg-stone-950/95 backdrop-blur-xl border border-amber-400/40 rounded-2xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between gap-2">
+      <div className="lg:hidden fixed bottom-3 sm:bottom-4 inset-x-2.5 sm:inset-x-6 z-40 animate-fade-in-up">
+        <div className="bg-stone-950/95 backdrop-blur-xl border border-amber-400/40 rounded-2xl p-1.5 sm:p-2.5 shadow-2xl flex items-center justify-between gap-2">
           {/* Toggle Tab */}
-          <div className="flex items-center bg-stone-900 p-1 rounded-xl text-xs font-bold border border-stone-800">
+          <div className="flex items-center bg-stone-900 p-0.5 sm:p-1 rounded-xl text-xs font-bold border border-stone-800 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('editor')}

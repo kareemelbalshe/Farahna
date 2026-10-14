@@ -7,12 +7,14 @@ interface MusicPlayerProps {
   musicUrl?: string | null;
   musicTitle?: string | null;
   shouldAutoTrigger?: boolean;
+  isPreview?: boolean;
 }
 
 export function MusicPlayer({
   musicUrl,
   musicTitle = 'موسيقى ليلة العمر الهادئة',
   shouldAutoTrigger = false,
+  isPreview = false,
 }: MusicPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -76,33 +78,66 @@ export function MusicPlayer({
   };
 
   return (
-    <div className="fixed bottom-20 left-4 sm:bottom-5 sm:left-5 z-40">
-      <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-stone-900/90 text-white backdrop-blur-md border border-amber-500/30 shadow-2xl transition-all">
+    <div
+      className={
+        isPreview
+          ? 'fixed bottom-3 left-3 z-30 max-w-[calc(100%-24px)] pointer-events-auto'
+          : 'fixed bottom-20 left-4 sm:bottom-5 sm:left-5 z-40'
+      }
+    >
+      <div
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900/95 text-white backdrop-blur-md border border-amber-500/40 shadow-xl transition-all ${
+          isPreview
+            ? 'max-w-[220px]'
+            : 'sm:px-3.5 sm:py-2 max-w-[230px] sm:max-w-none'
+        }`}
+      >
         {/* Play/Pause Button */}
         <button
           type="button"
           onClick={togglePlay}
-          className="w-8 h-8 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center hover:bg-amber-400 transition-colors shadow-xs active:scale-95"
+          className={`rounded-full bg-amber-500 text-stone-950 flex items-center justify-center hover:bg-amber-400 transition-colors shadow-xs active:scale-95 shrink-0 ${
+            isPreview ? 'w-7 h-7' : 'w-7 h-7 sm:w-8 sm:h-8'
+          }`}
           aria-label={isPlaying ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
         >
-          {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current mr-0.5" />}
+          {isPlaying ? (
+            <Pause className="w-3.5 h-3.5 fill-current" />
+          ) : (
+            <Play className="w-3.5 h-3.5 fill-current mr-0.5" />
+          )}
         </button>
 
         {/* Info & Animated Equalizer */}
-        <div className="hidden sm:flex flex-col text-right pr-1">
-          <span className="text-[11px] font-bold text-amber-200 truncate max-w-[120px]">
+        <div className="flex flex-col text-right pr-0.5 min-w-0">
+          <span
+            className={`font-bold text-amber-200 truncate ${
+              isPreview
+                ? 'text-[10px] max-w-[90px]'
+                : 'text-[10px] sm:text-[11px] max-w-[100px] sm:max-w-[125px]'
+            }`}
+          >
             {musicTitle}
           </span>
           <div className="flex items-center gap-1 mt-0.5">
             <span
-              className={`w-1 h-2 bg-amber-400 rounded-full ${isPlaying ? 'animate-pulse' : 'opacity-40'}`}
+              className={`w-0.5 h-2 bg-amber-400 rounded-full ${
+                isPlaying ? 'animate-pulse' : 'opacity-40'
+              }`}
             />
             <span
-              className={`w-1 h-3.5 bg-amber-400 rounded-full ${isPlaying ? 'animate-bounce' : 'opacity-40'}`}
+              className={`w-0.5 h-3 bg-amber-400 rounded-full ${
+                isPlaying ? 'animate-bounce' : 'opacity-40'
+              }`}
             />
             <span
-              className={`w-1 h-2.5 bg-amber-400 rounded-full ${isPlaying ? 'animate-pulse' : 'opacity-40'}`}
+              className={`w-0.5 h-2 bg-amber-400 rounded-full ${
+                isPlaying ? 'animate-pulse' : 'opacity-40'
+              }`}
             />
+            <span className="text-[9px] text-stone-400 mr-1 truncate">
+              {isPlaying ? 'يعزف الآن 🎵' : 'متوقف'}
+            </span>
           </div>
         </div>
 
@@ -111,10 +146,10 @@ export function MusicPlayer({
           <button
             type="button"
             onClick={toggleMute}
-            className="text-stone-400 hover:text-white transition-colors p-1"
+            className="text-stone-400 hover:text-white transition-colors p-1 shrink-0"
             aria-label={isMuted ? 'إلغاء الكتم' : 'كتم الصوت'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
         )}
       </div>
