@@ -125,8 +125,13 @@ export async function getPreviewInvitation(req: Request, res: Response, next: Ne
   try {
     const { token } = req.params;
 
-    const invitation = await prisma.invitation.findUnique({
-      where: { previewToken: token },
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        OR: [
+          { previewToken: token },
+          { id: token },
+        ],
+      },
       include: {
         theme: true,
         events: {

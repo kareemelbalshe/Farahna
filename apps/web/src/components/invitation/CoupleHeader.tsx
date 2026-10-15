@@ -66,7 +66,9 @@ export function CoupleHeader({
 
         {(coupleGroomEn || coupleBrideEn) && (
           <p className="text-xs sm:text-sm font-serif tracking-widest text-stone-400 uppercase">
-            {coupleGroomEn} &amp; {coupleBrideEn}
+            {coupleGroomEn && <span>{coupleGroomEn}</span>}
+            {coupleGroomEn && coupleBrideEn && <span className="mx-1.5">&amp;</span>}
+            {coupleBrideEn && <span>{coupleBrideEn}</span>}
           </p>
         )}
       </div>

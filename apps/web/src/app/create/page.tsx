@@ -740,6 +740,8 @@ function StudioContent() {
       const typeParam = searchParams.get('type');
       const groomParam = searchParams.get('groom');
       const brideParam = searchParams.get('bride');
+      const groomEnParam = searchParams.get('groomEn');
+      const brideEnParam = searchParams.get('brideEn');
       const venueParam = searchParams.get('venue');
       const cityParam = searchParams.get('city');
 
@@ -810,8 +812,19 @@ function StudioContent() {
         if (targetGroom) setCoupleGroomAr(targetGroom);
         if (targetBride) setCoupleBrideAr(targetBride);
 
-        if (matchedMock?.invitation?.coupleGroomEn) setCoupleGroomEn(matchedMock.invitation.coupleGroomEn);
-        if (matchedMock?.invitation?.coupleBrideEn) setCoupleBrideEn(matchedMock.invitation.coupleBrideEn);
+        // English names should only be set if explicitly provided in query params.
+        // Never auto-populate mock English names so client invitations remain pure Arabic unless English is chosen by client.
+        if (groomEnParam) {
+          setCoupleGroomEn(groomEnParam);
+        } else {
+          setCoupleGroomEn('');
+        }
+        if (brideEnParam) {
+          setCoupleBrideEn(brideEnParam);
+        } else {
+          setCoupleBrideEn('');
+        }
+
         if (matchedMock?.invitation?.parentsGroomAr) setParentsGroomAr(matchedMock.invitation.parentsGroomAr);
         if (matchedMock?.invitation?.parentsBrideAr) setParentsBrideAr(matchedMock.invitation.parentsBrideAr);
         if (matchedMock?.invitation?.weddingMessageAr) setCustomWeddingMessage(matchedMock.invitation.weddingMessageAr);
@@ -894,8 +907,34 @@ function StudioContent() {
           const parsed = JSON.parse(saved);
           if (parsed.coupleGroomAr) setCoupleGroomAr(parsed.coupleGroomAr);
           if (parsed.coupleBrideAr) setCoupleBrideAr(parsed.coupleBrideAr);
-          if (parsed.coupleGroomEn) setCoupleGroomEn(parsed.coupleGroomEn);
-          if (parsed.coupleBrideEn) setCoupleBrideEn(parsed.coupleBrideEn);
+          
+          // Clear legacy mock English names so client doesn't inherit them by accident
+          const legacyMockGrooms = ['Ahmed Mahmoud', 'Omar Khaled', 'Tarek Fahmy', 'Ziad Khalil', 'Karim'];
+          const legacyMockBrides = ['Sara El-Sherif', 'Salma El-Sherif', 'Nour El-Shennawy', 'Farida Assem', 'Nada'];
+          if (parsed.coupleGroomEn && !legacyMockGrooms.includes(parsed.coupleGroomEn)) {
+            setCoupleGroomEn(parsed.coupleGroomEn);
+          } else if (
+            parsed.coupleGroomEn &&
+            legacyMockGrooms.includes(parsed.coupleGroomEn) &&
+            (parsed.coupleGroomAr?.includes('أحمد') || parsed.coupleGroomAr?.includes('احمد'))
+          ) {
+            setCoupleGroomEn(parsed.coupleGroomEn);
+          } else {
+            setCoupleGroomEn('');
+          }
+
+          if (parsed.coupleBrideEn && !legacyMockBrides.includes(parsed.coupleBrideEn)) {
+            setCoupleBrideEn(parsed.coupleBrideEn);
+          } else if (
+            parsed.coupleBrideEn &&
+            legacyMockBrides.includes(parsed.coupleBrideEn) &&
+            (parsed.coupleBrideAr?.includes('سارة') || parsed.coupleBrideAr?.includes('ساره'))
+          ) {
+            setCoupleBrideEn(parsed.coupleBrideEn);
+          } else {
+            setCoupleBrideEn('');
+          }
+
           if (parsed.title) setTitle(parsed.title);
           if (parsed.type) setType(parsed.type);
           if (parsed.selectedPackage) setSelectedPackage(parsed.selectedPackage);
@@ -1039,6 +1078,15 @@ function StudioContent() {
       } else if (groom) {
         setTitle(`دعوة زفاف ${groom}`);
       }
+    }
+    // Auto-clear legacy mock English names when Arabic names are modified
+    const legacyMockGrooms = ['Ahmed Mahmoud', 'Omar Khaled', 'Tarek Fahmy', 'Ziad Khalil', 'Karim'];
+    const legacyMockBrides = ['Sara El-Sherif', 'Salma El-Sherif', 'Nour El-Shennawy', 'Farida Assem', 'Nada'];
+    if (coupleGroomEn && legacyMockGrooms.includes(coupleGroomEn)) {
+      setCoupleGroomEn('');
+    }
+    if (coupleBrideEn && legacyMockBrides.includes(coupleBrideEn)) {
+      setCoupleBrideEn('');
     }
   };
 
@@ -2213,6 +2261,44 @@ function StudioContent() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* English Couple Names (Optional - أسماء العروسين باللغة الإنجليزية) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                    <span>اسم العريس (English): <span className="text-[10px] text-stone-400 font-normal">(اختياري)</span></span>
+                  </label>
+                  <input
+                    type="text"
+                    value={coupleGroomEn}
+                    onChange={(e) => setCoupleGroomEn(e.target.value)}
+                    placeholder="مثال: Ahmed Mahmoud"
+                    dir="ltr"
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden transition-all text-left font-serif"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                    <span>اسم العروسة (English): <span className="text-[10px] text-stone-400 font-normal">(اختياري)</span></span>
+                  </label>
+                  <input
+                    type="text"
+                    value={coupleBrideEn}
+                    onChange={(e) => setCoupleBrideEn(e.target.value)}
+                    placeholder="مثال: Sara El-Sherif"
+                    dir="ltr"
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden transition-all text-left font-serif"
+                  />
+                </div>
+              </div>
+
+              {/* تنبيه توضيحي للعميل عن الأسماء بالإنجليزية */}
+              <div className="text-[11px] text-stone-600 bg-stone-50/90 border border-stone-200/80 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
+                <span className="text-xs leading-none mt-0.5">💡</span>
+                <span className="leading-relaxed">
+                  <strong>الأسماء بالإنجليزية اختيارية:</strong> إذا أدخلتها ستظهر بخط إنجليزي أنيق أسفل أسمائكم العربية في بطاقة الدعوة، وإذا تركتها فارغة ستظهر دعوتك باللغة العربية فقط ولن يظهر أي نص إنجليزي.
+                </span>
               </div>
 
               {/* Title */}

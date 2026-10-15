@@ -378,7 +378,9 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
           coupleBrideEn: coupleBrideEn || null,
           parentsGroomAr: parentsGroomAr || null,
           parentsBrideAr: parentsBrideAr || null,
-          weddingMessageAr: weddingMessageAr || null,
+          weddingMessageAr:
+            weddingMessageAr ||
+            'بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ\n«وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً»\nيسعدنا ويشرفنا دعوتكم لمشاركتنا فرحتنا وتتويج قصة حبنا في ليلة العمر ❤️',
           weddingMessageEn: weddingMessageEn || null,
           coverImageUrl: coverImageUrl || null,
           coupleImageUrl: coupleImageUrl || null,
@@ -451,6 +453,32 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
           isEnabled: sec.defaultEnabled,
           sortOrder: idx,
         })),
+      });
+
+      // Seed initial primary event so the invitation has a complete venue, date, time and dresscode
+      await tx.invitationEvent.create({
+        data: {
+          invitationId: inv.id,
+          type: inv.type === 'custom' ? 'custom' : inv.type,
+          titleAr:
+            inv.type === 'henna'
+              ? 'ليلة الحنة وسهرة العروس 🌿'
+              : inv.type === 'engagement'
+              ? 'حفل الخطوبة المبارك 💍'
+              : inv.type === 'katb_ketab'
+              ? 'عقد القران وكتب الكتاب 📜'
+              : 'حفل الزفاف والزفة الكبرى 👑',
+          date: parsedEventDate,
+          startTime: '08:00 م',
+          endTime: '01:00 ص',
+          venueNameAr: 'قاعة الحفل الملكية',
+          addressAr: 'القاهرة، مصر',
+          googleMapsUrl: 'https://maps.google.com/?q=Cairo',
+          dressCodeAr: 'ملابس رسمية فاخرة 🎩👗',
+          descriptionAr: 'يسعدنا ويشرفنا حضوركم ومشاركتنا أجمل لحظات العمر.',
+          isVisible: true,
+          sortOrder: 1,
+        },
       });
 
       return inv;

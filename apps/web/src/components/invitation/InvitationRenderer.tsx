@@ -42,6 +42,7 @@ export interface InvitationRendererProps {
   initialEventId?: string;
   isEnvelopeOpen?: boolean;
   onEnvelopeOpen?: () => void;
+  isMobileFrame?: boolean;
 }
 
 export function InvitationRenderer({
@@ -54,6 +55,7 @@ export function InvitationRenderer({
   initialEventId,
   isEnvelopeOpen: controlledEnvelopeOpen,
   onEnvelopeOpen,
+  isMobileFrame = false,
 }: InvitationRendererProps) {
   // Safe invitation reference
   const safeInv = invitation || ({} as InvitationDTO);
@@ -67,6 +69,9 @@ export function InvitationRenderer({
 
   const [audioTriggered, setAudioTriggered] = useState(false);
   const [showStickyDesignBar, setShowStickyDesignBar] = useState(true);
+
+  // Distinguish compact simulator frame in admin from full standalone preview
+  const isCompact = Boolean(isMobileFrame);
 
   // Extract theme colors with fallback to theme config or sensible defaults
   const primaryColor =
@@ -121,20 +126,58 @@ export function InvitationRenderer({
     effectiveEventDate && !isNaN(new Date(effectiveEventDate).getTime())
   );
 
-  // Effective location fields with fallback to root invitation attributes
+  // Robust fallback primary event so newly created / draft invitations never appear empty or broken
+  const fallbackEvent: InvitationEventDTO = {
+    id: `evt-auto-${safeInv.id || 'default'}`,
+    invitationId: safeInv.id || 'default',
+    type: (safeInv.type as any) || 'wedding',
+    titleAr:
+      safeInv.type === 'henna'
+        ? 'ليلة الحنة وسهرة العروس 🌿'
+        : safeInv.type === 'engagement'
+        ? 'حفل الخطوبة المبارك 💍'
+        : safeInv.type === 'katb_ketab'
+        ? 'عقد القران وكتب الكتاب 📜'
+        : 'حفل الزفاف والزفة الكبرى 👑',
+    date: effectiveEventDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    startTime: '08:00 م',
+    endTime: '01:00 ص',
+    venueNameAr: (safeInv as any).venueNameAr?.trim() || 'قاعة الحفل الملكية',
+    addressAr: (safeInv as any).addressAr?.trim() || 'القاهرة، مصر',
+    googleMapsUrl: (safeInv as any).googleMapsUrl?.trim() || 'https://maps.google.com/?q=Cairo',
+    dressCodeAr:
+      (safeInv as any).dressCodeAr?.trim() ||
+      (safeInv as any).themeConfig?.dressCode ||
+      'ملابس رسمية فاخرة وفستان سواريه أنيق 🎩👗',
+    descriptionAr: (safeInv as any).descriptionAr?.trim() || 'يسعدنا ويشرفنا حضوركم ومشاركتنا أجمل لحظات العمر.',
+    isVisible: true,
+    sortOrder: 1,
+    isHennaFemaleOnly: safeInv.type === 'henna',
+  };
+
+  const effectivePrimaryEvent = primaryEvent || fallbackEvent;
+
+  // Effective location fields with fallback to root invitation attributes or fallback event
   const effectiveVenueName =
     primaryEvent?.venueNameAr?.trim() ||
     (safeInv as any).venueNameAr?.trim() ||
     (safeInv as any).venueAddressAr?.trim() ||
+    effectivePrimaryEvent.venueNameAr ||
     '';
   const effectiveAddress =
-    primaryEvent?.addressAr?.trim() || (safeInv as any).addressAr?.trim() || '';
+    primaryEvent?.addressAr?.trim() ||
+    (safeInv as any).addressAr?.trim() ||
+    effectivePrimaryEvent.addressAr ||
+    '';
   const effectiveGoogleMapsUrl =
-    primaryEvent?.googleMapsUrl?.trim() || (safeInv as any).googleMapsUrl?.trim() || '';
+    primaryEvent?.googleMapsUrl?.trim() ||
+    (safeInv as any).googleMapsUrl?.trim() ||
+    effectivePrimaryEvent.googleMapsUrl ||
+    '';
   const effectiveLatitude =
-    primaryEvent?.latitude ?? (safeInv as any).latitude ?? null;
+    primaryEvent?.latitude ?? (safeInv as any).latitude ?? 30.0571;
   const effectiveLongitude =
-    primaryEvent?.longitude ?? (safeInv as any).longitude ?? null;
+    primaryEvent?.longitude ?? (safeInv as any).longitude ?? 31.2246;
   const effectiveOpenStreetMapUrl =
     primaryEvent?.openStreetMapUrl?.trim() || (safeInv as any).openStreetMapUrl?.trim() || '';
 
@@ -143,7 +186,8 @@ export function InvitationRenderer({
     effectiveVenueName ||
       effectiveAddress ||
       effectiveGoogleMapsUrl ||
-      Boolean(effectiveLatitude && effectiveLongitude)
+      Boolean(effectiveLatitude && effectiveLongitude) ||
+      effectivePrimaryEvent.venueNameAr
   );
 
   // Helper function to check if a section is enabled
@@ -238,7 +282,7 @@ export function InvitationRenderer({
   return (
     <div
       className={`${
-        isPreview && isEnvelopeActive
+        isMobileFrame && isEnvelopeActive
           ? 'h-full max-h-full overflow-hidden'
           : 'min-h-full'
       } flex flex-col transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden pattern-${backgroundPattern} ${
@@ -308,9 +352,9 @@ export function InvitationRenderer({
       {/* Main Invitation Layout Container */}
       <main
         className={`${
-          isPreview && isEnvelopeActive ? 'hidden' : ''
+          isMobileFrame && isEnvelopeActive ? 'hidden' : ''
         } ${
-          isPreview
+          isMobileFrame
             ? 'w-full mx-auto px-2 py-3 space-y-4 max-w-full'
             : 'max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up'
         }`}
@@ -433,10 +477,10 @@ export function InvitationRenderer({
 
         {/* 10. مكان المناسبة (Venue & Location Details) */}
         {isSectionEnabled('venue') &&
-          primaryEvent &&
-          (primaryEvent.venueNameAr?.trim() || primaryEvent.addressAr?.trim() || primaryEvent.date) && (
+          effectivePrimaryEvent &&
+          (effectivePrimaryEvent.venueNameAr?.trim() || effectivePrimaryEvent.addressAr?.trim() || effectivePrimaryEvent.date) && (
             <VenueLocationSection
-              primaryEvent={primaryEvent}
+              primaryEvent={effectivePrimaryEvent}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
               isPreview={isPreview}
@@ -461,11 +505,11 @@ export function InvitationRenderer({
 
         {/* 12. الزي Dress Code (Dress Code & Henna Notes - Only if dresscode or henna note exists) */}
         {isSectionEnabled('dresscode') &&
-          primaryEvent &&
-          (primaryEvent.dressCodeAr?.trim() || primaryEvent.isHennaFemaleOnly) && (
+          effectivePrimaryEvent &&
+          (effectivePrimaryEvent.dressCodeAr?.trim() || effectivePrimaryEvent.isHennaFemaleOnly) && (
             <DressCodeSection
-              dressCodeAr={primaryEvent.dressCodeAr}
-              isHennaFemaleOnly={primaryEvent.isHennaFemaleOnly}
+              dressCodeAr={effectivePrimaryEvent.dressCodeAr}
+              isHennaFemaleOnly={effectivePrimaryEvent.isHennaFemaleOnly}
               secondaryColor={secondaryColor}
               isPreview={isPreview}
             />

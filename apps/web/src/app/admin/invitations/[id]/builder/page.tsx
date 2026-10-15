@@ -317,6 +317,126 @@ export default function VisualInvitationBuilderPage() {
     }));
   };
 
+  const handleApplyLiveTemplate = () => {
+    if (
+      !confirm(
+        'هل ترغب في تعبئة هذه الدعوة بنموذج متكامل زي الدعوات الحية المنشأة؟\n\nسيتم ملء: مناسبات الفرح (الزفاف، ليلة الحنة للسيدات، كتب الكتاب)، موقع القاعة والخريطة، إهداء الأهل، كود الحنة السري، والآية الكريمة، وألبوم الصور والموسيقى.'
+      )
+    ) {
+      return;
+    }
+
+    const baseEventDate = invitation.eventDate
+      ? new Date(invitation.eventDate)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const weddingDateIso = baseEventDate.toISOString();
+    const hennaDateIso = new Date(baseEventDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const katbKetabDateIso = new Date(baseEventDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+
+    const fullEvents = [
+      {
+        id: `evt-live-wedding-${Date.now()}`,
+        type: 'wedding',
+        titleAr: 'حفل الزفاف والزفة الكبرى 👑',
+        subtitleAr: 'الليلة الملكية في قاعة عايدة',
+        date: weddingDateIso,
+        startTime: '08:00 م',
+        endTime: '02:00 ص',
+        venueNameAr: 'فندق ماريوت الزمالك — قاعة عايدة الملكية',
+        addressAr: '١٦ شارع سراي الجزيرة، حي الزمالك، القاهرة',
+        googleMapsUrl: 'https://maps.google.com/?q=Cairo+Marriott+Hotel+Zamalek',
+        dressCodeAr: 'Black Tie / بدلة رسمية كاملة وفستان سواريه فاخر 🎩👗',
+        descriptionAr: 'تتوفر خدمة صف السيارات الفاخرة (Valet Parking) عند بوابة الجزيرة المطلة على النيل.',
+        isVisible: true,
+        sortOrder: 1,
+        isHennaFemaleOnly: false,
+      },
+      {
+        id: `evt-live-henna-${Date.now() + 1}`,
+        type: 'henna',
+        titleAr: 'ليلة الحنة وسهرة البنات 🌿',
+        subtitleAr: 'أجواء شعبية مصرية دافئة وزغاريد',
+        date: hennaDateIso,
+        startTime: '05:00 م',
+        endTime: '10:00 م',
+        venueNameAr: 'فيلا النرجس للمناسبات الخاصة',
+        addressAr: 'الحي الرابع، التجمع الخامس، القاهرة الجديدة',
+        googleMapsUrl: 'https://maps.google.com/?q=New+Cairo+Villa',
+        dressCodeAr: 'جلابيب شرقية وملابس تراثية مبهجة 💃',
+        descriptionAr: 'سهرة مبهجة مع رسم الحنة والدفوف والزغاريد. خاص بالسيدات فقط.',
+        isVisible: true,
+        sortOrder: 2,
+        isHennaFemaleOnly: true,
+      },
+      {
+        id: `evt-live-katb-${Date.now() + 2}`,
+        type: 'katb_ketab',
+        titleAr: 'عقد القران وكتب الكتاب 📜',
+        subtitleAr: 'اللحظة الشرعية المباركة',
+        date: katbKetabDateIso,
+        startTime: '03:00 م',
+        endTime: '05:00 م',
+        venueNameAr: 'قاعة الماسة — مسجد المشير طنطاوي',
+        addressAr: 'محور المشير، التجمع الخامس، القاهرة',
+        googleMapsUrl: 'https://maps.google.com/?q=Mosheer+Tantawy+Mosque',
+        dressCodeAr: 'ملابس رسمية محتشمة ومريحة',
+        descriptionAr: 'بارك الله لهما وبارك عليهما وجمع بينهما في خير.',
+        isVisible: true,
+        sortOrder: 3,
+        isHennaFemaleOnly: false,
+      },
+    ];
+
+    const allSections = DEFAULT_SECTIONS.map((sec, idx) => ({
+      sectionKey: sec.key,
+      isEnabled: true,
+      sortOrder: idx + 1,
+    }));
+
+    setInvitation((prev: any) => ({
+      ...prev,
+      parentsGroomAr: prev.parentsGroomAr?.trim() || 'يتشرف المستشار والد العريس وحرمه',
+      parentsBrideAr: prev.parentsBrideAr?.trim() || 'والأستاذ الدكتور والد العروس وحرمه',
+      weddingMessageAr:
+        prev.weddingMessageAr?.trim() ||
+        `بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ\n"وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً"\n\nيسعدنا ويشرفنا دعوتكم لمشاركتنا فرحتنا وابتداء أجمل فصول حياتنا معاً. حضوركم يملأ قلوبنا بهجة وفرحاً ❤️`,
+      coverImageUrl:
+        prev.coverImageUrl?.trim() ||
+        'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+      coupleImageUrl:
+        prev.coupleImageUrl?.trim() ||
+        'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+      galleryImages:
+        Array.isArray(prev.galleryImages) && prev.galleryImages.length > 0
+          ? prev.galleryImages
+          : [
+              'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+              'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+              'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80',
+            ],
+      musicUrl: prev.musicUrl?.trim() || '/audio/presets/piano-romance.mp3',
+      musicTitle: prev.musicTitle?.trim() || 'موسيقى ليلة العمر الهادئة',
+      events: fullEvents,
+      sections: allSections,
+      isMultiEvent: true,
+      rsvpEnabled: true,
+      countdownEnabled: true,
+      envelopeAnimationEnabled: true,
+      themeConfig: {
+        ...(prev.themeConfig || {}),
+        hennaSpecialEnabled: true,
+        hennaPasscode: (prev.themeConfig as any)?.hennaPasscode || '2026',
+        hennaMessage:
+          (prev.themeConfig as any)?.hennaMessage ||
+          'يسعدنا تشريفكم في ليلة الحنة المبهجة في أجواء راقية ومخصصة للسيدات فقط للاحتفال بالعروس 🌸🌿',
+      },
+    }));
+
+    setSuccessNotice('تم تطبيق النموذج المتكامل بنجاح كالدعوات الحية! اضغط حفظ الآن 💾');
+    setTimeout(() => setSuccessNotice(''), 4000);
+  };
+
   const handleSave = async () => {
     if (invitation.slug) {
       const cleanSlug = invitation.slug.toLowerCase().trim();
@@ -599,6 +719,17 @@ export default function VisualInvitationBuilderPage() {
 
           <button
             type="button"
+            onClick={handleApplyLiveTemplate}
+            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 text-white font-black text-xs transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer"
+            title="تعبئة نموذج متكامل زي الدعوات الحية (الأقسام، المناسبات، موقع القاعة، إهداء الأهل، ليلة الحنة، الألبوم)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+            <span className="hidden md:inline">نموذج الدعوة الحية 🪄</span>
+            <span className="md:hidden">نموذج كامل 🪄</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleSave}
             disabled={saving}
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer active:scale-95"
@@ -816,15 +947,61 @@ export default function VisualInvitationBuilderPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-700 block">أولياء الأمور / إهداء العائلة:</label>
-                <input
-                  type="text"
-                  value={invitation.parentsGroomAr || ''}
-                  onChange={(e) => handleChange('parentsGroomAr', e.target.value)}
-                  placeholder="نجل الأستاذ ... وكريمة المهندس ..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs"
-                />
+              {/* Parents Greetings */}
+              <div className="p-3.5 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-stone-900 block flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-amber-600" />
+                    <span>إهداء العائلتين وأولياء الأمور (Parents Greetings):</span>
+                  </label>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleChange('parentsGroomAr', 'يتشرف المستشار والد العريس وحرمه');
+                        handleChange('parentsBrideAr', 'والأستاذ الدكتور والد العروس وحرمه');
+                      }}
+                      className="text-[10px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                      title="نموذج رسمي عائلي"
+                    >
+                      نموذج رسمي 🏛️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleChange('parentsGroomAr', 'يتشرف والد العريس وعائلته الكريمة');
+                        handleChange('parentsBrideAr', 'ووالد العروس وعائلتها الكريمة');
+                      }}
+                      className="text-[10px] font-bold text-rose-800 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200 transition-colors cursor-pointer"
+                      title="نموذج عائلي دافئ"
+                    >
+                      نموذج عائلي ❤️
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-stone-700 block">إهداء أهل العريس:</label>
+                    <input
+                      type="text"
+                      value={invitation.parentsGroomAr || ''}
+                      onChange={(e) => handleChange('parentsGroomAr', e.target.value)}
+                      placeholder="يتشرف والد العريس وحرمه..."
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-stone-50 focus:bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-stone-700 block">إهداء أهل العروسة:</label>
+                    <input
+                      type="text"
+                      value={invitation.parentsBrideAr || ''}
+                      onChange={(e) => handleChange('parentsBrideAr', e.target.value)}
+                      placeholder="والأستاذ الدكتور والد العروس وحرمه..."
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-stone-50 focus:bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1653,6 +1830,123 @@ export default function VisualInvitationBuilderPage() {
                 </button>
               </div>
 
+              {/* Quick Add Presets Bar */}
+              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5">
+                <span className="text-[10px] text-stone-500 font-bold block">إضافة سريعة لمناسبات جاهزة بنقرة واحدة:</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEvt = {
+                        id: `evt-main-${Date.now()}`,
+                        type: 'wedding',
+                        titleAr: 'حفل الزفاف والزفة الكبرى 👑',
+                        subtitleAr: 'الليلة الملكية في قاعة عايدة',
+                        date: invitation.eventDate || new Date().toISOString(),
+                        startTime: '08:00 م',
+                        endTime: '02:00 ص',
+                        venueNameAr: 'فندق ماريوت الزمالك — قاعة عايدة الملكية',
+                        addressAr: '١٦ شارع سراي الجزيرة، حي الزمالك، القاهرة',
+                        googleMapsUrl: 'https://maps.google.com/?q=Cairo+Marriott+Hotel+Zamalek',
+                        dressCodeAr: 'Black Tie / بدلة رسمية كاملة وفستان سواريه فاخر 🎩👗',
+                        descriptionAr: 'تتوفر خدمة صف السيارات الفاخرة (Valet Parking) عند بوابة الجزيرة المطلة على النيل.',
+                        isVisible: true,
+                        isHennaFemaleOnly: false,
+                        sortOrder: (invitation.events || []).length,
+                      };
+                      handleChange('events', [...(invitation.events || []), newEvt]);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    + حفل الزفاف 👑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseDate = invitation.eventDate ? new Date(invitation.eventDate) : new Date();
+                      const hennaDate = new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+                      const newEvt = {
+                        id: `evt-henna-${Date.now()}`,
+                        type: 'henna',
+                        titleAr: 'ليلة الحنة وسهرة البنات 🌿',
+                        subtitleAr: 'أجواء شعبية مصرية دافئة وزغاريد',
+                        date: hennaDate,
+                        startTime: '05:00 م',
+                        endTime: '10:00 م',
+                        venueNameAr: 'فيلا النرجس للمناسبات الخاصة',
+                        addressAr: 'الحي الرابع، التجمع الخامس، القاهرة الجديدة',
+                        googleMapsUrl: 'https://maps.google.com/?q=New+Cairo+Villa',
+                        dressCodeAr: 'جلابيب شرقية وملابس تراثية مبهجة 💃',
+                        descriptionAr: 'سهرة مبهجة مع رسم الحنة والدفوف والزغاريد. خاص بالسيدات فقط.',
+                        isVisible: true,
+                        isHennaFemaleOnly: true,
+                        sortOrder: (invitation.events || []).length,
+                      };
+                      handleChange('events', [...(invitation.events || []), newEvt]);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    + ليلة الحنة (سيدات) 🌿
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseDate = invitation.eventDate ? new Date(invitation.eventDate) : new Date();
+                      const katbDate = new Date(baseDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+                      const newEvt = {
+                        id: `evt-katb-${Date.now()}`,
+                        type: 'katb_ketab',
+                        titleAr: 'عقد القران وكتب الكتاب 📜',
+                        subtitleAr: 'اللحظة الشرعية المباركة',
+                        date: katbDate,
+                        startTime: '03:00 م',
+                        endTime: '05:00 م',
+                        venueNameAr: 'قاعة الماسة — مسجد المشير طنطاوي',
+                        addressAr: 'محور المشير، التجمع الخامس، القاهرة',
+                        googleMapsUrl: 'https://maps.google.com/?q=Mosheer+Tantawy+Mosque',
+                        dressCodeAr: 'ملابس رسمية محتشمة ومريحة',
+                        descriptionAr: 'بارك الله لهما وبارك عليهما وجمع بينهما في خير.',
+                        isVisible: true,
+                        isHennaFemaleOnly: false,
+                        sortOrder: (invitation.events || []).length,
+                      };
+                      handleChange('events', [...(invitation.events || []), newEvt]);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    + عقد القران 📜
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseDate = invitation.eventDate ? new Date(invitation.eventDate) : new Date();
+                      const engDate = new Date(baseDate.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+                      const newEvt = {
+                        id: `evt-eng-${Date.now()}`,
+                        type: 'engagement',
+                        titleAr: 'حفل الخطوبة الرسمي 💍',
+                        subtitleAr: 'بداية الرحلة والارتباط',
+                        date: engDate,
+                        startTime: '06:00 م',
+                        endTime: '11:00 م',
+                        venueNameAr: 'فندق رويال توليب — التراس المفتوح',
+                        addressAr: 'كورنيش الإسكندرية، سيدي جابر',
+                        googleMapsUrl: 'https://maps.google.com/?q=Tolip+Hotel+Alexandria',
+                        dressCodeAr: 'فورمال صيفي أنيق',
+                        descriptionAr: 'أجمل ليلة بحرية مع غروب شمس الإسكندرية الرائع.',
+                        isVisible: true,
+                        isHennaFemaleOnly: false,
+                        sortOrder: (invitation.events || []).length,
+                      };
+                      handleChange('events', [...(invitation.events || []), newEvt]);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    + خطوبة 💍
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 {(!invitation.events || invitation.events.length === 0) ? (
                   <div className="p-6 rounded-2xl bg-stone-50 border border-dashed border-stone-300 text-center space-y-3">
@@ -1663,13 +1957,15 @@ export default function VisualInvitationBuilderPage() {
                         const defaultEvt = {
                           id: `evt-main-${Date.now()}`,
                           type: 'wedding',
-                          titleAr: invitation.title || 'حفل الزفاف المبارك',
+                          titleAr: invitation.title || 'حفل الزفاف والزفة الكبرى 👑',
                           date: invitation.eventDate || new Date().toISOString(),
                           startTime: '08:00 م',
-                          endTime: '01:00 ص',
-                          venueNameAr: 'قاعة الحفل الملكية',
-                          addressAr: 'القاهرة، مصر',
-                          googleMapsUrl: '',
+                          endTime: '02:00 ص',
+                          venueNameAr: 'فندق ماريوت الزمالك — قاعة عايدة الملكية',
+                          addressAr: '١٦ شارع سراي الجزيرة، حي الزمالك، القاهرة',
+                          googleMapsUrl: 'https://maps.google.com/?q=Cairo+Marriott+Hotel+Zamalek',
+                          dressCodeAr: 'Black Tie / بدلة رسمية كاملة وفستان سواريه فاخر 🎩👗',
+                          descriptionAr: 'تتوفر خدمة صف السيارات الفاخرة عند بوابة الجزيرة المطلة على النيل.',
                           isVisible: true,
                           isHennaFemaleOnly: false,
                           sortOrder: 0,
@@ -1813,7 +2109,7 @@ export default function VisualInvitationBuilderPage() {
                                 updated[idx] = { ...updated[idx], venueNameAr: e.target.value };
                                 handleChange('events', updated);
                               }}
-                              placeholder="فندق فورسيزونز نايل بلازا"
+                              placeholder="فندق ماريوت الزمالك"
                               className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
                             />
                           </div>
@@ -1830,17 +2126,39 @@ export default function VisualInvitationBuilderPage() {
                                 updated[idx] = { ...updated[idx], addressAr: e.target.value };
                                 handleChange('events', updated);
                               }}
-                              placeholder="جاردن سيتي، القاهرة"
+                              placeholder="حي الزمالك، القاهرة"
                               className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
                             />
                           </div>
                         </div>
 
-                        {/* Google Maps URL */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-stone-600 block">
-                            رابط موقع القاعة على Google Maps:
-                          </label>
+                        {/* Google Maps URL with Quick Preset */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-stone-600 block">
+                              رابط موقع القاعة على Google Maps:
+                            </label>
+                            <div className="flex gap-1">
+                              {[
+                                { name: 'ماريوت الزمالك', url: 'https://maps.google.com/?q=Cairo+Marriott+Hotel+Zamalek' },
+                                { name: 'فورسيزونز', url: 'https://maps.google.com/?q=Four+Seasons+Hotel+Cairo+at+Nile+Plaza' },
+                                { name: 'مسجد المشير', url: 'https://maps.google.com/?q=Mosheer+Tantawy+Mosque' },
+                              ].map((m) => (
+                                <button
+                                  key={m.name}
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...(invitation.events || [])];
+                                    updated[idx] = { ...updated[idx], googleMapsUrl: m.url };
+                                    handleChange('events', updated);
+                                  }}
+                                  className="text-[9px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 px-1.5 py-0.5 rounded-md"
+                                >
+                                  {m.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <input
                             type="url"
                             value={ev.googleMapsUrl || ''}
@@ -1851,6 +2169,64 @@ export default function VisualInvitationBuilderPage() {
                             }}
                             placeholder="https://maps.google.com/?q=..."
                             className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr bg-stone-50"
+                          />
+                        </div>
+
+                        {/* Dress Code for this event */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-stone-600 block">
+                              إرشادات اللباس (Dress Code) لهذه المناسبة:
+                            </label>
+                            <div className="flex gap-1">
+                              {[
+                                'بدلة رسمية وفستان سواريه فاخر 🎩👗',
+                                'جلابيب شرقية وملابس تراثية 💃',
+                                'ملابس رسمية محتشمة ومريحة',
+                              ].map((dc) => (
+                                <button
+                                  key={dc}
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...(invitation.events || [])];
+                                    updated[idx] = { ...updated[idx], dressCodeAr: dc };
+                                    handleChange('events', updated);
+                                  }}
+                                  className="text-[9px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 px-1.5 py-0.5 rounded-md truncate max-w-[110px]"
+                                >
+                                  {dc.slice(0, 15)}...
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <input
+                            type="text"
+                            value={ev.dressCodeAr || ''}
+                            onChange={(e) => {
+                              const updated = [...(invitation.events || [])];
+                              updated[idx] = { ...updated[idx], dressCodeAr: e.target.value };
+                              handleChange('events', updated);
+                            }}
+                            placeholder="مثال: Black Tie / بدلة رسمية وفستان سواريه أنيق 🎩👗"
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                          />
+                        </div>
+
+                        {/* Description / Extra Notes */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-stone-600 block">
+                            ملاحظات إضافية للمدعوين:
+                          </label>
+                          <input
+                            type="text"
+                            value={ev.descriptionAr || ''}
+                            onChange={(e) => {
+                              const updated = [...(invitation.events || [])];
+                              updated[idx] = { ...updated[idx], descriptionAr: e.target.value };
+                              handleChange('events', updated);
+                            }}
+                            placeholder="مثال: تتوفر خدمة صف السيارات الفاخرة (Valet Parking) عند البوابة الرئيسية."
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
                           />
                         </div>
 
@@ -2019,6 +2395,333 @@ export default function VisualInvitationBuilderPage() {
                           >
                             مسح وإلغاء ❌
                           </button>
+                        </div>
+                      )}
+
+                      {sec.key === 'parents' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-stone-700">إهداء أولياء الأمور:</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleChange('parentsGroomAr', 'يتشرف المستشار والد العريس وحرمه');
+                                  handleChange('parentsBrideAr', 'والأستاذ الدكتور والد العروس وحرمه');
+                                }}
+                                className="text-[9px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200"
+                              >
+                                رسمي 🏛️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleChange('parentsGroomAr', 'يتشرف والد العريس وعائلته الكريمة');
+                                  handleChange('parentsBrideAr', 'ووالد العروس وعائلتها الكريمة');
+                                }}
+                                className="text-[9px] font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200"
+                              >
+                                عائلي ❤️
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={invitation.parentsGroomAr || ''}
+                              onChange={(e) => handleChange('parentsGroomAr', e.target.value)}
+                              placeholder="إهداء أهل العريس..."
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                            />
+                            <input
+                              type="text"
+                              value={invitation.parentsBrideAr || ''}
+                              onChange={(e) => handleChange('parentsBrideAr', e.target.value)}
+                              placeholder="إهداء أهل العروس..."
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {sec.key === 'dresscode' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <span className="text-[11px] font-bold text-stone-700 block">قواعد الزي (Dress Code):</span>
+                          <input
+                            type="text"
+                            value={
+                              invitation.events?.[0]?.dressCodeAr ||
+                              invitation.themeConfig?.dressCode ||
+                              ''
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              handleNestedThemeConfigChange('dressCode', val);
+                              if (invitation.events && invitation.events.length > 0) {
+                                const updated = [...invitation.events];
+                                updated[0] = { ...updated[0], dressCodeAr: val };
+                                handleChange('events', updated);
+                              }
+                            }}
+                            placeholder="بدلة رسمية وفستان سواريه فاخر 🎩👗"
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                          />
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              'بدلة رسمية وفستان سواريه فاخر 🎩👗',
+                              'جلابيب شرقية وملابس تراثية 💃',
+                              'فورمال صيفي أنيق',
+                              'ملابس رسمية محتشمة ومريحة',
+                            ].map((dc) => (
+                              <button
+                                key={dc}
+                                type="button"
+                                onClick={() => {
+                                  handleNestedThemeConfigChange('dressCode', dc);
+                                  if (invitation.events && invitation.events.length > 0) {
+                                    const updated = [...invitation.events];
+                                    updated[0] = { ...updated[0], dressCodeAr: dc };
+                                    handleChange('events', updated);
+                                  }
+                                }}
+                                className="text-[9px] font-bold text-stone-700 bg-stone-50 hover:bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200"
+                              >
+                                {dc}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {sec.key === 'henna_special' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200 text-rose-950 text-[11px] space-y-2">
+                            <span className="font-bold block">🌸 خيارات ليلة الحنة المخصصة للسيدات فقط:</span>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-700 block">رمز الدخول الخاص (Passcode):</label>
+                              <input
+                                type="text"
+                                value={(invitation.themeConfig as any)?.hennaPasscode || '2026'}
+                                onChange={(e) => handleNestedThemeConfigChange('hennaPasscode', e.target.value)}
+                                placeholder="2026"
+                                className="w-full px-2.5 py-1.5 rounded-xl border border-rose-200 text-xs font-mono text-left dir-ltr bg-white"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-700 block">رسالة سهرة الحنة:</label>
+                              <textarea
+                                rows={2}
+                                value={
+                                  (invitation.themeConfig as any)?.hennaMessage ||
+                                  'يسعدنا تشريفكم في ليلة الحنة المبهجة في أجواء راقية ومخصصة للسيدات فقط للاحتفال بالعروس 🌸🌿'
+                                }
+                                onChange={(e) => handleNestedThemeConfigChange('hennaMessage', e.target.value)}
+                                className="w-full px-2.5 py-1.5 rounded-xl border border-rose-200 text-xs bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {(sec.key === 'venue' || sec.key === 'map') && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-stone-700">تفاصيل القاعة وموقع الخريطة:</span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('events')}
+                              className="text-[10px] font-bold text-[#720925] hover:underline"
+                            >
+                              إدارة المناسبات ↗
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={invitation.events?.[0]?.venueNameAr || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (invitation.events && invitation.events.length > 0) {
+                                  const updated = [...invitation.events];
+                                  updated[0] = { ...updated[0], venueNameAr: val };
+                                  handleChange('events', updated);
+                                }
+                              }}
+                              placeholder="اسم القاعة (مثال: فندق ماريوت الزمالك)"
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                            />
+                            <input
+                              type="text"
+                              value={invitation.events?.[0]?.addressAr || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (invitation.events && invitation.events.length > 0) {
+                                  const updated = [...invitation.events];
+                                  updated[0] = { ...updated[0], addressAr: val };
+                                  handleChange('events', updated);
+                                }
+                              }}
+                              placeholder="العنوان (مثال: حي الزمالك، القاهرة)"
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs bg-stone-50"
+                            />
+                          </div>
+                          <input
+                            type="url"
+                            value={invitation.events?.[0]?.googleMapsUrl || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (invitation.events && invitation.events.length > 0) {
+                                const updated = [...invitation.events];
+                                updated[0] = { ...updated[0], googleMapsUrl: val };
+                                handleChange('events', updated);
+                              }
+                            }}
+                            placeholder="رابط خرائط جوجل (Google Maps URL)..."
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr bg-stone-50"
+                          />
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              { name: 'ماريوت الزمالك', venue: 'فندق ماريوت الزمالك — قاعة عايدة الملكية', address: '١٦ شارع سراي الجزيرة، حي الزمالك، القاهرة', map: 'https://maps.google.com/?q=Cairo+Marriott+Hotel+Zamalek' },
+                              { name: 'فورسيزونز نايل بلازا', venue: 'فندق فورسيزونز نايل بلازا', address: 'كورنيش النيل، جاردن سيتي، القاهرة', map: 'https://maps.google.com/?q=Four+Seasons+Hotel+Cairo+at+Nile+Plaza' },
+                              { name: 'مسجد المشير طنطاوي', venue: 'قاعة الماسة — مسجد المشير طنطاوي', address: 'محور المشير، التجمع الخامس، القاهرة', map: 'https://maps.google.com/?q=Mosheer+Tantawy+Mosque' },
+                            ].map((vp) => (
+                              <button
+                                key={vp.name}
+                                type="button"
+                                onClick={() => {
+                                  if (invitation.events && invitation.events.length > 0) {
+                                    const updated = [...invitation.events];
+                                    updated[0] = { ...updated[0], venueNameAr: vp.venue, addressAr: vp.address, googleMapsUrl: vp.map };
+                                    handleChange('events', updated);
+                                  } else {
+                                    const newEvt = {
+                                      id: `evt-main-${Date.now()}`,
+                                      type: 'wedding',
+                                      titleAr: 'حفل الزفاف والزفة الكبرى 👑',
+                                      date: invitation.eventDate || new Date().toISOString(),
+                                      startTime: '08:00 م',
+                                      endTime: '02:00 ص',
+                                      venueNameAr: vp.venue,
+                                      addressAr: vp.address,
+                                      googleMapsUrl: vp.map,
+                                      dressCodeAr: 'Black Tie / بدلة رسمية وفستان سواريه فاخر 🎩👗',
+                                      isVisible: true,
+                                      sortOrder: 1,
+                                    };
+                                    handleChange('events', [newEvt]);
+                                  }
+                                }}
+                                className="text-[9px] font-bold text-stone-700 bg-stone-50 hover:bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200"
+                              >
+                                📍 {vp.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {sec.key === 'gallery' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-stone-700">صور ألبوم الفرح ({invitation.galleryImages?.length || 0}):</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const presets = [
+                                  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+                                  'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+                                  'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80',
+                                ];
+                                handleChange('galleryImages', presets);
+                              }}
+                              className="text-[9px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200 cursor-pointer"
+                            >
+                              🪄 تعبئة صور ألبوم جاهزة
+                            </button>
+                          </div>
+                          {Array.isArray(invitation.galleryImages) && invitation.galleryImages.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto py-1">
+                              {invitation.galleryImages.map((img: string, i: number) => (
+                                <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-stone-200 group">
+                                  <img src={img} alt={`gallery-${i}`} className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = invitation.galleryImages.filter((_: any, idx: number) => idx !== i);
+                                      handleChange('galleryImages', updated);
+                                    }}
+                                    className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                    title="حذف الصورة"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {sec.key === 'cover' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <span className="text-[11px] font-bold text-stone-700 block">صورة غلاف الدعوة (Hero Cover):</span>
+                          <div className="flex items-center gap-2">
+                            {invitation.coverImageUrl && (
+                              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-stone-200">
+                                <img src={invitation.coverImageUrl} alt="cover" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <input
+                              type="text"
+                              value={invitation.coverImageUrl || ''}
+                              onChange={(e) => handleChange('coverImageUrl', e.target.value)}
+                              placeholder="رابط صورة الغلاف..."
+                              className="flex-1 px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr bg-stone-50"
+                            />
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              { label: 'ورود زفاف ناعمة 🌸', url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80' },
+                              { label: 'قاعة ملكية ذهبية 👑', url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80' },
+                              { label: 'أضواء رومانسية ✨', url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80' },
+                            ].map((p) => (
+                              <button
+                                key={p.label}
+                                type="button"
+                                onClick={() => handleChange('coverImageUrl', p.url)}
+                                className="text-[9px] font-bold text-stone-700 bg-stone-50 hover:bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200"
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {sec.key === 'couple_photo' && isEnabled && (
+                        <div className="pt-2 mt-2 border-t border-stone-100 space-y-2">
+                          <span className="text-[11px] font-bold text-stone-700 block">صورة العروسين الشخصية (Portrait):</span>
+                          <div className="flex items-center gap-2">
+                            {invitation.coupleImageUrl && (
+                              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-stone-200">
+                                <img src={invitation.coupleImageUrl} alt="couple" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <input
+                              type="text"
+                              value={invitation.coupleImageUrl || ''}
+                              onChange={(e) => handleChange('coupleImageUrl', e.target.value)}
+                              placeholder="رابط صورة العروسين..."
+                              className="flex-1 px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr bg-stone-50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleChange('coupleImageUrl', 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80')}
+                              className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold whitespace-nowrap cursor-pointer"
+                            >
+                              صورة نموذجية 💍
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2343,6 +3046,7 @@ export default function VisualInvitationBuilderPage() {
                 theme={invitation.theme}
                 sections={invitation.sections || []}
                 isPreview={true}
+                isMobileFrame={true}
               />
             </div>
           </div>
