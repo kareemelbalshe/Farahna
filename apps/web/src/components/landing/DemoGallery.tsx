@@ -52,7 +52,7 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     previewUrl: '/invitation/wedding/ahmed-sara',
     eventsCount: 4,
     eventsList: ['الخطوبة', 'الحنة', 'كتب الكتاب', 'الفرح'],
-    coverGradient: 'from-[#720925] via-[#4A0517] to-[#1F0209]',
+    coverGradient: 'from-[#6E0D25] via-[#500619] to-[#2B030D]',
     accentColor: '#D4AF37',
     badge: 'رحلة كاملة ٤ مناسبات 👑',
     openingStyle: 'wax-seal',
@@ -79,7 +79,7 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     previewUrl: '/invitation/engagement/omar-salma',
     eventsCount: 1,
     eventsList: ['حفل الخطوبة'],
-    coverGradient: 'from-[#1E1E22] via-[#141416] to-[#0A0A0C]',
+    coverGradient: 'from-[#1A1A22] via-[#121216] to-[#0A0A0D]',
     accentColor: '#D4AF37',
     badge: 'خطوبة شيك ✨',
     openingStyle: 'gatefold',
@@ -106,8 +106,8 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     previewUrl: '/invitation/henna/mariam-youssef',
     eventsCount: 1,
     eventsList: ['ليلة الحنة'],
-    coverGradient: 'from-[#9C5162] via-[#7B3C4B] to-[#451C26]',
-    accentColor: '#FBCFE8',
+    coverGradient: 'from-[#843247] via-[#682637] to-[#461421]',
+    accentColor: '#F5C6D6',
     badge: 'خاص بالسيدات فقط 🌿',
     openingStyle: 'blooming',
     openingNameAr: 'تفتح بتلات الورد 🌸',
@@ -133,8 +133,8 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     previewUrl: '/invitation/katb_ketab/karim-nada',
     eventsCount: 1,
     eventsList: ['عقد القران'],
-    coverGradient: 'from-[#3A4A58] via-[#2A3742] to-[#1B242C]',
-    accentColor: '#E2E8F0',
+    coverGradient: 'from-[#FFFFFF] via-[#F7F3EB] to-[#EAE2D2]',
+    accentColor: '#D4AF37',
     badge: 'طابع إسلامي أصيل 📜',
     openingStyle: 'slider',
     openingNameAr: 'الجراب المخملي المنزلق 💎',
@@ -160,8 +160,8 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     previewUrl: '/invitation/wedding/ahmed-sara-egyptian-oriental',
     eventsCount: 1,
     eventsList: ['حفل الزفاف'],
-    coverGradient: 'from-[#2C1810] via-[#3D2314] to-[#1A0F0A]',
-    accentColor: '#E5A93C',
+    coverGradient: 'from-[#1A365D] via-[#152E52] to-[#0C1B30]',
+    accentColor: '#C69214',
     badge: 'طابع مصري شرقي أصيل 🪕',
     openingStyle: 'gatefold',
     openingNameAr: 'بوابات القصر الملكي 🏛️',
@@ -184,10 +184,10 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     city: 'مصر الجديدة، القاهرة',
     themeName: 'الزمردي وقصر الرخام',
     themeSlug: 'emerald-palace',
-    previewUrl: '/invitation/wedding/ahmed-sara?theme=emerald-palace',
+    previewUrl: '/invitation/wedding/ahmed-sara-emerald-palace',
     eventsCount: 1,
     eventsList: ['حفل الزفاف'],
-    coverGradient: 'from-[#0E382B] via-[#165642] to-[#08261C]',
+    coverGradient: 'from-[#0D3528] via-[#134B39] to-[#071F17]',
     accentColor: '#D4AF37',
     badge: 'رخام إيطالي وعروق ذهب 🏛️',
     openingStyle: 'gatefold',
@@ -266,8 +266,9 @@ export function DemoGallery({
         </div>
 
         {/* Gallery Grid */}
-        <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDemos.map((demo) => {
+            const isLight = demo.themeSlug === 'minimal-white';
             const waUrl = getWhatsAppUrl(
               whatsappNumber,
               createInquiryWhatsAppMessage(demo.themeName, demo.typeNameAr)
@@ -281,25 +282,48 @@ export function DemoGallery({
                 <div>
                   {/* Card Visual Hero Frame */}
                   <div
-                    className={`h-48 bg-gradient-to-br ${demo.coverGradient} p-5 text-white flex flex-col justify-between relative overflow-hidden`}
+                    className={`h-48 bg-gradient-to-br ${demo.coverGradient} p-5 flex flex-col justify-between relative overflow-hidden ${
+                      isLight ? 'text-stone-900 border-b border-stone-200' : 'text-white'
+                    }`}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
+                    {/* Background Texture Pattern matching inside */}
+                    {demo.backgroundPattern && (
+                      <div className={`absolute inset-0 opacity-15 pointer-events-none pattern-${demo.backgroundPattern}`} />
+                    )}
+
+                    {/* Corner Filigrees matching the royal envelope */}
+                    <div className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t border-l rounded-tl pointer-events-none opacity-60" style={{ borderColor: demo.accentColor }} />
+                    <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t border-r rounded-tr pointer-events-none opacity-60" style={{ borderColor: demo.accentColor }} />
 
                     <div className="flex items-center justify-between z-10">
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white">
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md border ${
+                          isLight
+                            ? 'bg-stone-900/10 text-stone-900 border-stone-300'
+                            : 'bg-white/20 text-white border-white/20'
+                        }`}
+                      >
                         {demo.badge}
                       </span>
-                      <span className="text-[11px] font-medium text-stone-200">
+                      <span
+                        className={`text-[11px] font-medium ${
+                          isLight ? 'text-stone-600' : 'text-stone-200'
+                        }`}
+                      >
                         {demo.themeName}
                       </span>
                     </div>
 
                     <div className="text-center my-auto z-10">
-                      <p className="text-xs text-amber-300 font-amiri">دعوة لحضور</p>
-                      <h3 className="text-2xl font-black font-cairo text-white tracking-wide">
+                      <p className={`text-xs font-amiri ${isLight ? 'text-amber-800 font-bold' : 'text-amber-300'}`}>
+                        دعوة لحضور
+                      </p>
+                      <h3 className={`text-2xl font-black font-cairo tracking-wide ${isLight ? 'text-stone-950' : 'text-white'}`}>
                         {demo.coupleNames}
                       </h3>
-                      <p className="text-[11px] text-stone-200 mt-0.5">{demo.typeNameAr}</p>
+                      <p className={`text-[11px] mt-0.5 ${isLight ? 'text-stone-600 font-semibold' : 'text-stone-200'}`}>
+                        {demo.typeNameAr}
+                      </p>
                     </div>
 
                     {/* Events included chips */}
@@ -307,7 +331,11 @@ export function DemoGallery({
                       {demo.eventsList.map((evt, idx) => (
                         <span
                           key={idx}
-                          className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/15 backdrop-blur-xs text-stone-100"
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs ${
+                            isLight
+                              ? 'bg-stone-900/10 text-stone-800 border border-stone-300/60'
+                              : 'bg-white/15 text-stone-100'
+                          }`}
                         >
                           {evt}
                         </span>

@@ -10,6 +10,7 @@ import {
   submitPublicDesign,
   uploadPublicAudio,
 } from '../controllers/public.controller';
+import { getPricingPlans } from '../controllers/pricing-plan.controller';
 import { uploadMiddleware } from '../controllers/media.controller';
 import { validateBody } from '../middleware/validate';
 import { rsvpRateLimiter } from '../middleware/auth';
@@ -17,7 +18,8 @@ import { rsvpSubmissionSchema, analyticsEventSchema } from '@farahna/shared';
 
 const router = Router();
 
-// 1. Self-Service Design Submission & Audio Upload
+// 1. Self-Service Design Submission, Audio Upload & Pricing Plans
+router.get('/pricing-plans', getPricingPlans);
 router.post('/submit-design', submitPublicDesign);
 router.post('/upload-audio', uploadMiddleware, uploadPublicAudio);
 

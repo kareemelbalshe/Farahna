@@ -15,7 +15,12 @@ export function Footer({
   whatsappNumber = '201019262075',
   supportPhone = '+201019262075',
 }: FooterProps) {
-  const whatsappUrl = getWhatsAppUrl(whatsappNumber, createInquiryWhatsAppMessage());
+  // Official communication number is strictly +20 10 1926 2075
+  const contactWhatsApp =
+    whatsappNumber && !whatsappNumber.includes('64906723')
+      ? whatsappNumber.replace(/[^0-9]/g, '')
+      : '201019262075';
+  const whatsappUrl = getWhatsAppUrl(contactWhatsApp, createInquiryWhatsAppMessage());
 
   return (
     <footer className="bg-stone-950 text-white pt-16 pb-12 border-t border-stone-800">
@@ -113,20 +118,25 @@ export function Footer({
             <p className="text-xs text-stone-400">
               متاحون للرد على استفساراتكم وتصميم دعوتكم على مدار الأسبوع عبر واتساب.
             </p>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xs text-emerald-400 hover:text-emerald-300 font-bold"
+                className="inline-flex items-center gap-2 text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
               >
-                <MessageCircle className="w-4 h-4 fill-current" />
-                <span>واتساب: {whatsappNumber}</span>
+                <MessageCircle className="w-4 h-4 fill-current shrink-0" />
+                <span dir="ltr">واتساب: +20 10 1926 2075</span>
               </a>
-              <div className="text-xs text-stone-400 flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>هاتف: {supportPhone}</span>
-              </div>
+
+              <a
+                href="tel:+201019262075"
+                className="text-xs text-stone-300 hover:text-white flex items-center gap-2 transition-colors"
+              >
+                <Phone className="w-4 h-4 shrink-0 text-amber-400" />
+                <span dir="ltr">هاتف: +20 10 1926 2075</span>
+              </a>
+
               <div className="pt-2 flex items-center gap-2.5">
                 <a
                   href={FARAHNA_SOCIAL_LINKS.facebook}

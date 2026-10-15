@@ -4,10 +4,10 @@ export async function fetchPublicInvitation(type: string, slug: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/public/invitations/${type}/${slug}`, {
       cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
     });
     return await res.json();
   } catch (error) {
-    console.error('Error fetching public invitation:', error);
     return { success: false, message: 'تعذر الاتصال بالخادم' };
   }
 }
@@ -108,7 +108,10 @@ export async function recordPublicAnalytics(data: {
 
 export async function fetchSiteSettings() {
   try {
-    const res = await fetch(`${API_BASE_URL}/settings`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API_BASE_URL}/settings`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(1000),
+    });
     const json = await res.json();
     return json.data;
   } catch (e) {
@@ -116,7 +119,8 @@ export async function fetchSiteSettings() {
       siteNameAr: 'فرحنا',
       whatsappNumber: '201019262075',
       supportPhone: '+201019262075',
-      paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723',
+      paymentPhone: '01064906723',
+      paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش',
     };
   }
 }
@@ -141,3 +145,89 @@ export async function adminFetch(endpoint: string, options: RequestInit = {}) {
 
   return await res.json();
 }
+
+export interface PricingPlanItem {
+  id?: string;
+  name: string;
+  nameAr: string;
+  slug: string;
+  price: number;
+  priceLabel: string;
+  currency: string;
+  durationDays?: number;
+  features?: string[];
+  featuresAr?: string[];
+  badge?: string;
+  isPopular?: boolean;
+}
+
+export const DEFAULT_PRICING_PLANS: PricingPlanItem[] = [
+  {
+    name: 'Basic Event',
+    nameAr: 'باقة المناسبة الواحدة',
+    slug: 'basic',
+    price: 50,
+    priceLabel: '50 ج.م',
+    currency: 'EGP',
+    durationDays: 30,
+    badge: 'اقتصادية لمناسبة واحدة 🌸',
+    isPopular: false,
+  },
+  {
+    name: 'Wedding Journey',
+    nameAr: 'باقة رحلة الفرح الشاملة',
+    slug: 'wedding-journey',
+    price: 95,
+    priceLabel: '95 ج.م',
+    currency: 'EGP',
+    durationDays: 90,
+    badge: 'الأكثر طلباً والأفضل قيمة 👑',
+    isPopular: true,
+  },
+  {
+    name: 'Luxury Custom VIP',
+    nameAr: 'باقة التصميم الخاص VIP',
+    slug: 'luxury-vip',
+    price: 150,
+    priceLabel: '150 ج.م',
+    currency: 'EGP',
+    durationDays: 180,
+    badge: 'فخامة ملكية وتخصيص كامل 💎',
+    isPopular: false,
+  },
+];
+
+export async function fetchPricingPlans(): Promise<PricingPlanItem[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/pricing-plans`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
+    });
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+      return json.data.map((p: any) => ({
+        ...p,
+        price: Number(p.price) || 50,
+        priceLabel: `${Number(p.price) || 50} ${p.currency === 'EGP' ? 'ج.م' : p.currency || 'ج.م'}`,
+      }));
+    }
+    return DEFAULT_PRICING_PLANS;
+  } catch (e) {
+    return DEFAULT_PRICING_PLANS;
+  }
+}
+
+export async function updatePricingPlan(idOrSlug: string, data: any) {
+  return await adminFetch(`/pricing-plans/${idOrSlug}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function bulkUpdatePricingPlans(plans: any[]) {
+  return await adminFetch(`/pricing-plans/bulk`, {
+    method: 'PATCH',
+    body: JSON.stringify({ plans }),
+  });
+}
+

@@ -11,6 +11,7 @@ import settingsRoutes from './settings.routes';
 import analyticsRoutes from './analytics.routes';
 import mediaRoutes from './media.routes';
 import publicRoutes from './public.routes';
+import pricingPlanRoutes from './pricing-plan.routes';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/themes', themeRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/media', mediaRoutes);
+router.use('/pricing-plans', pricingPlanRoutes);
 router.use('/public', publicRoutes);
 
 export default router;

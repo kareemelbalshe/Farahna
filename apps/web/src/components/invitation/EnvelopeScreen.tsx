@@ -5,6 +5,27 @@ import { Sparkles, Heart, Crown, Music } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { formatArabicDate } from '@/lib/date';
 import { playThemeMelody } from '@/lib/themeAudio';
+import { InnerCardView } from './InnerCardView';
+
+function adjustHex(hex: string, percent: number): string {
+  try {
+    let clean = hex.replace('#', '').trim();
+    if (clean.length === 3) {
+      clean = clean.split('').map((c) => c + c).join('');
+    }
+    if (clean.length !== 6) return hex;
+    const num = parseInt(clean, 16);
+    let r = (num >> 16) + Math.round(255 * (percent / 100));
+    let g = ((num >> 8) & 0x00ff) + Math.round(255 * (percent / 100));
+    let b = (num & 0x0000ff) + Math.round(255 * (percent / 100));
+    r = Math.min(255, Math.max(0, r));
+    g = Math.min(255, Math.max(0, g));
+    b = Math.min(255, Math.max(0, b));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  } catch {
+    return hex;
+  }
+}
 
 interface EnvelopeScreenProps {
   coupleNames: string;
@@ -50,6 +71,7 @@ export function EnvelopeScreen({
   isPreview = false,
 }: EnvelopeScreenProps) {
   const [openStage, setOpenStage] = useState<OpenStage>('closed');
+  const [isFlapBehind, setIsFlapBehind] = useState(false);
 
   if (isOpen) return null;
 
@@ -199,6 +221,27 @@ export function EnvelopeScreen({
 
   const palette = resolveThemePalette();
 
+  // Harmonize exterior envelope colors with primaryColor & secondaryColor
+  if (primaryColor) {
+    const pLight = adjustHex(primaryColor, 15);
+    const pDark = adjustHex(primaryColor, -25);
+    palette.envelopeBody = primaryColor;
+    palette.envelopeBodyGradient = `linear-gradient(145deg, ${pLight} 0%, ${primaryColor} 55%, ${pDark} 100%)`;
+    palette.flapColor = primaryColor;
+    palette.buttonBg = `linear-gradient(135deg, ${pLight} 0%, ${primaryColor} 50%, ${pDark} 100%)`;
+    palette.glowOrb = primaryColor;
+  }
+
+  if (secondaryColor) {
+    const sLight = adjustHex(secondaryColor, 20);
+    const sDark = adjustHex(secondaryColor, -20);
+    palette.envelopeBorder = secondaryColor;
+    palette.flapBorder = secondaryColor;
+    palette.sealBorder = sLight;
+    palette.buttonBorder = secondaryColor;
+    palette.ribbonBg = `linear-gradient(180deg, ${secondaryColor} 0%, ${sDark} 100%)`;
+  }
+
   const handleOpenClick = () => {
     if (hasTriggeredRef.current || openStage !== 'closed') {
       onOpen();
@@ -216,8 +259,8 @@ export function EnvelopeScreen({
       return;
     }
 
-    // Step 1: Immediate unseal sound & flap/door open
-    setOpenStage('flap_open');
+    // Step 0: Immediate unsealing anticipation (wax seal glow & melody)
+    setOpenStage('unsealing');
 
     try {
       const slugKey = (
@@ -231,50 +274,60 @@ export function EnvelopeScreen({
       playThemeMelody(slugKey);
     } catch (e) {}
 
-    // Golden sparkle burst
+    // Subtle golden sparkle burst at seal point
     try {
       confetti({
-        particleCount: 45,
-        spread: 60,
-        origin: { y: 0.6 },
+        particleCount: 35,
+        spread: 55,
+        origin: { y: 0.58 },
         colors: [palette.envelopeBorder, '#FFD700', '#FFF8DC', '#FFFFFF'],
       });
     } catch (e) {}
 
-    // Step 2: Elevate card
+    // Step 1: Flap unfolds smoothly outwards & upwards
+    setTimeout(() => {
+      setOpenStage('flap_open');
+    }, 220);
+
+    // Step 1.5: As flap crosses 90 degrees vertical, seamlessly switch behind card
+    setTimeout(() => {
+      setIsFlapBehind(true);
+    }, 560);
+
+    // Step 2: Elevate card gracefully after flap is fully open
     setTimeout(() => {
       setOpenStage('card_up');
-    }, 480);
+    }, 980);
 
-    // Step 3: Festive dual-angle confetti
+    // Step 3: Festive dual-angle confetti celebration
     setTimeout(() => {
       try {
         confetti({
-          particleCount: 45,
+          particleCount: 50,
           angle: 60,
           spread: 65,
           origin: { x: 0.22, y: 0.55 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
         confetti({
-          particleCount: 45,
+          particleCount: 50,
           angle: 120,
           spread: 65,
           origin: { x: 0.78, y: 0.55 },
           colors: [palette.envelopeBorder, '#FFD700', '#F5D77F', '#FFFFFF'],
         });
       } catch (e) {}
-    }, 850);
+    }, 1250);
 
     // Step 4: Fade & reveal
     setTimeout(() => {
       setOpenStage('revealing');
-    }, 1400);
+    }, 2100);
 
     // Step 5: Complete & hand over
     setTimeout(() => {
       onOpen();
-    }, 1850);
+    }, 2600);
   };
 
   const handleUserAction = (e?: React.SyntheticEvent) => {
@@ -332,58 +385,19 @@ export function EnvelopeScreen({
 
   // Common Inner Card Content Component
   const renderInnerCardContent = () => (
-    <div
-      className={`relative w-full h-full p-3 sm:p-5 flex flex-col justify-between text-center select-none ${resolvedCardStyleClass}`}
-      style={{
-        backgroundColor: innerCardStyle === 'frosted' ? 'rgba(255,255,255,0.85)' : isDark ? '#FFFDF8' : '#FCFAF6',
-        borderColor: palette.envelopeBorder,
-      }}
-    >
-      {/* Top Bismillah / Verse Excerpt */}
-      {verseExcerpt ? (
-        <div className="space-y-0.5">
-          <span className="text-[10px] sm:text-xs text-amber-900 font-amiri font-bold tracking-widest block opacity-85">
-            ﷽
-          </span>
-          <p className="text-[9px] min-[360px]:text-[10px] sm:text-[11px] text-stone-800 font-amiri font-bold leading-relaxed line-clamp-2 px-1">
-            «{verseExcerpt}»
-          </p>
-        </div>
-      ) : (
-        <div className="py-0.5">
-          <span className="text-[10px] sm:text-[11px] text-amber-900 font-amiri font-bold tracking-widest block">
-            ✨ دعوة خاصة ومباركة لحضور الحفل ✨
-          </span>
-        </div>
-      )}
-
-      {/* Couple names on card */}
-      <div className="py-1 border-y border-amber-300/80 my-auto">
-        <span
-          className={`font-black font-cairo block leading-snug px-1 break-words ${
-            isPreview ? 'text-xs min-[360px]:text-sm' : 'text-sm min-[360px]:text-base sm:text-xl'
-          }`}
-          style={{ color: primaryColor }}
-        >
-          {coupleNames}
-        </span>
-        <span className="text-[9px] min-[360px]:text-[10px] sm:text-[11px] font-amiri font-bold text-amber-800 block mt-0.5 truncate">
-          {invitationTitle || 'نتشرف بحضوركم ومشاركتنا فرحتنا'}
-        </span>
-      </div>
-
-      {/* Bottom event date */}
-      {formattedDate ? (
-        <div className="flex items-center justify-center gap-1.5 text-[8px] min-[360px]:text-[9px] sm:text-[10px] text-stone-700 font-cairo font-bold">
-          <span>📅</span>
-          <span>{formattedDate}</span>
-        </div>
-      ) : (
-        <span className="text-[8px] min-[360px]:text-[9px] text-stone-500 font-cairo font-bold">
-          أهلاً وسهلاً بكم في ليلتنا المباركة
-        </span>
-      )}
-    </div>
+    <InnerCardView
+      style={innerCardStyle}
+      coupleNames={coupleNames}
+      invitationTitle={invitationTitle}
+      formattedDate={formattedDate}
+      primaryColor={primaryColor}
+      secondaryColor={secondaryColor}
+      borderColor={palette.envelopeBorder}
+      isDark={isDark}
+      verseExcerpt={verseExcerpt}
+      waxSealMonogram={waxSealMonogram}
+      isPreview={isPreview}
+    />
   );
 
   return (
@@ -688,13 +702,13 @@ export function EnvelopeScreen({
               } ${
                 isCardUp
                   ? isPreview
-                    ? '-translate-y-14 min-[360px]:-translate-y-16 scale-[1.02] shadow-[0_15px_35px_rgba(0,0,0,0.5),0_0_20px_rgba(212,175,55,0.4)]'
-                    : '-translate-y-16 min-[360px]:-translate-y-20 sm:-translate-y-28 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
+                    ? '-translate-y-16 min-[360px]:-translate-y-20 scale-[1.02] shadow-[0_15px_35px_rgba(0,0,0,0.5),0_0_20px_rgba(212,175,55,0.4)]'
+                    : '-translate-y-20 min-[360px]:-translate-y-26 sm:-translate-y-36 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
                   : 'translate-y-0 opacity-95'
               }`}
               style={{
-                transitionDuration: '450ms',
-                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                transitionDuration: '700ms',
+                transitionTimingFunction: 'cubic-bezier(0.2, 0.9, 0.3, 1)',
               }}
             >
               {renderInnerCardContent()}
@@ -757,30 +771,30 @@ export function EnvelopeScreen({
                 transformStyle: 'preserve-3d',
                 WebkitTransformStyle: 'preserve-3d',
                 transform: isFlapOpen ? 'rotateX(180deg)' : 'rotateX(0deg)',
-                transition: 'transform 480ms cubic-bezier(0.25, 1, 0.5, 1)',
-                zIndex: openStage === 'closed' || openStage === 'flap_open' ? 40 : 20,
+                transition: 'transform 850ms cubic-bezier(0.2, 0.8, 0.25, 1)',
+                zIndex: isFlapBehind ? 20 : 40,
               }}
             >
-              {/* Front of Flap */}
+              {/* Front of Flap (Exterior seen when envelope is closed) */}
               <div
                 className="absolute inset-0"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
+                  transformOrigin: 'top center',
                   transform: 'translateZ(1px)',
-                  filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))',
                 }}
               >
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id="flapFrontGrad" x1="0%" y1="0%" x2="50%" y2="100%">
+                    <linearGradient id={`flapFrontGrad_${isPreview ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
                       <stop offset="0%" stopColor={palette.flapColor} />
                       <stop offset="100%" stopColor={palette.envelopeBody} />
                     </linearGradient>
                   </defs>
                   <path
                     d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
-                    fill="url(#flapFrontGrad)"
+                    fill={`url(#flapFrontGrad_${isPreview ? 'prev' : 'live'})`}
                     stroke={palette.flapBorder}
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
@@ -788,22 +802,38 @@ export function EnvelopeScreen({
                 </svg>
               </div>
 
-              {/* Back of Flap (Revealed when open) */}
+              {/* Back of Flap (Luxury Inner Lining revealed pointing UPWARDS when open) */}
               <div
                 className="absolute inset-0"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateX(180deg) translateZ(1px)',
+                  transformOrigin: 'top center',
+                  transform: 'rotateY(180deg) translateZ(1px)',
                 }}
               >
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id={`flapBackGrad_${isPreview ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                      <stop offset="0%" stopColor={palette.flapColor} />
+                      <stop offset="100%" stopColor={palette.envelopeBody} />
+                    </linearGradient>
+                  </defs>
                   <path
-                    d="M 1,16 C 1,7.5 7.5,1 16,1 L 284,1 C 292.5,1 299,7.5 299,16 L 156,122 Q 150,128 144,122 L 1,16 Z"
-                    fill={palette.flapColor}
-                    stroke={palette.envelopeBorder}
+                    d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
+                    fill={`url(#flapBackGrad_${isPreview ? 'prev' : 'live'})`}
+                    stroke={palette.flapBorder}
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
+                  />
+                  {/* Luxury Inner Golden Lining Filigree */}
+                  <path
+                    d="M 16,5 L 284,5 C 284,12 280,18 274,23 L 155,114 Q 150,118 145,114 L 26,23 C 20,18 16,12 16,5 Z"
+                    fill="none"
+                    stroke={palette.flapBorder}
+                    strokeWidth="1.2"
+                    strokeDasharray="4 3"
+                    opacity="0.65"
                   />
                 </svg>
               </div>
@@ -815,12 +845,13 @@ export function EnvelopeScreen({
               tabIndex={0}
               aria-label="ختم الشمع الملكي"
               onClick={handleUserAction}
-              className={`absolute top-[48%] sm:top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer transition-all animate-seal-glow ${
-                isFlapOpen
+              className={`absolute top-[48%] sm:top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer transition-all duration-300 ${
+                openStage === 'unsealing'
+                  ? 'scale-110 brightness-125 drop-shadow-[0_0_25px_rgba(212,175,55,0.9)] animate-pulse'
+                  : isFlapOpen
                   ? 'opacity-0 scale-50 -translate-y-6 pointer-events-none'
-                  : 'opacity-100 scale-100 hover:scale-105 active:scale-95'
+                  : 'opacity-100 scale-100 hover:scale-105 active:scale-95 animate-seal-glow'
               }`}
-              style={{ transitionDuration: '300ms' }}
             >
               {/* Satin Ribbon Tails */}
               <div className="absolute top-[80%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 pointer-events-none -z-10">

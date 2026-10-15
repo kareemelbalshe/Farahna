@@ -765,6 +765,20 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
         });
       }
 
+      // Resolve authoritative amount from database pricing plan
+      let authoritativeAmount = Number(amount) || 95;
+      if (packageId) {
+        const matchedPlan = await tx.pricingPlan.findFirst({
+          where: {
+            OR: [{ slug: packageId }, { id: packageId }],
+            isActive: true,
+          },
+        });
+        if (matchedPlan) {
+          authoritativeAmount = Number(matchedPlan.price);
+        }
+      }
+
       // Create Order
       const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
       const order = await tx.order.create({
@@ -773,7 +787,7 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
           customerId: customer.id,
           invitationId: inv.id,
           packageId,
-          amount: Number(amount) || 95,
+          amount: authoritativeAmount,
           currency: 'EGP',
           status: 'payment_proof_received', // Waiting for admin confirmation!
           notes: `طلب تصميم ذاتي بواسطة العميل - بانتظار التحقق من إيصال الدفع (${paymentMethod})`,
@@ -785,7 +799,7 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
         data: {
           orderId: order.id,
           customerId: customer.id,
-          amount: Number(amount) || 95,
+          amount: authoritativeAmount,
           currency: 'EGP',
           method: paymentMethod as any,
           status: 'proof_received',

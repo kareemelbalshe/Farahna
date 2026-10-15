@@ -9,7 +9,8 @@ export default function AdminSettingsPage() {
     siteNameAr: 'فرحنا',
     whatsappNumber: '201019262075',
     supportPhone: '+201019262075',
-    paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش على الرقم 01064906723',
+    paymentPhone: '01064906723',
+    paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش',
     defaultTimezone: 'Africa/Cairo',
     defaultDurationDays: 60,
   });
@@ -120,16 +121,26 @@ export default function AdminSettingsPage() {
             </span>
           </div>
 
-          {/* Privacy & Zero-Storage Notice */}
-          <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs leading-relaxed flex items-start gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-amber-950">قاعدة الخصوصية والأمان المالي:</p>
-              <p className="text-[11px] text-amber-800 mt-0.5">
-                طرق الدفع المعتمدة هي <strong>InstaPay</strong> و <strong>فودافون كاش</strong> فقط.
-                لا يتم حفظ أي أرقام حسابات أو محافظ شخصية داخل النظام مطلقاً؛ بل يتم إرسال بيانات التحويل يدوياً ومباشرة للعميل عبر واتساب من قبل الإدارة بعد اعتماد معاينة الدعوة.
-              </p>
+          {/* Official Payment Receiving Number (Strict Privacy - Shown Only at Checkout) */}
+          <div className="space-y-2 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-amber-950 block">
+                رقم تحويل الأموال المعتمد (InstaPay / فودافون كاش):
+              </label>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                يظهر وقت الدفع فقط 🔒
+              </span>
             </div>
+            <input
+              type="text"
+              value={settings.paymentPhone || ''}
+              onChange={(e) => setSettings({ ...settings, paymentPhone: e.target.value })}
+              placeholder="01064906723"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-white text-xs font-mono font-bold text-left dir-ltr focus:border-[#720925] focus:outline-hidden"
+            />
+            <p className="text-[10px] text-amber-900 leading-relaxed">
+              🔒 <strong>تنبيه الخصوصية:</strong> هذا الرقم يظهر حصرياً للمستخدم داخل شاشة الدفع بعد تأكيد تعديل الدعوة داخل الاستوديو. لا يظهر هذا الرقم في الفوتر أو في أي صفحة خارجية عامة.
+            </p>
           </div>
 
           {/* Supported Methods Badges */}

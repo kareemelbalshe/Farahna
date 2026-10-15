@@ -43,6 +43,8 @@ import {
   Loader2,
   Pipette,
   Info,
+  AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -61,8 +63,15 @@ import {
   resolveCityCoordinates,
   getOpenStreetMapUrl,
 } from '@farahna/shared';
-import { submitPublicDesign } from '@/lib/api';
+import { submitPublicDesign, fetchPricingPlans, fetchSiteSettings } from '@/lib/api';
+import {
+  validateMapUrl,
+  validatePhoneNumber,
+  isDateInPast,
+  safeIsoDate,
+} from '@/lib/validation';
 import { InvitationRenderer } from '@/components/invitation/InvitationRenderer';
+import { InnerCardView } from '@/components/invitation/InnerCardView';
 import { DEFAULT_DEMOS } from '@/components/landing/DemoGallery';
 import {
   MOCK_OMAR_SALMA,
@@ -86,11 +95,13 @@ const PACKAGES = [
     features: [
       { text: 'مناسبة واحدة رئيسية (فرح أو خطوبة أو كتب كتاب)', included: true },
       { text: 'تصميم مخصص بأسماء العروسين وصورة الغلاف', included: true },
-      { text: 'عداد تنازلي لموعد الحفل وموقع القاعة على خرائط جوجل', included: true },
-      { text: 'آية قرآنية أو رسالة الفرح الافتتاحية المخصصة', included: true },
-      { text: 'رابط مباشر ومخصص للمشاركة عبر واتساب ومسنجر', included: true },
+      { text: 'قوالب كلاسيكية منسقة بألوانها الأصلية', included: true },
+      { text: 'خطوط عربية قياسية أنيقة (كايرو وأميري)', included: true },
+      { text: 'خريطة تفاعلية وموقع القاعة على Google Maps', included: true },
+      { text: 'عداد تنازلي لموعد الحفل ورابط مشاركة واتساب', included: true },
+      { text: 'فتح الظرف التفاعلي ثلاثي الأبعاد', included: false },
       { text: 'تبويبات رحلة الفرح الـ 4 برابط واحد', included: false },
-      { text: 'فتح الظرف التفاعلي الفاخر ثلاثي الأبعاد', included: false },
+      { text: 'تخصيص حر لدرجات الألوان والباترنات الملكية', included: false },
       { text: 'ألبوم صور وجاليري الذكريات VIP', included: false },
       { text: 'قسم ليلة الحنة المخصص للسيدات مع قفل سري', included: false },
     ],
@@ -103,19 +114,21 @@ const PACKAGES = [
     icon: '👑',
     badge: 'الأكثر طلباً والأفضل قيمة 👑',
     tagline: 'كل مناسبات الفرح برابط واحد متكامل',
-    summary: 'حتى 4 مناسبات (خطوبة + حنة + كتب كتاب + فرح) برابط واحد مع الظرف الملكي والموسيقى وRSVP',
+    summary: 'حتى 4 مناسبات برابط واحد مع فتح الظرف الملكي وباليتات الألوان المقترحة والموسيقى وRSVP',
     defaultMultiEvent: true,
     colorTheme: 'burgundy',
     features: [
       { text: 'كل مميزات الباقة الأساسية', included: true },
       { text: 'تبويبات رحلة الفرح الـ 4 برابط واحد (خطوبة + حنة + كتب كتاب + فرح)', included: true, highlight: true },
-      { text: 'فتح الظرف التفاعلي الفاخر ثلاثي الأبعاد مع موسيقى', included: true, highlight: true },
-      { text: 'مشغل أغاني وموسيقى تصويرية هادئة مع خيار رفع أغنيتكم', included: true },
-      { text: 'تأكيد الحضور الذكي (RSVP) وحصر المعازيم إلكترونياً', included: true },
-      { text: 'إضافة الموعد لتقويم هواتف المعازيم (Google & Apple)', included: true },
+      { text: 'فتح الظرف التفاعلي ثلاثي الأبعاد بجميع حركاته الفاخرة', included: true, highlight: true },
+      { text: 'تخصيص الألوان من الدرجات الملكية والذهبية المقترحة', included: true, highlight: true },
+      { text: '5 خطوط عربية فاخرة و5 باترنات وأشكال بطاقات مذهبة', included: true, highlight: true },
+      { text: 'مشغل أغاني وموسيقى رومانسية مع وضع رابط مباشر MP3', included: true },
+      { text: 'تأكيد الحضور الذكي (RSVP) وحفظ الموعد في التقويم', included: true },
+      { text: 'عجلة الألوان الحرة المطلقة بالكامل (Color Wheel)', included: false },
       { text: 'ألبوم صور وجاليري الذكريات VIP', included: false },
       { text: 'قسم ليلة الحنة المخصص للسيدات مع قفل سري', included: false },
-      { text: 'البريق واللمعان الذهبي الملكي وشارة VIP', included: false },
+      { text: 'البريق واللمعان الذهبي الملكي وختم مونوغرام الحروف', included: false },
     ],
   },
   {
@@ -126,20 +139,62 @@ const PACKAGES = [
     icon: '💎',
     badge: 'فخامة ملكية وتخصيص كامل 💎',
     tagline: 'التجربة الملكية الأرقى لأصحاب الذوق الرفيع',
-    summary: 'كامل مميزات المنصة + ألبوم صور الذكريات + قسم الحنة للسيدات مع قفل سري + بريق ذهبي وشارة VIP',
+    summary: 'كامل مميزات المنصة مفتوحة 100% + تخصيص حر كامل للألوان والخطوط + ألبوم صور + حنة سرية + بريق ملكي',
     defaultMultiEvent: true,
     colorTheme: 'gold',
     features: [
       { text: 'كل مميزات باقة رحلة الفرح الشاملة كاملةً', included: true },
+      { text: 'تخصيص حر 100% لعجلة الألوان وكود Hex لجميع التفاصيل', included: true, highlight: true },
+      { text: 'جميع الخطوط الـ 10 وكافة الباترنات والبطاقات الفاخرة', included: true, highlight: true },
       { text: 'ألبوم صور وجاليري الذكريات (Photo Session Gallery) مع Lightbox', included: true, highlight: true },
-      { text: 'قسم ليلة الحنة المخصص للسيدات مع رمز خصوصية سري وقفل الدخول', included: true, highlight: true },
+      { text: 'قسم ليلة الحنة المخصص للسيدات مع رمز خصوصية وقفل سري', included: true, highlight: true },
+      { text: 'ختم شمعي مخصص بحروف العروسين للظرف الملكي (Monogram)', included: true, highlight: true },
       { text: 'تأثيرات البريق والشيمر الذهبي الملكي المتحرك (Gold Sparkles)', included: true, highlight: true },
-      { text: 'ختم شمعي مخصص بحروف العروسين للظرف التفاعلي (Monogram Seal)', included: true, highlight: true },
-      { text: 'شارة ملكية فاخرة (VIP Crown Badge) وإزالة أي علامة ترويجية', included: true, highlight: true },
-      { text: 'تخصيص كامل للألوان الملكية والخطوط الفاخرة', included: true },
+      { text: 'رفع ملفات الصوت MP3 وصورة غلاف مخصصة للواتساب', included: true, highlight: true },
+      { text: 'شارة ملكية فاخرة VIP وإزالة أي علامة ترويجية وأولوية تسليم', included: true, highlight: true },
     ],
   },
 ];
+
+// Tier mapping constants for granular theme customization logic
+const FONT_TIERS: Record<string, { minTier: 'basic' | 'wedding-journey' | 'luxury-vip'; tierBadge: string; nameAr: string }> = {
+  "'Cairo', sans-serif": { minTier: 'basic', tierBadge: 'متاح للجميع', nameAr: 'خط كايرو الحديث' },
+  "'Amiri', serif": { minTier: 'basic', tierBadge: 'متاح للجميع', nameAr: 'خط أميري الملكي' },
+  "'Tajawal', sans-serif": { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑', nameAr: 'خط تجوال الانسيابي' },
+  "'Aref Ruqaa', serif": { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑', nameAr: 'خط رقعة تراثي' },
+  "'Almarai', sans-serif": { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑', nameAr: 'خط المراعي المعاصر' },
+  "'Scheherazade New', serif": { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎', nameAr: 'خط شهرزاد الملكي' },
+  "'Noto Naskh Arabic', serif": { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎', nameAr: 'خط النسخ الملكي' },
+  "'Marhey', cursive": { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎', nameAr: 'خط مَرحي المبهج' },
+  "'IBM Plex Sans Arabic', sans-serif": { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎', nameAr: 'خط آي بي إم الأنيق' },
+  "'Noto Kufi Arabic', sans-serif": { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎', nameAr: 'خط كوفي حديث' },
+};
+
+const PATTERN_TIERS: Record<string, { minTier: 'basic' | 'wedding-journey' | 'luxury-vip'; tierBadge: string }> = {
+  dots: { minTier: 'basic', tierBadge: 'متاح للجميع' },
+  parchment: { minTier: 'basic', tierBadge: 'متاح للجميع' },
+  damask: { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  zellige: { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  geometric: { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  marble: { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+  stars: { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+  floral: { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+};
+
+const CARD_STYLE_TIERS: Record<string, { minTier: 'basic' | 'wedding-journey' | 'luxury-vip'; tierBadge: string }> = {
+  arched: { minTier: 'basic', tierBadge: 'متاح للجميع' },
+  'double-gold': { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  deckle: { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  frosted: { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+  'royal-crest': { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+};
+
+const PARTICLE_TIERS: Record<string, { minTier: 'basic' | 'wedding-journey' | 'luxury-vip'; tierBadge: string }> = {
+  none: { minTier: 'basic', tierBadge: 'متاح للجميع' },
+  'golden-dust': { minTier: 'basic', tierBadge: 'متاح للجميع' },
+  'rose-petals': { minTier: 'wedding-journey', tierBadge: 'باقة 95 ج.م و VIP 👑' },
+  sparkles: { minTier: 'luxury-vip', tierBadge: 'حصري VIP (150 ج.م) 💎' },
+};
 
 const LOCAL_STORAGE_KEY = 'farahna_draft_invitation_v2';
 const LOCAL_STORAGE_ORDER_KEY = 'farahna_submitted_order_v2';
@@ -256,10 +311,70 @@ function StudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Package & Theme
+  // Package & Theme (with live dynamic pricing from backend)
+  const [packagesList, setPackagesList] = useState(PACKAGES);
   const [selectedPackage, setSelectedPackage] = useState('wedding-journey');
   const [selectedThemeId, setSelectedThemeId] = useState('theme-royal-burgundy');
   const [selectedFont, setSelectedFont] = useState("'Cairo', sans-serif");
+  const [paymentPhone, setPaymentPhone] = useState('01064906723');
+
+  // Load dynamic pricing and site settings from backend database
+  useEffect(() => {
+    let isMounted = true;
+    fetchPricingPlans()
+      .then((plans) => {
+        if (!isMounted || !plans || plans.length === 0) return;
+        setPackagesList((prev) =>
+          prev.map((pkg) => {
+            const match = plans.find((p) => p.slug === pkg.id || p.id === pkg.id);
+            if (!match) return pkg;
+            return {
+              ...pkg,
+              name: match.nameAr || pkg.name,
+              price: Number(match.price),
+              priceLabel: match.priceLabel || `${match.price} ج.م`,
+              badge: match.badge || pkg.badge,
+            };
+          })
+        );
+      })
+      .catch((err) => {
+        console.error('Failed to load dynamic pricing in studio', err);
+      });
+
+    fetchSiteSettings()
+      .then((settings) => {
+        if (!isMounted || !settings) return;
+        if (settings.paymentPhone) {
+          setPaymentPhone(settings.paymentPhone);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load payment settings in studio', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const basicPlan = packagesList.find((p) => p.id === 'basic') || packagesList[0];
+  const journeyPlan = packagesList.find((p) => p.id === 'wedding-journey') || packagesList[1];
+  const vipPlan = packagesList.find((p) => p.id === 'luxury-vip') || packagesList[2];
+
+  const basicPrice = basicPlan?.price || 50;
+  const journeyPrice = journeyPlan?.price || 95;
+  const vipPrice = vipPlan?.price || 150;
+
+  const basicToJourneyDiff = Math.max(0, journeyPrice - basicPrice);
+  const journeyToVipDiff = Math.max(0, vipPrice - journeyPrice);
+  const basicToVipDiff = Math.max(0, vipPrice - basicPrice);
+
+  const getTierBadgeText = (tier: 'basic' | 'wedding-journey' | 'luxury-vip') => {
+    if (tier === 'luxury-vip') return `حصري VIP (${vipPlan.priceLabel}) 💎`;
+    if (tier === 'wedding-journey') return `باقة ${journeyPlan.priceLabel} و VIP 👑`;
+    return 'متاح للجميع';
+  };
 
   // Custom Colors Override (Live Real-Time Editing)
   const [customPrimaryColor, setCustomPrimaryColor] = useState<string>('#720925');
@@ -270,6 +385,7 @@ function StudioContent() {
   const [openingStyle, setOpeningStyle] = useState('wax-seal');
   const [backgroundPattern, setBackgroundPattern] = useState('damask');
   const [innerCardStyle, setInnerCardStyle] = useState('arched');
+  const [previewCardInspectMode, setPreviewCardInspectMode] = useState(false);
   const [floatingParticles, setFloatingParticles] = useState('golden-dust');
 
   // Couple Details
@@ -425,6 +541,90 @@ function StudioContent() {
   const [envelopePreviewOpen, setEnvelopePreviewOpen] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [templateNotice, setTemplateNotice] = useState<string | null>(null);
+
+  // Studio Design Validation Error State
+  const [designValidationError, setDesignValidationError] = useState<string | null>(null);
+
+  // Interactive Tier Gating Notice Modal & Feedback Toast
+  const [tierNoticeModal, setTierNoticeModal] = useState<{
+    isOpen: boolean;
+    featureTitle: string;
+    featureDescription: string;
+    requiredPackageId: 'basic' | 'wedding-journey' | 'luxury-vip';
+    onUpgradeAction?: () => void;
+  } | null>(null);
+  const [tierFeedbackToast, setTierFeedbackToast] = useState<string | null>(null);
+
+  // Helper to check if a feature tier is permitted for current package
+  const isTierAllowed = (requiredTier: 'basic' | 'wedding-journey' | 'luxury-vip'): boolean => {
+    if (requiredTier === 'basic') return true;
+    if (requiredTier === 'wedding-journey') {
+      return selectedPackage === 'wedding-journey' || selectedPackage === 'luxury-vip';
+    }
+    if (requiredTier === 'luxury-vip') {
+      return selectedPackage === 'luxury-vip';
+    }
+    return false;
+  };
+
+  // Helper to trigger upgrade notice modal
+  const triggerTierNotice = (params: {
+    featureTitle: string;
+    featureDescription: string;
+    requiredPackageId: 'basic' | 'wedding-journey' | 'luxury-vip';
+    onUpgradeAction?: () => void;
+  }) => {
+    setTierNoticeModal({
+      isOpen: true,
+      featureTitle: params.featureTitle,
+      featureDescription: params.featureDescription,
+      requiredPackageId: params.requiredPackageId,
+      onUpgradeAction: params.onUpgradeAction,
+    });
+  };
+
+  // One-click upgrade handler
+  const handleUpgradeToPackage = (targetPkgId: 'basic' | 'wedding-journey' | 'luxury-vip' | string, featureName?: string) => {
+    setSelectedPackage(targetPkgId);
+    setIsMultiEvent(true);
+    if (targetPkgId === 'wedding-journey') {
+      setSectionsVisibility((prev) => ({
+        ...prev,
+        events: true,
+        envelope: true,
+        music: true,
+        rsvp: true,
+      }));
+    } else if (targetPkgId === 'luxury-vip') {
+      setSectionsVisibility((prev) => ({
+        ...prev,
+        events: true,
+        envelope: true,
+        music: true,
+        rsvp: true,
+        gallery: true,
+        henna_special: true,
+      }));
+    }
+
+    try {
+      confetti({
+        particleCount: 90,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: targetPkgId === 'luxury-vip' ? ['#D4AF37', '#FFD700', '#F59E0B'] : ['#720925', '#D4AF37', '#E11D48'],
+      });
+    } catch {
+      // ignore
+    }
+
+    const targetPkg = packagesList.find((p) => p.id === targetPkgId);
+    setTierFeedbackToast(
+      `تمت ترقية باقتك إلى [${targetPkg?.name}] بنجاح! ${featureName ? `وتم تفعيل ميزة (${featureName}) 🪄` : ''}`
+    );
+    setTimeout(() => setTierFeedbackToast(null), 5000);
+    setTierNoticeModal(null);
+  };
 
   // Payment / Checkout Modal State
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -919,29 +1119,179 @@ function StudioContent() {
     setTimeout(() => setCopySuccess(null), 2500);
   };
 
+  // Primary event update handlers with automatic sync to journeyEvents[0]
+  const handlePrimaryVenueChange = (val: string) => {
+    setVenueNameAr(val);
+    setJourneyEvents((prev) =>
+      prev.map((ev) =>
+        ev.type === 'wedding' || ev.id === 'evt-wedding' ? { ...ev, venueNameAr: val } : ev
+      )
+    );
+    setDesignValidationError(null);
+  };
+
+  const handlePrimaryAddressChange = (val: string) => {
+    setAddressAr(val);
+    setJourneyEvents((prev) =>
+      prev.map((ev) =>
+        ev.type === 'wedding' || ev.id === 'evt-wedding' ? { ...ev, addressAr: val } : ev
+      )
+    );
+    setDesignValidationError(null);
+  };
+
+  const handlePrimaryMapUrlChange = (val: string) => {
+    setGoogleMapsUrl(val);
+    setJourneyEvents((prev) =>
+      prev.map((ev) =>
+        ev.type === 'wedding' || ev.id === 'evt-wedding' ? { ...ev, googleMapsUrl: val } : ev
+      )
+    );
+    setDesignValidationError(null);
+  };
+
+  const handlePrimaryDateChange = (val: string) => {
+    setEventDate(val);
+    setJourneyEvents((prev) =>
+      prev.map((ev) =>
+        ev.type === 'wedding' || ev.id === 'evt-wedding' ? { ...ev, date: val } : ev
+      )
+    );
+    setDesignValidationError(null);
+  };
+
+  // Sub-event update handler with automatic sync to top-level wedding states
+  const updateJourneyEvent = (
+    index: number,
+    updates: Partial<(typeof journeyEvents)[0]>
+  ) => {
+    setJourneyEvents((prev) => {
+      const next = prev.map((ev, idx) => (idx === index ? { ...ev, ...updates } : ev));
+      return next;
+    });
+    setDesignValidationError(null);
+
+    const target = journeyEvents[index];
+    if (target && (target.type === 'wedding' || target.id === 'evt-wedding')) {
+      if (updates.venueNameAr !== undefined) setVenueNameAr(updates.venueNameAr);
+      if (updates.addressAr !== undefined) setAddressAr(updates.addressAr);
+      if (updates.googleMapsUrl !== undefined) setGoogleMapsUrl(updates.googleMapsUrl);
+      if (updates.date !== undefined && updates.date) {
+        setEventDate(updates.date);
+      }
+    }
+  };
+
+  const handleToggleEventEnabled = (index: number, checked: boolean) => {
+    if (!checked) {
+      const enabledCount = journeyEvents.filter((ev) => ev.enabled).length;
+      if (enabledCount <= 1) {
+        setDesignValidationError('يجب الإبقاء على مناسبة واحدة على الأقل مفعلة في الدعوة');
+        return;
+      }
+    }
+    updateJourneyEvent(index, { enabled: checked });
+  };
+
+  // Studio Form Pre-validation before Opening Checkout Modal
+  const validateDesignForm = (): { isValid: boolean; error?: string } => {
+    if (!coupleGroomAr || !coupleGroomAr.trim()) {
+      return { isValid: false, error: 'يرجى كتابة اسم العريس بالعربية في الخطوة الثانية للمتابعة.' };
+    }
+    if (!coupleBrideAr || !coupleBrideAr.trim()) {
+      return { isValid: false, error: 'يرجى كتابة اسم العروسة بالعربية في الخطوة الثانية للمتابعة.' };
+    }
+    if (!eventDate || isNaN(new Date(eventDate).getTime())) {
+      return { isValid: false, error: 'يرجى تحديد تاريخ وتوقيت حفل الزفاف في الخطوة السادسة.' };
+    }
+    if (sectionsVisibility.venue !== false && (!venueNameAr || !venueNameAr.trim())) {
+      return { isValid: false, error: 'يرجى إدخال اسم قاعة أو مكان حفل الزفاف في الخطوة السادسة.' };
+    }
+    if (googleMapsUrl && googleMapsUrl.trim()) {
+      const check = validateMapUrl(googleMapsUrl);
+      if (check.status === 'invalid') {
+        return {
+          isValid: false,
+          error: 'رابط خرائط جوجل لحفل الزفاف غير صالح، يرجى كتابة رابط صحيح أو تركه فارغاً.',
+        };
+      }
+    }
+
+    if (selectedPackage !== 'basic') {
+      const enabledEvents = journeyEvents.filter((ev) => ev.enabled);
+      if (enabledEvents.length === 0) {
+        return { isValid: false, error: 'يجب تفعيل وتضمين مناسبة واحدة على الأقل في جدول رحلة الفرح.' };
+      }
+      for (const ev of enabledEvents) {
+        if (!ev.venueNameAr || !ev.venueNameAr.trim()) {
+          return { isValid: false, error: `يرجى إدخال اسم المكان لمناسبة (${ev.titleAr}) في جدول رحلة الفرح.` };
+        }
+        if (!ev.date || isNaN(new Date(ev.date).getTime())) {
+          return { isValid: false, error: `يرجى تحديد تاريخ صالح لمناسبة (${ev.titleAr}) في جدول رحلة الفرح.` };
+        }
+        if (!ev.time || !ev.time.trim()) {
+          return { isValid: false, error: `يرجى كتابة توقيت وساعة مناسبة (${ev.titleAr}) في جدول رحلة الفرح.` };
+        }
+        if (ev.googleMapsUrl && ev.googleMapsUrl.trim()) {
+          const evCheck = validateMapUrl(ev.googleMapsUrl);
+          if (evCheck.status === 'invalid') {
+            return {
+              isValid: false,
+              error: `رابط خرائط جوجل لمناسبة (${ev.titleAr}) غير صالح، يرجى كتابة رابط صحيح أو تركه فارغاً.`,
+            };
+          }
+        }
+      }
+    }
+
+    if (sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone) {
+      const phoneCheck = validatePhoneNumber(whatsappContactPhone);
+      if (!phoneCheck.isValid) {
+        return {
+          isValid: false,
+          error: 'يرجى إدخال رقم واتساب صحيح للتواصل السريع في الخطوة السادسة أو تعطيل الزر.',
+        };
+      }
+    }
+
+    return { isValid: true };
+  };
+
+  const handleOpenCheckoutModal = () => {
+    const val = validateDesignForm();
+    if (!val.isValid) {
+      setDesignValidationError(val.error || 'يرجى استكمال البيانات المطلوبة');
+      window.scrollTo({ top: 350, behavior: 'smooth' });
+      return;
+    }
+    setDesignValidationError(null);
+    setShowCheckoutModal(true);
+  };
+
   // Submit Self-Service Design
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError('');
 
-    if (!customerPhone || customerPhone.trim().length < 10) {
-      setSubmitError('يرجى كتابة رقم هاتف / واتساب صالح للتواصل وتأكيد التفعيل');
+    const phoneValidation = validatePhoneNumber(customerPhone);
+    if (!phoneValidation.isValid) {
+      setSubmitError(phoneValidation.error || 'يرجى كتابة رقم هاتف / واتساب صالح للتواصل وتأكيد التفعيل');
       return;
     }
 
     if (!paymentProofBase64) {
-      setSubmitError('يرجى رفع لقطة شاشة (Screenshot) لرسالة تحويل الدفع عبر InstaPay أو فودافون كاش');
+      setSubmitError('يرجى رفع لقطة شاشة (Screenshot) لرسالة تحويل الدفع عبر InstaPay أو فودافون كاش للاعتماد');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const currentPkg = PACKAGES.find((p) => p.id === selectedPackage) || PACKAGES[1];
+      const currentPkg = packagesList.find((p) => p.id === selectedPackage) || packagesList[1];
 
       const res = await submitPublicDesign({
-        customerName: customerName.trim() || coupleGroomAr || 'العروسين',
-        customerPhone: customerPhone.trim(),
+        customerName: customerName.trim() || coupleGroomAr?.trim() || 'العروسين',
+        customerPhone: phoneValidation.normalized,
         packageId: selectedPackage,
         amount: currentPkg.price,
         paymentMethod,
@@ -951,8 +1301,8 @@ function StudioContent() {
           slug: generatedSlug,
           title: title || `دعوة فرح ${coupleGroomAr || 'العروسين'}`,
           type,
-          coupleGroomAr: coupleGroomAr || 'العريس',
-          coupleBrideAr: coupleBrideAr || 'العروس',
+          coupleGroomAr: coupleGroomAr?.trim() || 'العريس',
+          coupleBrideAr: coupleBrideAr?.trim() || 'العروس',
           coupleGroomEn: coupleGroomEn || null,
           coupleBrideEn: coupleBrideEn || null,
           parentsGroomAr: sectionsVisibility.parents ? parentsGroomAr || null : null,
@@ -969,7 +1319,7 @@ function StudioContent() {
           galleryImages: selectedPackage === 'luxury-vip' ? galleryImages : [],
           customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
           themeId: selectedThemeId,
-          fontFamily: selectedFont,
+          fontFamily: effectiveFont,
           whatsappPhone:
             sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
               ? whatsappContactPhone.trim()
@@ -979,12 +1329,12 @@ function StudioContent() {
             secondaryColor,
             backgroundColor,
             textColor,
-            fontFamily: selectedFont,
+            fontFamily: effectiveFont,
             selectedPackage,
-            openingStyle,
-            backgroundPattern,
-            innerCardStyle,
-            floatingParticles,
+            openingStyle: effectiveOpeningStyle,
+            backgroundPattern: effectiveBackgroundPattern,
+            innerCardStyle: effectiveInnerCardStyle,
+            floatingParticles: effectiveFloatingParticles,
             customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
             hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
             hennaMessage,
@@ -1000,16 +1350,16 @@ function StudioContent() {
                 : null,
             whatsappContactEnabled: sectionsVisibility.whatsapp && whatsappContactEnabled,
           },
-          eventDate: new Date(eventDate).toISOString(),
-          venueNameAr: sectionsVisibility.venue ? venueNameAr || 'قاعة الحفل' : 'قاعة الحفل',
-          addressAr: sectionsVisibility.venue ? addressAr || 'القاهرة، مصر' : 'القاهرة، مصر',
-          googleMapsUrl: sectionsVisibility.map ? googleMapsUrl || null : null,
+          eventDate: safeIsoDate(eventDate),
+          venueNameAr: sectionsVisibility.venue ? (venueNameAr?.trim() || 'قاعة الحفل') : 'قاعة الحفل',
+          addressAr: sectionsVisibility.venue ? (addressAr?.trim() || 'القاهرة، مصر') : 'القاهرة، مصر',
+          googleMapsUrl: sectionsVisibility.map ? (googleMapsUrl?.trim() || null) : null,
           latitude: livePreviewEvents[0]?.latitude ?? null,
           longitude: livePreviewEvents[0]?.longitude ?? null,
           openStreetMapUrl: livePreviewEvents[0]?.openStreetMapUrl ?? null,
           isMultiEvent: selectedPackage !== 'basic' && isMultiEvent,
           isVip: selectedPackage === 'luxury-vip',
-          envelopeAnimationEnabled: sectionsVisibility.envelope !== false,
+          envelopeAnimationEnabled: !isBasic && sectionsVisibility.envelope !== false,
           countdownEnabled: sectionsVisibility.countdown !== false,
           rsvpEnabled: sectionsVisibility.rsvp !== false,
           sections: DEFAULT_SECTIONS.map((sec, idx) => ({
@@ -1020,7 +1370,10 @@ function StudioContent() {
                 : sec.defaultEnabled,
             sortOrder: idx,
           })),
-          events: livePreviewEvents,
+          events: livePreviewEvents.map((ev) => ({
+            ...ev,
+            date: safeIsoDate(ev.date),
+          })),
         },
       });
 
@@ -1060,20 +1413,97 @@ function StudioContent() {
     DEFAULT_THEMES.find((t) => t.slug === selectedThemeId || `theme-${t.slug}` === selectedThemeId) ||
     DEFAULT_THEMES[0];
 
+  const isBasic = selectedPackage === 'basic';
+  const isJourney = selectedPackage === 'wedding-journey';
   const isVip = selectedPackage === 'luxury-vip';
 
-  // Strict VIP Rule: Custom colors are only active if VIP package is selected
-  const primaryColor = isVip && normalizeColor(customPrimaryColor)
+  // Tier Color Rules:
+  // - Basic (50): Theme defaults (locked to activeTheme.config)
+  // - Journey (95): Allowed to pick from curated royal swatches
+  // - VIP (150): Full freedom native color wheel + swatches + hex codes
+  const allowsCustomColors = isJourney || isVip;
+
+  const primaryColor = allowsCustomColors && normalizeColor(customPrimaryColor)
     ? normalizeColor(customPrimaryColor)!
     : (activeTheme.config?.primaryColor || '#720925');
 
-  const secondaryColor = isVip && normalizeColor(customSecondaryColor)
+  const secondaryColor = allowsCustomColors && normalizeColor(customSecondaryColor)
     ? normalizeColor(customSecondaryColor)!
     : (activeTheme.config?.secondaryColor || '#D4AF37');
 
-  const backgroundColor = isVip && normalizeColor(customBackgroundColor)
+  const backgroundColor = allowsCustomColors && normalizeColor(customBackgroundColor)
     ? normalizeColor(customBackgroundColor)!
     : (activeTheme.config?.backgroundColor || '#FAF7F2');
+
+  // Effective font normalized to active tier
+  const effectiveFont = useMemo(() => {
+    if (isBasic) {
+      if (selectedFont === "'Cairo', sans-serif" || selectedFont === "'Amiri', serif") {
+        return selectedFont;
+      }
+      return "'Cairo', sans-serif";
+    }
+    if (isJourney) {
+      const journeyFonts = [
+        "'Cairo', sans-serif",
+        "'Amiri', serif",
+        "'Tajawal', sans-serif",
+        "'Aref Ruqaa', serif",
+        "'Almarai', sans-serif",
+      ];
+      if (journeyFonts.includes(selectedFont)) {
+        return selectedFont;
+      }
+      return "'Cairo', sans-serif";
+    }
+    return selectedFont;
+  }, [isBasic, isJourney, selectedFont]);
+
+  // Effective opening style: Basic has no 3D envelope (direct reveal)
+  const effectiveOpeningStyle = useMemo(() => {
+    if (isBasic) {
+      return 'direct';
+    }
+    return openingStyle;
+  }, [isBasic, openingStyle]);
+
+  // Effective background pattern normalized to active tier
+  const effectiveBackgroundPattern = useMemo(() => {
+    if (isBasic) {
+      if (['dots', 'parchment'].includes(backgroundPattern)) return backgroundPattern;
+      return 'dots';
+    }
+    if (isJourney) {
+      if (['dots', 'parchment', 'damask', 'zellige', 'geometric'].includes(backgroundPattern)) {
+        return backgroundPattern;
+      }
+      return 'damask';
+    }
+    return backgroundPattern;
+  }, [isBasic, isJourney, backgroundPattern]);
+
+  // Effective inner card style normalized to active tier
+  const effectiveInnerCardStyle = useMemo(() => {
+    if (isBasic) return 'arched';
+    if (isJourney) {
+      if (['arched', 'double-gold', 'deckle'].includes(innerCardStyle)) return innerCardStyle;
+      return 'double-gold';
+    }
+    return innerCardStyle;
+  }, [isBasic, isJourney, innerCardStyle]);
+
+  // Effective particles normalized to active tier
+  const effectiveFloatingParticles = useMemo(() => {
+    if (isBasic) {
+      if (['none', 'golden-dust'].includes(floatingParticles)) return floatingParticles;
+      return 'golden-dust';
+    }
+    if (isJourney) {
+      if (['none', 'golden-dust', 'rose-petals'].includes(floatingParticles)) return floatingParticles;
+      return 'golden-dust';
+    }
+    return floatingParticles;
+  }, [isBasic, isJourney, floatingParticles]);
 
   const safePickerPrimary = normalizeColor(primaryColor) || '#720925';
   const safePickerSecondary = normalizeColor(secondaryColor) || '#d4af37';
@@ -1148,7 +1578,7 @@ function StudioContent() {
     setCustomBackgroundColor(activeTheme.config?.backgroundColor || '#FAF7F2');
   };
 
-  const currentPkg = PACKAGES.find((p) => p.id === selectedPackage) || PACKAGES[1];
+  const currentPkg = packagesList.find((p) => p.id === selectedPackage) || packagesList[1];
 
   const livePreviewSections = DEFAULT_SECTIONS.map((sec, idx) => ({
     id: `sec-${sec.key}`,
@@ -1195,12 +1625,12 @@ function StudioContent() {
       secondaryColor,
       backgroundColor,
       textColor,
-      fontFamily: selectedFont,
+      fontFamily: effectiveFont,
       selectedPackage,
-      openingStyle,
-      backgroundPattern,
-      innerCardStyle,
-      floatingParticles,
+      openingStyle: effectiveOpeningStyle,
+      backgroundPattern: effectiveBackgroundPattern,
+      innerCardStyle: effectiveInnerCardStyle,
+      floatingParticles: effectiveFloatingParticles,
       hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
       hennaMessage,
       hennaSpecialEnabled:
@@ -1227,7 +1657,7 @@ function StudioContent() {
       `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`,
     rsvpEnabled: sectionsVisibility.rsvp !== false,
     countdownEnabled: sectionsVisibility.countdown !== false,
-    envelopeAnimationEnabled: sectionsVisibility.envelope !== false,
+    envelopeAnimationEnabled: !isBasic && sectionsVisibility.envelope !== false,
     eventDate,
     sections: livePreviewSections,
   };
@@ -1398,7 +1828,7 @@ function StudioContent() {
             {/* Save & Activate CTA */}
             <button
               type="button"
-              onClick={() => setShowCheckoutModal(true)}
+              onClick={handleOpenCheckoutModal}
               className="px-3 sm:px-7 py-2 sm:py-3 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm shadow-md shadow-rose-950/20 hover:opacity-95 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
@@ -1431,6 +1861,32 @@ function StudioContent() {
               type="button"
               onClick={() => setTemplateNotice(null)}
               className="p-1 rounded-lg text-amber-700 hover:text-amber-950 hover:bg-amber-100 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Global Studio Design Validation Error Banner */}
+        {designValidationError && (
+          <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-rose-50 border-2 border-rose-300 shadow-md flex items-start justify-between gap-3 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div className="space-y-1 text-right">
+                <h4 className="font-black text-rose-950 text-xs sm:text-sm">
+                  تنبيه: يرجى مراجعة البيانات المطلوبة قبل تفعيل الدعوة
+                </h4>
+                <p className="text-xs text-rose-800 font-bold leading-relaxed">
+                  {designValidationError}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDesignValidationError(null)}
+              className="p-1 rounded-lg text-rose-500 hover:text-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1493,7 +1949,7 @@ function StudioContent() {
 
               {/* Package Comparison Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {PACKAGES.map((pkg) => {
+                {packagesList.map((pkg) => {
                   const isSelected = selectedPackage === pkg.id;
                   const isVipTier = pkg.id === 'luxury-vip';
                   const isPopularTier = pkg.id === 'wedding-journey';
@@ -1706,26 +2162,56 @@ function StudioContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700 block">اسم العريس (عربي): *</label>
+                  <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                    <span>اسم العريس (عربي): <span className="text-rose-600">*</span></span>
+                    {!coupleGroomAr.trim() && (
+                      <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     required
                     value={coupleGroomAr}
                     onChange={(e) => handleCoupleNameChange(e.target.value, coupleBrideAr)}
                     placeholder="مثال: أحمد محمود"
-                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden transition-all ${
+                      !coupleGroomAr.trim() && designValidationError
+                        ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                        : 'border-stone-200'
+                    }`}
                   />
+                  {!coupleGroomAr.trim() && designValidationError && (
+                    <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>يرجى كتابة اسم العريس بالعربية</span>
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700 block">اسم العروسة (عربي): *</label>
+                  <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                    <span>اسم العروسة (عربي): <span className="text-rose-600">*</span></span>
+                    {!coupleBrideAr.trim() && (
+                      <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     required
                     value={coupleBrideAr}
                     onChange={(e) => handleCoupleNameChange(coupleGroomAr, e.target.value)}
                     placeholder="مثال: سارة إبراهيم"
-                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-[#720925] focus:outline-hidden transition-all ${
+                      !coupleBrideAr.trim() && designValidationError
+                        ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                        : 'border-stone-200'
+                    }`}
                   />
+                  {!coupleBrideAr.trim() && designValidationError && (
+                    <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>يرجى كتابة اسم العروسة بالعربية</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -2212,7 +2698,27 @@ function StudioContent() {
               </div>
 
               <div className="space-y-4">
-                {!sectionsVisibility.music ? (
+                {isBasic ? (
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                    <div className="space-y-1">
+                      <p className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                        <Music className="w-4 h-4 text-amber-700" />
+                        <span>الموسيقى والخلفية الصوتية متاحة في باقة رحلة الفرح ({journeyPlan.priceLabel}) وباقة VIP</span>
+                      </p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                        باقة الـ {basicPlan.priceLabel} تعمل كدعوة صامتة راقية وسريعة بدون موسيقى. لإضافة مقطوعات رومانسية أو وضع أغنيتكم الخاصة، قم بالترقية لباقة رحلة الفرح.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUpgradeToPackage('wedding-journey', 'الموسيقى والخلفية الصوتية')}
+                      className="shrink-0 px-4 py-2.5 rounded-xl bg-[#720925] text-white font-bold text-xs hover:bg-rose-900 transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-300" />
+                      <span>ترقية لرحلة الفرح ({journeyPlan.priceLabel}) 👑</span>
+                    </button>
+                  </div>
+                ) : !sectionsVisibility.music ? (
                   <div className="p-3.5 rounded-2xl bg-stone-100/80 border border-stone-200 text-xs text-stone-600 leading-relaxed">
                     💡 تم كتم الصوت وحذف الموسيقى — الدعوة ستعمل كـ (دعوة صامتة هادئة). يمكنك تفعيل الموسيقى في أي وقت باختيار مقطع من أدناه.
                   </div>
@@ -2223,7 +2729,7 @@ function StudioContent() {
                 )}
 
                 {/* Preset Music Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${isBasic ? 'opacity-70' : ''}`}>
                   {WEDDING_MUSIC_PRESETS.map((m) => {
                     const isSelected = selectedMusicId === m.id || (m.url && customMusicUrl === m.url);
                     const isPlaying = audioPreviewing === m.url;
@@ -2238,11 +2744,27 @@ function StudioContent() {
                       >
                         <div
                           className="flex-1 cursor-pointer"
-                          onClick={() => handleMusicSelect(m.id)}
+                          onClick={() => {
+                            if (isBasic) {
+                              triggerTierNotice({
+                                featureTitle: `تشغيل مقطع (${m.title})`,
+                                featureDescription: `تشغيل الموسيقى الرومانسية المرافقة متاح بدءاً من باقة رحلة الفرح (${journeyPlan.priceLabel}) وباقة VIP.`,
+                                requiredPackageId: 'wedding-journey',
+                                onUpgradeAction: () => handleMusicSelect(m.id),
+                              });
+                              return;
+                            }
+                            handleMusicSelect(m.id);
+                          }}
                         >
                           <div className="flex items-center gap-1.5">
                             <h4 className="text-xs font-black">{m.title}</h4>
                             {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                            {isBasic && (
+                              <span className="text-[9px] text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.2 rounded-md font-bold">
+                                باقة {journeyPlan.priceLabel}
+                              </span>
+                            )}
                           </div>
                           <span className="text-[10px] text-stone-500 block mt-0.5">
                             {m.artist} • {m.durationHint}
@@ -2300,6 +2822,18 @@ function StudioContent() {
                       type="url"
                       value={customMusicUrl}
                       onChange={(e) => {
+                        if (isBasic) {
+                          triggerTierNotice({
+                            featureTitle: 'إدخال رابط أغنية مخصص',
+                            featureDescription: `تضمين روابط الموسيقى MP3 متاح بدءاً من باقة رحلة الفرح (${journeyPlan.priceLabel}).`,
+                            requiredPackageId: 'wedding-journey',
+                            onUpgradeAction: () => {
+                              setCustomMusicUrl(e.target.value);
+                              setSelectedMusicId('custom-link');
+                            },
+                          });
+                          return;
+                        }
                         setCustomMusicUrl(e.target.value);
                         setSelectedMusicId('custom-link');
                       }}
@@ -2324,8 +2858,24 @@ function StudioContent() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-stone-700 block">أو رفع ملف MP3 من هاتفك/جهازك:</label>
-                      <label className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-dashed text-xs font-bold transition-colors ${
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-stone-700 block">أو رفع ملف MP3 من هاتفك/جهازك:</label>
+                        <span className="text-[9px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Crown className="w-3 h-3 text-amber-600" /> حصري VIP 💎
+                        </span>
+                      </div>
+                      <label
+                        onClick={(e) => {
+                          if (!isVip) {
+                            e.preventDefault();
+                            triggerTierNotice({
+                              featureTitle: 'رفع ملف صوتي MP3 من جهازك مباشرة للسيرفر',
+                              featureDescription: `رفع الملفات الصوتية مباشرة من هاتفك وحفظها على السيرفر متاح حصرياً في باقة VIP (${vipPlan.priceLabel}). يمكنك في باقة ${journeyPlan.priceLabel} وضع رابط MP3 مباشر.`,
+                              requiredPackageId: 'luxury-vip',
+                            });
+                          }
+                        }}
+                        className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-dashed text-xs font-bold transition-colors ${
                         isUploadingAudio
                           ? 'border-amber-400 bg-amber-50 text-amber-800 cursor-wait'
                           : 'border-stone-300 hover:border-amber-500 text-stone-700 hover:text-stone-900 cursor-pointer'
@@ -2345,7 +2895,7 @@ function StudioContent() {
                           type="file"
                           accept="audio/*,.mp3"
                           onChange={handleAudioFileUpload}
-                          disabled={isUploadingAudio}
+                          disabled={isUploadingAudio || !isVip}
                           className="hidden"
                         />
                       </label>
@@ -2370,6 +2920,79 @@ function StudioContent() {
                 <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                   ⚡ التعديلات تظهر فوراً في المعاينة
                 </span>
+              </div>
+
+              {/* Active Tier Capabilities Status Bar for Step 5 */}
+              <div
+                className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-center justify-between gap-3 text-right ${
+                  isVip
+                    ? 'bg-gradient-to-r from-amber-50 via-white to-amber-50 border-amber-300 text-amber-950'
+                    : isJourney
+                    ? 'bg-rose-50/70 border-rose-200 text-rose-950'
+                    : 'bg-stone-50 border-stone-200 text-stone-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      isVip
+                        ? 'bg-amber-100 text-amber-800'
+                        : isJourney
+                        ? 'bg-rose-100 text-[#720925]'
+                        : 'bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    {isVip ? (
+                      <Crown className="w-5 h-5 text-amber-600" />
+                    ) : isJourney ? (
+                      <Sparkles className="w-5 h-5 text-[#720925]" />
+                    ) : (
+                      <Palette className="w-5 h-5 text-stone-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black flex items-center gap-2">
+                      <span>إمكانيات الثيم والمظهر لباقة ({packagesList.find((p) => p.id === selectedPackage)?.name}):</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-stone-200">
+                        {packagesList.find((p) => p.id === selectedPackage)?.priceLabel}
+                      </span>
+                    </h4>
+                    <p className="text-[11px] opacity-85 mt-0.5 leading-relaxed font-medium">
+                      {isVip
+                        ? '💎 كامل المميزات مفتوحة 100%: عجلة الألوان الحرة (Color Wheel) وكود Hex، كافة الخطوط الـ 10، كل الباترنات وأشكال الكروت والبريق الملكي ومونوغرام الحروف.'
+                        : isJourney
+                        ? '👑 مفتوح لك: فتح الظرف الملكي ثلاثي الأبعاد بجميع حركاته، وتخصيص الألوان من الدرجات الملكية المقترحة، و5 خطوط و5 باترنات وأشكال بطاقات مذهبة.'
+                        : `🌸 باقة المناسبة الواحدة تشمل ألوان الثيم الأصلية الثابتة، والخطوط العربية القياسية (كايرو وأميري)، والباترنات الناعمة. للترقية إلى فتح الظرف 3D وتخصيص الألوان اختر باقة ${journeyPlan.priceLabel} أو VIP.`}
+                    </p>
+                  </div>
+                </div>
+
+                {!isVip && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isBasic) {
+                        triggerTierNotice({
+                          featureTitle: 'ترقية إمكانيات الثيم والمظهر الملكي',
+                          featureDescription:
+                            'افتح حركة فتح الظرف التفاعلي ثلاثي الأبعاد وتخصيص الألوان والخطوط الملكية مع باقة رحلة الفرح أو VIP.',
+                          requiredPackageId: 'wedding-journey',
+                        });
+                      } else {
+                        triggerTierNotice({
+                          featureTitle: 'فتح عجلة الألوان الحرة وكافة الخطوط الـ 10',
+                          featureDescription:
+                            'تمنحك باقة VIP تحكماً مطلقاً في درجات الألوان عبر Color Wheel وختم المونوغرام المخصص بالاسمين وكافة الخطوط الملكية.',
+                          requiredPackageId: 'luxury-vip',
+                        });
+                      }
+                    }}
+                    className="shrink-0 px-3.5 py-2 rounded-xl bg-white border border-stone-300 hover:border-amber-400 text-stone-900 font-black text-xs shadow-2xs hover:shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{isBasic ? `ترقية لباقة ${journeyPlan.priceLabel} (+${basicToJourneyDiff} ج.م) 👑` : `ترقية لـ VIP ${vipPlan.priceLabel} (+${journeyToVipDiff} ج.م) 💎`}</span>
+                  </button>
+                )}
               </div>
 
               {/* 5.1: Curated Theme Cards */}
@@ -2411,77 +3034,322 @@ function StudioContent() {
                 </div>
               </div>
 
-              {/* 5.2: Real-time Color Customizer (Gated to VIP Only) */}
-              {!isVip ? (
-                <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/80 via-stone-50 to-amber-50/50 border-2 border-amber-300 shadow-xs space-y-4">
+              {/* 5.2: Real-time Color Customizer with Tier Logic (Basic 50 locked vs Journey 95 swatches vs VIP 150 full freedom) */}
+              {isBasic ? (
+                /* Plan 50 EGP: Locked Theme Colors with Upgrades */
+                <div className="p-5 rounded-2xl bg-gradient-to-b from-stone-50 via-white to-stone-50 border-2 border-stone-300 shadow-xs space-y-4">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <Crown className="w-4.5 h-4.5 text-amber-600" />
+                      <Lock className="w-4 h-4 text-stone-600" />
                       <h4 className="text-xs sm:text-sm font-black text-stone-900">
-                        ب. تحكّم بدرجات الألوان بحرية كاملة (خاص بباقة VIP 👑):
+                        ب. ألوان الثيم وتخصيص الدرجات (محددة في باقة {basicPlan.priceLabel} 🌸):
                       </h4>
                     </div>
-                    <span className="text-[11px] font-extrabold text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
-                      <Lock className="w-3.5 h-3.5 text-amber-700" /> ميزة حصرية لباقة VIP 👑
+                    <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-3 py-1 rounded-full border border-stone-200 flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-stone-500" /> ألوان القالب الكلاسيكي الأصلي
                     </span>
                   </div>
 
-                  {/* Explanatory Lock Banner */}
-                  <div className="p-4 rounded-xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                  <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-stone-800">
-                        🔒 تخصيص درجات الألوان الحرة (عجلة الألوان / كود Hex) متاح حصرياً مع باقة VIP
+                      <p className="text-xs font-bold text-amber-950">
+                        🔒 ألوان القالب محددة مسبقاً بعناية لتناسب الباقة الأساسية الاقتصادية
                       </p>
-                      <p className="text-[11px] text-stone-500 leading-relaxed">
-                        تتيح لك باقة VIP حرية اختيار أي درجة لون لثيم الدعوة، الزخارف والختم، ولون بطاقة الدعوة بكل حرية لتناسب ثيم قاعتكم أو فستان العروسة مع انعكاس فوري على المعاينة.
+                      <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                        تتيح لك باقة رحلة الفرح ({journeyPlan.priceLabel}) التعديل من الدرجات الملكية والذهبية المقترحة، كما تتيح لك باقة VIP ({vipPlan.priceLabel}) حرية اختيار أي درجة لون على الإطلاق عبر عجلة الألوان التفاعلية.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedPackage('luxury-vip');
-                        setIsMultiEvent(true);
-                      }}
-                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:brightness-110 text-white font-black text-xs shadow-sm hover:shadow-md transition-all cursor-pointer"
-                    >
-                      <Crown className="w-4 h-4 text-amber-200" />
-                      <span>الترقية لباقة VIP وتفعيل الألوان (150 ج.م) ✨</span>
-                    </button>
+
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleUpgradeToPackage('wedding-journey', 'تخصيص الألوان الملكية')}
+                        className="px-3.5 py-2 rounded-xl bg-[#720925] text-white font-black text-xs hover:bg-rose-900 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>فتح ألوان باقة {journeyPlan.priceLabel} (+${basicToJourneyDiff} ج.م) 👑</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpgradeToPackage('luxury-vip', 'عجلة الألوان الحرة المطلقة')}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 text-white font-black text-xs hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-200" />
+                        <span>فتح عجلة VIP ({vipPlan.priceLabel}) 💎</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Dimmed Preview of color pickers */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 opacity-40 pointer-events-none select-none filter blur-[0.3px]">
-                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                      <span className="text-xs font-bold text-stone-800 block">اللون الرئيسي (الثيم والظرف)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-[#720925] border border-stone-300 shrink-0" />
-                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#720925</div>
+                  {/* Read-only theme swatches preview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                      <span className="text-xs font-bold text-stone-700 block">اللون الرئيسي (الثيم)</span>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-10 h-10 rounded-xl border border-stone-300 shrink-0 shadow-2xs"
+                          style={{ backgroundColor: activeTheme.config?.primaryColor || '#720925' }}
+                        />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-600">
+                          {activeTheme.config?.primaryColor || '#720925'}
+                        </div>
                       </div>
                     </div>
-                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                      <span className="text-xs font-bold text-stone-800 block">الذهب والتفاصيل (الختم والزخارف)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-[#D4AF37] border border-stone-300 shrink-0" />
-                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#D4AF37</div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                      <span className="text-xs font-bold text-stone-700 block">الذهب والتفاصيل</span>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-10 h-10 rounded-xl border border-stone-300 shrink-0 shadow-2xs"
+                          style={{ backgroundColor: activeTheme.config?.secondaryColor || '#D4AF37' }}
+                        />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-600">
+                          {activeTheme.config?.secondaryColor || '#D4AF37'}
+                        </div>
                       </div>
                     </div>
-                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                      <span className="text-xs font-bold text-stone-800 block">لون الخلفية (بطاقة الدعوة)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-stone-300 shrink-0" />
-                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-400">#FAF7F2</div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                      <span className="text-xs font-bold text-stone-700 block">لون الخلفية والبطاقة</span>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-10 h-10 rounded-xl border border-stone-300 shrink-0 shadow-2xs"
+                          style={{ backgroundColor: activeTheme.config?.backgroundColor || '#FAF7F2' }}
+                        />
+                        <div className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono text-center font-bold bg-stone-50 text-stone-600">
+                          {activeTheme.config?.backgroundColor || '#FAF7F2'}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              ) : isJourney ? (
+                /* Plan 95 EGP: Curated Royal Swatches Unlocked + VIP Teaser for Color Wheel */
+                <div className="p-5 rounded-2xl bg-gradient-to-b from-rose-50/50 via-white to-amber-50/40 border-2 border-rose-200 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4.5 h-4.5 text-[#720925]" />
+                      <h4 className="text-xs sm:text-sm font-black text-stone-900">
+                        ب. تخصيص الألوان من الدرجات الملكية والذهبية (مفعلة لك مع باقة {journeyPlan.priceLabel} 👑):
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetColorsToTheme}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-stone-950 bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      title="استعادة ألوان القالب الأصلية"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-stone-500" />
+                      <span>استعادة ألوان القالب الأصلية</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Card 1: اللون الرئيسي */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          اللون الرئيسي (الثيم والظرف):
+                        </label>
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                          {(customPrimaryColor || primaryColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                        <div
+                          className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200 shrink-0"
+                          style={{ backgroundColor: safePickerPrimary }}
+                        />
+                        <div className="flex-1 text-right">
+                          <span className="text-xs font-bold text-stone-800 block">اللون المحدد الآن</span>
+                          <span className="text-[10px] text-stone-500 font-medium">ينعكس فوراً على المعاينة</span>
+                        </div>
+                      </div>
+
+                      {/* Suggested Royal Swatches (Clickable!) */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-500 font-bold block">
+                          اختر من الدرجات الملكية المقترحة 👑:
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'شوكولاتة ملكية', hex: '#3B1E08' },
+                            { name: 'أسود فاخر', hex: '#18181B' },
+                            { name: 'موف ملكي', hex: '#4A044E' },
+                            { name: 'كحلي داكن', hex: '#0F172A' },
+                            { name: 'زمردي ملكي', hex: '#064E3B' },
+                            { name: 'عنابي ملكي', hex: '#720925' },
+                            { name: 'وردي ملكي', hex: '#9C5162' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('primary', swatch.hex)}
+                              className="w-6 h-6 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* VIP Color Wheel Teaser Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerTierNotice({
+                            featureTitle: 'عجلة الألوان الحرة (Color Wheel)',
+                            featureDescription:
+                              'تتيح لك باقة VIP حرية اختيار أي درجة لون على الإطلاق من عجلة الألوان أو كود Hex المخصص.',
+                            requiredPackageId: 'luxury-vip',
+                          })
+                        }
+                        className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-50/80 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>عجلة الألوان الحرة وكود Hex (خاص بباقة VIP 💎)</span>
+                      </button>
+                    </div>
+
+                    {/* Card 2: الذهب والتفاصيل */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          الذهب والتفاصيل (الختم والزخارف):
+                        </label>
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                          {(customSecondaryColor || secondaryColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                        <div
+                          className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200 shrink-0"
+                          style={{ backgroundColor: safePickerSecondary }}
+                        />
+                        <div className="flex-1 text-right">
+                          <span className="text-xs font-bold text-stone-800 block">درجة الذهب المختارة</span>
+                          <span className="text-[10px] text-stone-500 font-medium">للختم والشريط والخطوط</span>
+                        </div>
+                      </div>
+
+                      {/* Suggested Gold Swatches (Clickable!) */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-500 font-bold block">
+                          اختر من درجات الذهب المقترحة ✨:
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'ذهب ملكي', hex: '#D4AF37' },
+                            { name: 'ذهب كهرماني', hex: '#F59E0B' },
+                            { name: 'برونز دافئ', hex: '#E0A96D' },
+                            { name: 'وردي ذهبي', hex: '#FDA4AF' },
+                            { name: 'بلاتينيوم فضي', hex: '#94A3B8' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('secondary', swatch.hex)}
+                              className="w-6 h-6 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* VIP Color Wheel Teaser Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerTierNotice({
+                            featureTitle: 'عجلة الألوان الحرة (Color Wheel)',
+                            featureDescription:
+                              'تتيح لك باقة VIP حرية اختيار أي درجة لون على الإطلاق من عجلة الألوان أو كود Hex المخصص.',
+                            requiredPackageId: 'luxury-vip',
+                          })
+                        }
+                        className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-50/80 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>عجلة الألوان الحرة للذهب (خاص بباقة VIP 💎)</span>
+                      </button>
+                    </div>
+
+                    {/* Card 3: لون الخلفية والبطاقة */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-stone-900">
+                          لون الخلفية (بطاقة الدعوة):
+                        </label>
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                          {(customBackgroundColor || backgroundColor).toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-50 border border-stone-200">
+                        <div
+                          className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200 shrink-0"
+                          style={{ backgroundColor: safePickerBackground }}
+                        />
+                        <div className="flex-1 text-right">
+                          <span className="text-xs font-bold text-stone-800 block">لون خلفية الكارت</span>
+                          <span className="text-[10px] text-stone-500 font-medium">كريمي أو أبيض أو داكن</span>
+                        </div>
+                      </div>
+
+                      {/* Suggested Background Swatches (Clickable!) */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <span className="text-[11px] text-stone-500 font-bold block">
+                          اختر من الخلفيات الراقية المقترحة 🎨:
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: 'كريمي عاجي', hex: '#FAF7F2' },
+                            { name: 'أبيض نقي', hex: '#FFFFFF' },
+                            { name: 'أبيض ناعم', hex: '#FFF8F9' },
+                            { name: 'رمادي لؤلؤي', hex: '#F8FAFC' },
+                            { name: 'دارك مود فاخر', hex: '#18181B' },
+                          ].map((swatch) => (
+                            <button
+                              key={swatch.hex}
+                              type="button"
+                              onClick={() => handleColorInputChange('background', swatch.hex)}
+                              className="w-6 h-6 rounded-full border border-stone-300 shadow-2xs cursor-pointer hover:scale-125 active:scale-95 transition-all"
+                              style={{ backgroundColor: swatch.hex }}
+                              title={`${swatch.name} (${swatch.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* VIP Color Wheel Teaser Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerTierNotice({
+                            featureTitle: 'عجلة الألوان الحرة (Color Wheel)',
+                            featureDescription:
+                              'تتيح لك باقة VIP حرية اختيار أي درجة لون على الإطلاق من عجلة الألوان أو كود Hex المخصص.',
+                            requiredPackageId: 'luxury-vip',
+                          })
+                        }
+                        className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-50/80 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>عجلة الألوان الحرة للخلفية (خاص بباقة VIP 💎)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ) : (
+                /* Plan 150 VIP: Full Unrestricted Freedom (Native Color Wheels + Hex + Swatches) */
                 <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F5] border border-amber-200/70 shadow-xs space-y-4">
-                  {/* VIP Header Bar */}
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4.5 h-4.5 text-amber-600 shrink-0" />
                       <h4 className="text-xs sm:text-sm font-black text-stone-900">
-                        ب. تحكّم بدرجات الألوان بحرية كاملة (تتغير وقتياً في الهاتف المقابل 📱):
+                        ب. تحكّم بدرجات الألوان بحرية كاملة (خاصة بباقة VIP 👑) — عجلة الألوان مفتوحة 100%:
                       </h4>
                     </div>
                     <button
@@ -2495,7 +3363,7 @@ function StudioContent() {
                     </button>
                   </div>
 
-                  {/* 3 VIP Color Cards matching screenshot */}
+                  {/* 3 VIP Color Cards with Native Visual Color Pickers */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Card 1: اللون الرئيسي (الثيم والظرف) */}
                     <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-3">
@@ -2503,37 +3371,42 @@ function StudioContent() {
                         <label className="text-xs font-black text-stone-900">
                           اللون الرئيسي (الثيم والظرف):
                         </label>
-                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
                           {(customPrimaryColor || primaryColor).toUpperCase()}
                         </span>
                       </div>
 
-                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
-                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
-                        <input
-                          type="text"
-                          value={customPrimaryColor}
-                          onChange={(e) => handleColorInputChange('primary', e.target.value)}
-                          onBlur={(e) => handleColorInputBlur('primary', e.target.value)}
-                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
-                          placeholder="#9C5162 أو 156, 81, 98"
-                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(156, 81, 98) أو 156, 81, 98"
-                        />
-                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
-                        <div
-                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
-                          style={{ backgroundColor: safePickerPrimary }}
-                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
-                        >
-                          <input
-                            type="color"
-                            value={safePickerPrimary}
-                            onChange={(e) => handleColorInputChange('primary', e.target.value.toUpperCase())}
-                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
-                            title="انقر لفتح عجلة الألوان"
+                      {/* Interactive Visual Color Picker Trigger */}
+                      <label className="relative flex items-center justify-between p-3 rounded-2xl border-2 border-stone-200/90 hover:border-amber-400 bg-gradient-to-r from-stone-50 via-white to-stone-50 hover:bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200/80 group-hover:scale-105 transition-transform shrink-0"
+                            style={{ backgroundColor: safePickerPrimary }}
                           />
+                          <div className="text-right">
+                            <span className="text-xs font-black text-stone-900 group-hover:text-amber-950 block">
+                              اضغط هنا لاختيار اللون 🎨
+                            </span>
+                            <span className="text-[11px] text-stone-500 font-medium">
+                              انقر لفتح باليتة وعجلة الألوان
+                            </span>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 transition-colors">
+                          <Pipette className="w-3.5 h-3.5 text-amber-700" />
+                          <span>تغيير</span>
+                        </div>
+
+                        {/* Native Color Picker that opens on click anywhere */}
+                        <input
+                          type="color"
+                          value={safePickerPrimary}
+                          onChange={(e) => handleColorInputChange('primary', e.target.value.toUpperCase())}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          title="اضغط لاختيار اللون من عجلة الألوان"
+                        />
+                      </label>
 
                       {/* Suggested Royal Swatches */}
                       <div className="space-y-1.5 pt-0.5">
@@ -2567,48 +3440,53 @@ function StudioContent() {
                         <label className="text-xs font-black text-stone-900">
                           الذهب والتفاصيل (الختم والزخارف):
                         </label>
-                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
                           {(customSecondaryColor || secondaryColor).toUpperCase()}
                         </span>
                       </div>
 
-                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
-                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
-                        <input
-                          type="text"
-                          value={customSecondaryColor}
-                          onChange={(e) => handleColorInputChange('secondary', e.target.value)}
-                          onBlur={(e) => handleColorInputBlur('secondary', e.target.value)}
-                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
-                          placeholder="#D4AF37 أو 212, 175, 55"
-                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(212, 175, 55) أو 212, 175, 55"
-                        />
-                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
-                        <div
-                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
-                          style={{ backgroundColor: safePickerSecondary }}
-                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
-                        >
-                          <input
-                            type="color"
-                            value={safePickerSecondary}
-                            onChange={(e) => handleColorInputChange('secondary', e.target.value.toUpperCase())}
-                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
-                            title="انقر لفتح عجلة الألوان"
+                      {/* Interactive Visual Color Picker Trigger */}
+                      <label className="relative flex items-center justify-between p-3 rounded-2xl border-2 border-stone-200/90 hover:border-amber-400 bg-gradient-to-r from-stone-50 via-white to-stone-50 hover:bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200/80 group-hover:scale-105 transition-transform shrink-0"
+                            style={{ backgroundColor: safePickerSecondary }}
                           />
+                          <div className="text-right">
+                            <span className="text-xs font-black text-stone-900 group-hover:text-amber-950 block">
+                              اضغط هنا لاختيار لون الذهب 🎨
+                            </span>
+                            <span className="text-[11px] text-stone-500 font-medium">
+                              انقر لفتح باليتة وعجلة الألوان
+                            </span>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 transition-colors">
+                          <Pipette className="w-3.5 h-3.5 text-amber-700" />
+                          <span>تغيير</span>
+                        </div>
+
+                        {/* Native Color Picker that opens on click anywhere */}
+                        <input
+                          type="color"
+                          value={safePickerSecondary}
+                          onChange={(e) => handleColorInputChange('secondary', e.target.value.toUpperCase())}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          title="اضغط لاختيار اللون من عجلة الألوان"
+                        />
+                      </label>
 
                       {/* Suggested Gold Swatches */}
                       <div className="space-y-1.5 pt-0.5">
                         <span className="text-[11px] text-stone-400 font-bold block">درجات الذهب المقترحة:</span>
                         <div className="flex items-center gap-2 flex-wrap">
                           {[
-                            { name: 'وردي ذهبي', hex: '#FDA4AF' },
-                            { name: 'بلاتينيوم فضي', hex: '#94A3B8' },
+                            { name: 'ذهب ملكي', hex: '#D4AF37' },
                             { name: 'ذهب كهرماني', hex: '#F59E0B' },
                             { name: 'برونز دافئ', hex: '#E0A96D' },
-                            { name: 'ذهب ملكي', hex: '#D4AF37' },
+                            { name: 'وردي ذهبي', hex: '#FDA4AF' },
+                            { name: 'بلاتينيوم فضي', hex: '#94A3B8' },
                           ].map((swatch) => (
                             <button
                               key={swatch.hex}
@@ -2629,48 +3507,53 @@ function StudioContent() {
                         <label className="text-xs font-black text-stone-900">
                           لون الخلفية (بطاقة الدعوة):
                         </label>
-                        <span className="text-[11px] font-mono font-semibold text-stone-400">
+                        <span className="text-[10px] font-mono font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
                           {(customBackgroundColor || backgroundColor).toUpperCase()}
                         </span>
                       </div>
 
-                      {/* Unified Input Container: Text RGB/HEX + Color Picker Swatch */}
-                      <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-2xs hover:border-stone-300 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-200/40 transition-all">
-                        <input
-                          type="text"
-                          value={customBackgroundColor}
-                          onChange={(e) => handleColorInputChange('background', e.target.value)}
-                          onBlur={(e) => handleColorInputBlur('background', e.target.value)}
-                          className="flex-1 bg-transparent text-center font-mono font-bold text-xs sm:text-sm text-stone-900 focus:outline-hidden dir-ltr placeholder:text-stone-300"
-                          placeholder="#FAF7F2 أو 250, 247, 242"
-                          title="اكتب أي كود HEX أو قيمة RGB مثل: rgb(250, 247, 242) أو 250, 247, 242"
-                        />
-                        <div className="w-px h-6 bg-stone-200 mx-2.5 shrink-0" />
-                        <div
-                          className="relative w-3.5 h-6.5 rounded-full border border-stone-300/90 shadow-2xs shrink-0 cursor-pointer overflow-hidden hover:scale-110 active:scale-95 transition-transform"
-                          style={{ backgroundColor: safePickerBackground }}
-                          title="انقر لفتح عجلة الألوان واختيار أي درجة بحرية"
-                        >
-                          <input
-                            type="color"
-                            value={safePickerBackground}
-                            onChange={(e) => handleColorInputChange('background', e.target.value.toUpperCase())}
-                            className="absolute -inset-4 w-[250%] h-[250%] opacity-0 cursor-pointer"
-                            title="انقر لفتح عجلة الألوان"
+                      {/* Interactive Visual Color Picker Trigger */}
+                      <label className="relative flex items-center justify-between p-3 rounded-2xl border-2 border-stone-200/90 hover:border-amber-400 bg-gradient-to-r from-stone-50 via-white to-stone-50 hover:bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-2 ring-stone-200/80 group-hover:scale-105 transition-transform shrink-0"
+                            style={{ backgroundColor: safePickerBackground }}
                           />
+                          <div className="text-right">
+                            <span className="text-xs font-black text-stone-900 group-hover:text-amber-950 block">
+                              اضغط هنا لاختيار لون الخلفية 🎨
+                            </span>
+                            <span className="text-[11px] text-stone-500 font-medium">
+                              انقر لفتح باليتة وعجلة الألوان
+                            </span>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 transition-colors">
+                          <Pipette className="w-3.5 h-3.5 text-amber-700" />
+                          <span>تغيير</span>
+                        </div>
+
+                        {/* Native Color Picker that opens on click anywhere */}
+                        <input
+                          type="color"
+                          value={safePickerBackground}
+                          onChange={(e) => handleColorInputChange('background', e.target.value.toUpperCase())}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          title="اضغط لاختيار اللون من عجلة الألوان"
+                        />
+                      </label>
 
                       {/* Suggested Background Swatches */}
                       <div className="space-y-1.5 pt-0.5">
                         <span className="text-[11px] text-stone-400 font-bold block">خلفيات راقية مقترحة:</span>
                         <div className="flex items-center gap-2 flex-wrap">
                           {[
-                            { name: 'أبيض نقي', hex: '#FFFFFF' },
-                            { name: 'دارك مود فاخر', hex: '#18181B' },
                             { name: 'كريمي عاجي', hex: '#FAF7F2' },
+                            { name: 'أبيض نقي', hex: '#FFFFFF' },
                             { name: 'أبيض ناعم', hex: '#FFF8F9' },
                             { name: 'رمادي لؤلؤي', hex: '#F8FAFC' },
+                            { name: 'دارك مود فاخر', hex: '#18181B' },
                           ].map((swatch) => (
                             <button
                               key={swatch.hex}
@@ -2688,40 +3571,117 @@ function StudioContent() {
                 </div>
               )}
 
-              {/* 5.3: Arabic Wedding Typography with Live Preview */}
+              {/* 5.3: Arabic Wedding Typography with Gating & Live Calligraphy Preview */}
               <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="text-xs font-bold text-stone-700 block">
                     ج. نوع الخط العربي الملكي (Calligraphy & Typography):
                   </label>
                   <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    خطوط أفراح عربية أصيلة 👑
+                    {isVip ? 'جميع الخطوط الـ 10 مفتوحة لك 💎' : isJourney ? '5 خطوط ملكية متاحة 👑' : 'خطوط عربية قياسية 🌸'}
                   </span>
                 </div>
 
+                {/* Dropdown Selector with Tier Indicators */}
                 <select
                   value={selectedFont}
-                  onChange={(e) => setSelectedFont(e.target.value)}
+                  onChange={(e) => {
+                    const chosen = e.target.value;
+                    const tierMeta = FONT_TIERS[chosen];
+                    if (tierMeta && !isTierAllowed(tierMeta.minTier)) {
+                      triggerTierNotice({
+                        featureTitle: `خط ${tierMeta.nameAr}`,
+                        featureDescription: `هذا الخط العربي متاح في ${getTierBadgeText(tierMeta.minTier)}. يمكنك الترقية الآن بضغطة واحدة وتفعيله على الفور.`,
+                        requiredPackageId: tierMeta.minTier,
+                        onUpgradeAction: () => setSelectedFont(chosen),
+                      });
+                      return;
+                    }
+                    setSelectedFont(chosen);
+                  }}
                   className="w-full px-4 py-3 rounded-xl border border-stone-200 text-xs sm:text-sm bg-white font-bold cursor-pointer"
                 >
-                  {ARABIC_WEDDING_FONTS.map((f: WeddingFontOption) => (
-                    <option key={f.id} value={f.fontFamily}>
-                      {f.nameAr} — {f.description}
-                    </option>
-                  ))}
+                  {ARABIC_WEDDING_FONTS.map((f: WeddingFontOption) => {
+                    const tierMeta = FONT_TIERS[f.fontFamily];
+                    const allowed = !tierMeta || isTierAllowed(tierMeta.minTier);
+                    return (
+                      <option key={f.id} value={f.fontFamily}>
+                        {allowed ? '✓' : '🔒'} {f.nameAr} — {f.description} {tierMeta ? `(${getTierBadgeText(tierMeta.minTier)})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
+
+                {/* Visual Clickable Font Pills with Tier Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                  {ARABIC_WEDDING_FONTS.map((f: WeddingFontOption) => {
+                    const tierMeta = FONT_TIERS[f.fontFamily];
+                    const allowed = !tierMeta || isTierAllowed(tierMeta.minTier);
+                    const isSelected = selectedFont === f.fontFamily;
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          if (!allowed && tierMeta) {
+                            triggerTierNotice({
+                              featureTitle: `خط ${tierMeta.nameAr}`,
+                              featureDescription: `هذا الخط العربي متاح في ${getTierBadgeText(tierMeta.minTier)}. يمكنك الترقية الآن بضغطة واحدة وتفعيله على الفور.`,
+                              requiredPackageId: tierMeta.minTier,
+                              onUpgradeAction: () => setSelectedFont(f.fontFamily),
+                            });
+                            return;
+                          }
+                          setSelectedFont(f.fontFamily);
+                        }}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-1.5 ${
+                          isSelected
+                            ? 'border-[#720925] bg-rose-50/80 ring-2 ring-[#720925]/20 shadow-xs'
+                            : allowed
+                            ? 'border-stone-200 bg-white hover:bg-stone-50'
+                            : 'border-stone-200 bg-stone-50/70 opacity-75 hover:opacity-100 hover:border-amber-300'
+                        }`}
+                      >
+                        <div className="w-full flex items-center justify-between">
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                              allowed
+                                ? isSelected
+                                  ? 'bg-[#720925] text-white'
+                                  : 'bg-stone-100 text-stone-600'
+                                : 'bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-0.5'
+                            }`}
+                          >
+                            {!allowed && <Lock className="w-2.5 h-2.5" />}
+                            <span>{allowed ? (isSelected ? 'محدد' : 'متاح') : tierMeta?.minTier === 'luxury-vip' ? 'VIP' : journeyPlan.priceLabel}</span>
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#720925]" />}
+                        </div>
+                        <span
+                          className="text-xs font-bold text-stone-900 block truncate w-full"
+                          style={{ fontFamily: f.fontFamily }}
+                        >
+                          {f.nameAr}
+                        </span>
+                        <span className="text-[9px] text-stone-400 block truncate w-full">
+                          {f.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {/* Instant Calligraphy Visual Preview Card */}
                 <div
-                  className="p-4 rounded-2xl border border-stone-200/90 text-center space-y-1 transition-all shadow-2xs"
+                  className="p-4 rounded-2xl border border-stone-200/90 text-center space-y-1 transition-all shadow-2xs mt-2"
                   style={{
                     backgroundColor: backgroundColor,
                     color: textColor,
-                    fontFamily: selectedFont,
+                    fontFamily: effectiveFont,
                   }}
                 >
                   <span className="text-[10px] uppercase tracking-widest block opacity-60 font-mono">
-                    معاينة حية لشكل الخط:
+                    معاينة حية لشكل الخط المعتمد ({effectiveFont.replace(/['",]/g, '').split(' ')[0]}):
                   </span>
                   <h3
                     className="text-lg sm:text-2xl font-black transition-colors"
@@ -2737,7 +3697,7 @@ function StudioContent() {
                 </div>
               </div>
 
-              {/* 5.4: Opening Animation Style (حركة الفتح التفاعلية في الأول) */}
+              {/* 5.4: Opening Animation Style (حركات الفتح التفاعلية للظرف) */}
               <div className="space-y-3 pt-3 border-t border-stone-100">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -2747,24 +3707,80 @@ function StudioContent() {
                     </label>
                   </div>
                   <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    تنوع مذهل يبهر المعازيم ✨
+                    {isBasic ? 'العرض المباشر في الباقة الأساسية 🌸' : 'حركات فتح مبهرة للأفراح ✨'}
                   </span>
                 </div>
 
+                {/* Notice for Basic Package */}
+                {isBasic && (
+                  <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-300 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>فتح الظرف الملكي ثلاثي الأبعاد متاح في باقة رحلة الفرح ({journeyPlan.priceLabel}) وباقة VIP</span>
+                      </p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                        باقة الـ {basicPlan.priceLabel} تعرض البطاقة مباشرة وسريعاً لضيوفك بدون حركة الظرف ثلاثي الأبعاد. للترقية والاستمتاع بتأثير الظرف الملكي:
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUpgradeToPackage('wedding-journey', 'فتح الظرف ثلاثي الأبعاد')}
+                      className="shrink-0 px-3.5 py-2 rounded-xl bg-[#720925] text-white font-black text-xs hover:bg-rose-900 transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>ترقية لباقة رحلة الفرح (+${basicToJourneyDiff} ج.م) 👑</span>
+                    </button>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Direct card display for Basic */}
+                  {isBasic && (
+                    <div className="p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 text-right flex flex-col justify-between gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-stone-900 flex items-center gap-1.5">
+                          <span>💌</span>
+                          <span>عرض مباشر للبطاقة بدون ظرف (Direct Reveal)</span>
+                        </span>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          مفعل بالباقة الأساسية ✓
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                        تفتح بطاقة الدعوة مباشرة للضيوف بسلاسة وسرعة فائقة دون الحاجة للضغط على ختم الظرف.
+                      </p>
+                    </div>
+                  )}
+
                   {OPENING_STYLE_PRESETS.map((preset) => {
-                    const isSelected = openingStyle === preset.id;
+                    const isSelected = openingStyle === preset.id && !isBasic;
                     return (
                       <button
                         key={preset.id}
                         type="button"
                         onClick={() => {
+                          if (isBasic) {
+                            triggerTierNotice({
+                              featureTitle: `حركة ${preset.nameAr}`,
+                              featureDescription:
+                                `حركات فتح الظرف التفاعلي ثلاثي الأبعاد وفك الختم والشريط الحريري متاحة في باقة رحلة الفرح (${journeyPlan.priceLabel}) وباقة VIP.`,
+                              requiredPackageId: 'wedding-journey',
+                              onUpgradeAction: () => {
+                                setOpeningStyle(preset.id);
+                                setEnvelopePreviewOpen(false);
+                              },
+                            });
+                            return;
+                          }
                           setOpeningStyle(preset.id);
                           setEnvelopePreviewOpen(false); // Reset envelope so opening animation plays!
                         }}
                         className={`p-3.5 rounded-2xl border-2 text-right transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                           isSelected
                             ? 'border-[#720925] bg-rose-50/70 shadow-sm ring-2 ring-[#720925]/20'
+                            : isBasic
+                            ? 'border-stone-200 bg-stone-50/60 opacity-80 hover:opacity-100 hover:border-amber-300'
                             : 'border-stone-200 bg-white hover:bg-stone-50'
                         }`}
                       >
@@ -2773,11 +3789,15 @@ function StudioContent() {
                             <span>{preset.icon}</span>
                             <span>{preset.nameAr}</span>
                           </span>
-                          {preset.badgeAr && (
+                          {isBasic ? (
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5 text-amber-700" /> باقة {journeyPlan.priceLabel} و VIP
+                            </span>
+                          ) : preset.badgeAr ? (
                             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                               {preset.badgeAr}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-[11px] text-stone-500 leading-relaxed">
                           {preset.descriptionAr}
@@ -2792,9 +3812,37 @@ function StudioContent() {
                     );
                   })}
                 </div>
+
+                {/* VIP Wax Seal Monogram Initials Input */}
+                {isVip && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-stone-50 border border-amber-300/80 space-y-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                        <Crown className="w-4 h-4 text-amber-600" />
+                        <span>ختم شمعي مخصص بحروف العروسين (Monogram Initial) 👑:</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                        ميزة VIP حصرية
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={waxSealMonogram}
+                        onChange={(e) => setWaxSealMonogram(e.target.value)}
+                        placeholder={`${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`}
+                        maxLength={10}
+                        className="px-3.5 py-2 rounded-xl border border-amber-300 text-xs font-bold bg-white text-center w-36 shadow-2xs"
+                      />
+                      <span className="text-[11px] text-stone-500 font-medium">
+                        تُنقش هذه الحروف مباشرةً على الختم الشمعي المذهب في مقدمة الظرف!
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* 5.5: Background Pattern & Texture (باترن وزخرفة الخلفية) */}
+              {/* 5.5: Background Pattern & Texture (باترن وزخرفة الخلفية) with Tier Gating */}
               <div className="space-y-3 pt-3 border-t border-stone-100">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -2804,40 +3852,65 @@ function StudioContent() {
                     </label>
                   </div>
                   <span className="text-[10px] text-stone-500 font-bold bg-stone-100 px-2.5 py-0.5 rounded-full">
-                    8 باترنات ملكية فائقة الجمال 🎨
+                    {isVip ? 'كل الـ 8 باترنات مفتوحة لك 💎' : isJourney ? '5 باترنات ملكية متاحة 👑' : 'باترنات هادئة للباقة الأساسية 🌸'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {BACKGROUND_PATTERN_PRESETS.map((p) => {
+                    const tierMeta = PATTERN_TIERS[p.id];
+                    const allowed = !tierMeta || isTierAllowed(tierMeta.minTier);
                     const isSelected = backgroundPattern === p.id;
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setBackgroundPattern(p.id)}
+                        onClick={() => {
+                          if (!allowed && tierMeta) {
+                            triggerTierNotice({
+                              featureTitle: `باترن ${p.nameAr}`,
+                              featureDescription: `هذا الباترن الفاخر متاح في ${getTierBadgeText(tierMeta.minTier)}. يمكنك الترقية الآن بضغطة واحدة وتفعيله على الفور.`,
+                              requiredPackageId: tierMeta.minTier,
+                              onUpgradeAction: () => setBackgroundPattern(p.id),
+                            });
+                            return;
+                          }
+                          setBackgroundPattern(p.id);
+                        }}
                         className={`p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
                           isSelected
                             ? 'border-[#720925] bg-rose-50/80 shadow-xs ring-2 ring-[#720925]/20'
-                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                            : allowed
+                            ? 'border-stone-200 bg-white hover:bg-stone-50'
+                            : 'border-stone-200 bg-stone-50/60 opacity-70 hover:opacity-100 hover:border-amber-300'
                         }`}
                       >
                         <div
-                          className={`w-10 h-10 rounded-lg border border-stone-300 shadow-2xs flex items-center justify-center text-base ${p.previewClass}`}
+                          className={`w-10 h-10 rounded-lg border border-stone-300 shadow-2xs flex items-center justify-center text-base relative ${p.previewClass}`}
                           style={{ backgroundColor: isDarkBackground ? '#18181B' : '#FAF7F2' }}
                         >
                           <span>{p.icon}</span>
+                          {!allowed && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                              <Lock className="w-2.5 h-2.5" />
+                            </div>
+                          )}
                         </div>
                         <span className="text-[11px] font-bold text-stone-900 block truncate w-full">
                           {p.nameAr}
                         </span>
+                        {!allowed && (
+                          <span className="text-[9px] font-bold text-amber-700 block truncate w-full">
+                            {tierMeta?.minTier === 'luxury-vip' ? 'حصري VIP 💎' : `باقة ${journeyPlan.priceLabel} 👑`}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* 5.6: Inner Card Shape & Style (شكل وتصميم البطاقة الداخلية) */}
+              {/* 5.6: Inner Card Shape & Style (شكل وتصميم البطاقة الداخلية) with Tier Gating */}
               <div className="space-y-3 pt-3 border-t border-stone-100">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -2847,31 +3920,79 @@ function StudioContent() {
                     </label>
                   </div>
                   <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    أقواس ملكية وإطارات ذهبية 🏰
+                    {isVip ? 'كافة أشكال الكروت الـ 5 مفتوحة 💎' : isJourney ? '3 أشكال كروت ملكية مذهبة 👑' : 'قوس القصر الكلاسيكي 🌸'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {INNER_CARD_STYLE_PRESETS.map((card) => {
+                    const tierMeta = CARD_STYLE_TIERS[card.id];
+                    const allowed = !tierMeta || isTierAllowed(tierMeta.minTier);
                     const isSelected = innerCardStyle === card.id;
                     return (
                       <button
                         key={card.id}
                         type="button"
-                        onClick={() => setInnerCardStyle(card.id)}
-                        className={`p-3 rounded-xl border-2 text-right transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                        onClick={() => {
+                          if (!allowed && tierMeta) {
+                            triggerTierNotice({
+                              featureTitle: `شكل كارت ${card.nameAr}`,
+                              featureDescription: `هذا التصميم الفاخر متاح في ${getTierBadgeText(tierMeta.minTier)}. يمكنك الترقية الآن بضغطة واحدة وتفعيله على الفور.`,
+                              requiredPackageId: tierMeta.minTier,
+                              onUpgradeAction: () => {
+                                setInnerCardStyle(card.id);
+                                setPreviewCardInspectMode(true);
+                              },
+                            });
+                            return;
+                          }
+                          setInnerCardStyle(card.id);
+                          setPreviewCardInspectMode(true);
+                        }}
+                        className={`p-3 rounded-xl border-2 text-right transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                           isSelected
-                            ? 'border-[#720925] bg-rose-50/70 shadow-xs ring-2 ring-[#720925]/20'
-                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                            ? 'border-[#720925] bg-rose-50/70 shadow-xs ring-2 ring-[#720925]/20 scale-[1.01]'
+                            : allowed
+                            ? 'border-stone-200 bg-white hover:bg-stone-50'
+                            : 'border-stone-200 bg-stone-50/60 opacity-70 hover:opacity-100 hover:border-amber-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-stone-900 flex items-center gap-1">
-                            <span>{card.icon}</span>
+                          <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                            <span className="text-sm">{card.icon}</span>
                             <span>{card.nameAr}</span>
                           </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-[#720925]" />}
+                          {!allowed ? (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-0.5">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>{tierMeta?.minTier === 'luxury-vip' ? 'VIP' : journeyPlan.priceLabel}</span>
+                            </span>
+                          ) : isSelected ? (
+                            <Check className="w-3.5 h-3.5 text-[#720925]" />
+                          ) : null}
                         </div>
+
+                        {/* Mini Visual Silhouette Preview */}
+                        <div
+                          className={`w-full h-8 rounded-lg border flex items-center justify-center text-[10px] font-bold ${
+                            card.id === 'arched'
+                              ? 'rounded-t-2xl border-t-2 border-amber-500 bg-amber-50/60 text-amber-900'
+                              : card.id === 'double-gold'
+                              ? 'border-2 border-double border-amber-500 bg-stone-50 text-amber-900'
+                              : card.id === 'frosted'
+                              ? 'border border-sky-300 bg-white/70 backdrop-blur-xs text-sky-900'
+                              : card.id === 'deckle'
+                              ? 'border border-dashed border-amber-700/60 bg-[#FAF5EC] text-amber-950 rounded-xs'
+                              : 'border-2 border-amber-600 bg-amber-50 text-amber-950'
+                          }`}
+                        >
+                          {card.id === 'arched' && <span>🏛️ قمة مقوسة ملكية</span>}
+                          {card.id === 'double-gold' && <span>⚜️ زوايا أرابيسك مذهبة</span>}
+                          {card.id === 'frosted' && <span>✨ بلور زجاجي مشع</span>}
+                          {card.id === 'deckle' && <span>📜 حواف أثرية قطنية</span>}
+                          {card.id === 'royal-crest' && <span>👑 شارة التاج والمونوغرام</span>}
+                        </div>
+
                         <p className="text-[10px] text-stone-500 leading-snug">
                           {card.descriptionAr}
                         </p>
@@ -2879,9 +4000,51 @@ function StudioContent() {
                     );
                   })}
                 </div>
+
+                {/* Live Interactive Card Preview Showcase */}
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-[#FAF7F2] to-amber-50/50 border-2 border-amber-300/90 shadow-sm space-y-3 mt-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span className="text-xs font-black text-stone-900">
+                        معاينة حية ومباشرة لشكل البطاقة الداخلية المعتمدة:
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                      هذا الكارت يخرج من الظرف أثناء الفتح 🪄
+                    </span>
+                  </div>
+
+                  <div className="relative mx-auto w-full max-w-[320px] h-[210px] rounded-2xl p-2 shadow-md bg-stone-900/5 border border-stone-200/80 flex items-center justify-center">
+                    <InnerCardView
+                      style={effectiveInnerCardStyle}
+                      coupleNames={coupleGroomAr || coupleBrideAr ? `${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}` : 'أحمد & سارة'}
+                      invitationTitle={title || 'نتشرف بحضوركم ومشاركتنا فرحتنا'}
+                      formattedDate={eventDate ? new Date(eventDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'الجمعة، ٢٠ نوفمبر ٢٠٢٦'}
+                      primaryColor={primaryColor}
+                      secondaryColor={secondaryColor}
+                      borderColor={secondaryColor || '#D4AF37'}
+                      isDark={false}
+                      verseExcerpt={customWeddingMessage?.slice(0, 50)}
+                      waxSealMonogram={waxSealMonogram || `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`}
+                      isPreview={true}
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-stone-600 text-center font-bold">
+                    ✨ التأثير الفعلي المعتمد في باقتك: {' '}
+                    <span className="text-[#720925]">
+                      {effectiveInnerCardStyle === 'arched' && 'قوس القصر الملكي المقوس كبوابات القصور مع تاج القمة 🏰'}
+                      {effectiveInnerCardStyle === 'double-gold' && 'إطار مذهب مزدوج مع ٤ زوايا أرابيسك نباتية دقيقة 🖼️'}
+                      {effectiveInnerCardStyle === 'frosted' && 'بلور زجاجي مشع مع لمعان كريستالي وانعكاسات زجاجية 🪞'}
+                      {effectiveInnerCardStyle === 'deckle' && 'حواف قطنية أثرية غير منتظمة مع ورق يدوي الصنع 📜'}
+                      {effectiveInnerCardStyle === 'royal-crest' && 'شارة التاج الملكي والمونوغرام البارز في القمة 👑'}
+                    </span>
+                  </p>
+                </div>
               </div>
 
-              {/* 5.7: Floating Particles (تأثير الجزيئات المتطايرة) */}
+              {/* 5.7: Floating Particles (تأثير الجزيئات المتطايرة) with Tier Gating */}
               <div className="space-y-3 pt-3 border-t border-stone-100">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -2890,24 +4053,48 @@ function StudioContent() {
                       ز. الجزيئات الساحرة المتطايرة في الخلفية (Floating Atmosphere):
                     </label>
                   </div>
+                  <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    {isVip ? 'البريق الملكي مفتوح 💎' : isJourney ? 'بتلات الورد والغبار الذهبي 👑' : 'غبار ذهبي هادئ 🌸'}
+                  </span>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {FLOATING_PARTICLES_PRESETS.map((pt) => {
+                    const tierMeta = PARTICLE_TIERS[pt.id];
+                    const allowed = !tierMeta || isTierAllowed(tierMeta.minTier);
                     const isSelected = floatingParticles === pt.id;
                     return (
                       <button
                         key={pt.id}
                         type="button"
-                        onClick={() => setFloatingParticles(pt.id)}
+                        onClick={() => {
+                          if (!allowed && tierMeta) {
+                            triggerTierNotice({
+                              featureTitle: `تأثير ${pt.nameAr}`,
+                              featureDescription: `هذا التأثير متاح في ${getTierBadgeText(tierMeta.minTier)}. يمكنك الترقية الآن بضغطة واحدة وتفعيله على الفور.`,
+                              requiredPackageId: tierMeta.minTier,
+                              onUpgradeAction: () => setFloatingParticles(pt.id),
+                            });
+                            return;
+                          }
+                          setFloatingParticles(pt.id);
+                        }}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                           isSelected
                             ? 'bg-[#720925] text-white shadow-xs'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                            : allowed
+                            ? 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                            : 'bg-stone-100 text-stone-400 opacity-70 hover:opacity-100 hover:bg-amber-50 hover:text-amber-900'
                         }`}
                       >
+                        {!allowed && <Lock className="w-3 h-3 text-amber-600" />}
                         <span>{pt.icon}</span>
                         <span>{pt.nameAr}</span>
+                        {!allowed && (
+                          <span className="text-[9px] font-bold text-amber-700 mr-1">
+                            ({tierMeta?.minTier === 'luxury-vip' ? 'VIP' : journeyPlan.priceLabel})
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -2940,37 +4127,87 @@ function StudioContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700 block">تاريخ وتوقيت المناسبة: *</label>
+                    <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                      <span>تاريخ وتوقيت المناسبة: <span className="text-rose-600">*</span></span>
+                      {!eventDate && (
+                        <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                      )}
+                    </label>
                     <input
                       type="datetime-local"
                       value={eventDate}
-                      onChange={(e) => setEventDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr bg-white"
+                      onChange={(e) => handlePrimaryDateChange(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs text-left dir-ltr bg-white transition-all ${
+                        !eventDate && designValidationError
+                          ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                          : 'border-stone-200'
+                      }`}
                     />
+                    {!eventDate && designValidationError ? (
+                      <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        <span>يرجى تحديد تاريخ وتوقيت الحفل</span>
+                      </p>
+                    ) : isDateInPast(eventDate) ? (
+                      <p className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 shrink-0 text-amber-600" />
+                        <span>تنبيه: التاريخ المحدد قد مضى، يرجى مراجعة السنة</span>
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700 block">اسم القاعة / الفندق / المكان: *</label>
+                    <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                      <span>اسم القاعة / الفندق / المكان: <span className="text-rose-600">*</span></span>
+                      {!venueNameAr.trim() && (
+                        <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       value={venueNameAr}
-                      onChange={(e) => setVenueNameAr(e.target.value)}
+                      onChange={(e) => handlePrimaryVenueChange(e.target.value)}
                       placeholder="مثال: قاعة الماسة - فندق فورسيزونز"
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs bg-white transition-all ${
+                        !venueNameAr.trim() && designValidationError
+                          ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                          : 'border-stone-200'
+                      }`}
                     />
+                    {!venueNameAr.trim() && designValidationError && (
+                      <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        <span>يرجى كتابة اسم قاعة أو مكان الحفل</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700 block">العنوان بالتفصيل:</label>
+                    <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                      <span>العنوان بالتفصيل: <span className="text-rose-600">*</span></span>
+                      {!addressAr.trim() && (
+                        <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       value={addressAr}
-                      onChange={(e) => setAddressAr(e.target.value)}
+                      onChange={(e) => handlePrimaryAddressChange(e.target.value)}
                       placeholder="مثال: كورنيش النيل، جاردن سيتي، القاهرة"
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs bg-white"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs bg-white transition-all ${
+                        !addressAr.trim() && designValidationError
+                          ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                          : 'border-stone-200'
+                      }`}
                     />
+                    {!addressAr.trim() && designValidationError && (
+                      <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        <span>يرجى إدخال العنوان بالتفصيل</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1">
@@ -2980,20 +4217,54 @@ function StudioContent() {
                     <input
                       type="url"
                       value={googleMapsUrl}
-                      onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                      placeholder="https://maps.google.com/?q=..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr font-mono bg-white"
+                      onChange={(e) => handlePrimaryMapUrlChange(e.target.value)}
+                      placeholder="https://maps.google.com/?q=... أو رابط مشاركة خرائط جوجل"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs text-left dir-ltr font-mono bg-white transition-all ${
+                        validateMapUrl(googleMapsUrl).status === 'invalid'
+                          ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
+                          : 'border-stone-200'
+                      }`}
                     />
-                    {detectedWeddingCoords ? (
-                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>تم ضبط الموقع على خرائط جوجل والخريطة التفاعلية بدقة 📍</span>
-                      </div>
-                    ) : (
-                      <p className="text-[10px] text-stone-400 mt-1">
-                        💡 يمكنك وضع رابط خرائط جوجل أو الإحداثيات مباشرة لفتح اتجاهات الملاحة بدقة لضيوفك.
-                      </p>
-                    )}
+                    {(() => {
+                      const mapCheck = validateMapUrl(googleMapsUrl);
+                      if (mapCheck.status === 'valid_google') {
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{mapCheck.message}</span>
+                          </div>
+                        );
+                      }
+                      if (mapCheck.status === 'valid_coords') {
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{mapCheck.message}</span>
+                          </div>
+                        );
+                      }
+                      if (mapCheck.status === 'valid_url') {
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                            <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>{mapCheck.message}</span>
+                          </div>
+                        );
+                      }
+                      if (mapCheck.status === 'invalid') {
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>{mapCheck.message}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <p className="text-[10px] text-stone-400 mt-1">
+                          💡 يمكنك وضع رابط خرائط جوجل أو الإحداثيات مباشرة لفتح اتجاهات الملاحة بدقة لضيوفك.
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -3041,50 +4312,64 @@ function StudioContent() {
 
                   {/* Active Sub-Event Editor Card */}
                   {journeyEvents[activeJourneyEventIndex] && (
-                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-amber-950">
-                          تعديل تفاصيل: {journeyEvents[activeJourneyEventIndex].titleAr}
-                        </span>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-4">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">📅</span>
+                          <span className="text-xs font-black text-amber-950">
+                            تعديل تفاصيل: {journeyEvents[activeJourneyEventIndex].titleAr}
+                          </span>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer bg-white/80 px-3 py-1.5 rounded-xl border border-amber-200">
                           <input
                             type="checkbox"
                             checked={journeyEvents[activeJourneyEventIndex].enabled}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setJourneyEvents((prev) =>
-                                prev.map((ev, idx) =>
-                                  idx === activeJourneyEventIndex ? { ...ev, enabled: checked } : ev
-                                )
-                              );
-                            }}
-                            className="w-4 h-4 rounded text-[#720925]"
+                            onChange={(e) => handleToggleEventEnabled(activeJourneyEventIndex, e.target.checked)}
+                            className="w-4 h-4 rounded text-[#720925] focus:ring-[#720925]"
                           />
                           <span className="text-xs font-bold text-amber-900">تضمين في الدعوة</span>
                         </label>
                       </div>
 
-                      {journeyEvents[activeJourneyEventIndex].enabled && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      {journeyEvents[activeJourneyEventIndex].enabled ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                          {/* Venue Name */}
                           <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-stone-700 block">اسم المكان / القاعة:</label>
+                            <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
+                              <span>اسم المكان / القاعة: <span className="text-rose-600">*</span></span>
+                              {!journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && (
+                                <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                              )}
+                            </label>
                             <input
                               type="text"
                               value={journeyEvents[activeJourneyEventIndex].venueNameAr}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setJourneyEvents((prev) =>
-                                  prev.map((ev, idx) =>
-                                    idx === activeJourneyEventIndex ? { ...ev, venueNameAr: val } : ev
-                                  )
-                                );
-                              }}
-                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white"
+                              onChange={(e) =>
+                                updateJourneyEvent(activeJourneyEventIndex, { venueNameAr: e.target.value })
+                              }
+                              placeholder="مثال: قاعة الحفل الملكية"
+                              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white transition-all ${
+                                !journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && designValidationError
+                                  ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                                  : 'border-stone-200'
+                              }`}
                             />
+                            {!journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && designValidationError && (
+                              <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                <span>يرجى كتابة اسم المكان أو القاعة لهذه المناسبة</span>
+                              </p>
+                            )}
                           </div>
 
+                          {/* Date */}
                           <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-stone-700 block">تاريخ المناسبة:</label>
+                            <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
+                              <span>تاريخ المناسبة: <span className="text-rose-600">*</span></span>
+                              {!journeyEvents[activeJourneyEventIndex].date && (
+                                <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                              )}
+                            </label>
                             <input
                               type="date"
                               value={
@@ -3094,76 +4379,165 @@ function StudioContent() {
                               }
                               onChange={(e) => {
                                 const val = e.target.value;
-                                setJourneyEvents((prev) =>
-                                  prev.map((ev, idx) =>
-                                    idx === activeJourneyEventIndex
-                                      ? { ...ev, date: val ? `${val}T19:00` : ev.date }
-                                      : ev
-                                  )
-                                );
+                                const prevTime = journeyEvents[activeJourneyEventIndex].date?.includes('T')
+                                  ? journeyEvents[activeJourneyEventIndex].date.split('T')[1]
+                                  : '19:00';
+                                updateJourneyEvent(activeJourneyEventIndex, {
+                                  date: val ? `${val}T${prevTime}` : '',
+                                });
                               }}
-                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white text-left font-mono dir-ltr"
+                              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left font-mono dir-ltr transition-all ${
+                                !journeyEvents[activeJourneyEventIndex].date && designValidationError
+                                  ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                                  : 'border-stone-200'
+                              }`}
                             />
+                            {!journeyEvents[activeJourneyEventIndex].date && designValidationError ? (
+                              <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                <span>يرجى تحديد تاريخ المناسبة</span>
+                              </p>
+                            ) : isDateInPast(journeyEvents[activeJourneyEventIndex].date) ? (
+                              <p className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 shrink-0 text-amber-600" />
+                                <span>تنبيه: التاريخ المحدد قد مضى، يرجى مراجعة السنة</span>
+                              </p>
+                            ) : null}
                           </div>
 
+                          {/* Time with Quick Presets */}
                           <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-stone-700 block">التوقيت والساعة:</label>
+                            <div className="flex items-center justify-between flex-wrap gap-1">
+                              <label className="text-[11px] font-bold text-stone-700 block">
+                                التوقيت والساعة: <span className="text-rose-600">*</span>
+                              </label>
+                              <div className="flex items-center gap-1">
+                                {['06:00 م', '07:00 م', '08:00 م', '09:00 م', '10:00 م'].map((preset) => (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() => updateJourneyEvent(activeJourneyEventIndex, { time: preset })}
+                                    className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-100/80 hover:bg-amber-200 text-amber-900 font-mono transition-colors cursor-pointer"
+                                    title={`تحديد ${preset}`}
+                                  >
+                                    {preset}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                             <input
                               type="text"
                               value={journeyEvents[activeJourneyEventIndex].time}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setJourneyEvents((prev) =>
-                                  prev.map((ev, idx) =>
-                                    idx === activeJourneyEventIndex ? { ...ev, time: val } : ev
-                                  )
-                                );
-                              }}
+                              onChange={(e) =>
+                                updateJourneyEvent(activeJourneyEventIndex, { time: e.target.value })
+                              }
                               placeholder="08:00 م"
-                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white text-left dir-ltr"
+                              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left dir-ltr transition-all ${
+                                !journeyEvents[activeJourneyEventIndex].time.trim() && designValidationError
+                                  ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                                  : 'border-stone-200'
+                              }`}
                             />
+                            {!journeyEvents[activeJourneyEventIndex].time.trim() && designValidationError && (
+                              <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                <span>يرجى كتابة التوقيت والساعة</span>
+                              </p>
+                            )}
                           </div>
 
+                          {/* Address */}
                           <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-stone-700 block">العنوان أو الحي:</label>
+                            <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
+                              <span>العنوان أو الحي: <span className="text-rose-600">*</span></span>
+                              {!journeyEvents[activeJourneyEventIndex].addressAr.trim() && (
+                                <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
+                              )}
+                            </label>
                             <input
                               type="text"
                               value={journeyEvents[activeJourneyEventIndex].addressAr}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setJourneyEvents((prev) =>
-                                  prev.map((ev, idx) =>
-                                    idx === activeJourneyEventIndex ? { ...ev, addressAr: val } : ev
-                                  )
-                                );
-                              }}
-                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white"
+                              onChange={(e) =>
+                                updateJourneyEvent(activeJourneyEventIndex, { addressAr: e.target.value })
+                              }
+                              placeholder="مثال: فندق فورسيزونز نايل بلازا، القاهرة"
+                              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white transition-all ${
+                                !journeyEvents[activeJourneyEventIndex].addressAr.trim() && designValidationError
+                                  ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                                  : 'border-stone-200'
+                              }`}
                             />
+                            {!journeyEvents[activeJourneyEventIndex].addressAr.trim() && designValidationError && (
+                              <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                <span>يرجى إدخال العنوان أو الحي لتسهيل وصول الضيوف</span>
+                              </p>
+                            )}
                           </div>
 
+                          {/* Google Maps URL with Smart Validation Feedback */}
                           <div className="space-y-1 sm:col-span-2">
-                            <label className="text-[11px] font-bold text-stone-700 block">رابط خريطة Google Maps (اختياري):</label>
+                            <label className="text-[11px] font-bold text-stone-700 block">
+                              رابط خريطة Google Maps (اختياري):
+                            </label>
                             <input
                               type="url"
                               value={journeyEvents[activeJourneyEventIndex].googleMapsUrl || ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setJourneyEvents((prev) =>
-                                  prev.map((ev, idx) =>
-                                    idx === activeJourneyEventIndex ? { ...ev, googleMapsUrl: val } : ev
-                                  )
-                                );
-                              }}
-                              placeholder="https://maps.google.com/?q=..."
-                              className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white text-left font-mono dir-ltr"
+                              onChange={(e) =>
+                                updateJourneyEvent(activeJourneyEventIndex, { googleMapsUrl: e.target.value })
+                              }
+                              placeholder="https://maps.google.com/?q=... أو رابط مشاركة خرائط جوجل"
+                              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left font-mono dir-ltr transition-all ${
+                                validateMapUrl(journeyEvents[activeJourneyEventIndex].googleMapsUrl).status === 'invalid'
+                                  ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
+                                  : 'border-stone-200'
+                              }`}
                             />
-                            {journeyEvents[activeJourneyEventIndex].googleMapsUrl ? (
-                              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg mt-1 font-bold">
-                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                                <span>جاهز للربط مع جوجل ماب وخريطة OpenStreetMap 🗺️</span>
-                              </div>
-                            ) : null}
+                            {(() => {
+                              const mapCheck = validateMapUrl(journeyEvents[activeJourneyEventIndex].googleMapsUrl);
+                              if (mapCheck.status === 'valid_google') {
+                                return (
+                                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span>{mapCheck.message}</span>
+                                  </div>
+                                );
+                              }
+                              if (mapCheck.status === 'valid_coords') {
+                                return (
+                                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
+                                    <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span>{mapCheck.message}</span>
+                                  </div>
+                                );
+                              }
+                              if (mapCheck.status === 'valid_url') {
+                                return (
+                                  <div className="flex items-center gap-1.5 text-[10px] text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
+                                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                    <span>{mapCheck.message}</span>
+                                  </div>
+                                );
+                              }
+                              if (mapCheck.status === 'invalid') {
+                                return (
+                                  <div className="flex items-center gap-1.5 text-[10px] text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                    <span>{mapCheck.message}</span>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <p className="text-[10px] text-stone-500 mt-1">
+                                  💡 {mapCheck.message}
+                                </p>
+                              );
+                            })()}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-stone-100/80 border border-stone-200 text-stone-500 text-xs text-center font-medium">
+                          هذه المناسبة غير مفعلة حالياً ولن تظهر في كارت وموقع الدعوة. قم بتحديد "تضمين في الدعوة" بالأعلى لتفعيلها.
                         </div>
                       )}
                     </div>
@@ -3805,7 +5179,7 @@ function StudioContent() {
 
               <button
                 type="button"
-                onClick={() => setShowCheckoutModal(true)}
+                onClick={handleOpenCheckoutModal}
                 className="relative z-10 w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black text-sm sm:text-base shadow-xl shadow-amber-950/40 hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2 border border-amber-200"
               >
                 <Sparkles className="w-5 h-5 text-stone-950" />
@@ -3855,15 +5229,32 @@ function StudioContent() {
               </div>
 
               {sectionsVisibility.envelope ? (
-                <button
-                  type="button"
-                  onClick={() => setEnvelopePreviewOpen((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border border-amber-300 hover:bg-amber-100 shadow-2xs transition-all cursor-pointer"
-                  title="إعادة تشغيل حركة الفتح الملكية"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
-                  <span>{envelopePreviewOpen ? 'إعادة تجربة حركة الفتح 🔄' : 'فتح الدعوة الملكية 🪄'}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewCardInspectMode((prev) => !prev)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      previewCardInspectMode
+                        ? 'bg-[#720925] text-white border-[#720925] shadow-xs ring-2 ring-[#720925]/20'
+                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                    }`}
+                    title="فحص شكل كارت الدعوة الداخلي"
+                  >
+                    <span>📜 {previewCardInspectMode ? 'عرض الظرف' : 'كارت الدعوة'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewCardInspectMode(false);
+                      setEnvelopePreviewOpen((prev) => !prev);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border border-amber-300 hover:bg-amber-100 shadow-2xs transition-all cursor-pointer"
+                    title="إعادة تشغيل حركة الفتح الملكية"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                    <span>{envelopePreviewOpen ? 'إعادة الفتح 🔄' : 'فتح الظرف 🪄'}</span>
+                  </button>
+                </div>
               ) : (
                 <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                   الظرف محذوف ⚡
@@ -3888,17 +5279,48 @@ function StudioContent() {
                   }}
                 >
                   <div className="relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain flex-1 flex flex-col">
-                    {/* Main Rendered Invitation Body (Controls Envelope inside) */}
-                    <InvitationRenderer
-                      invitation={livePreviewInvitation}
-                      events={livePreviewEvents}
-                      theme={activeTheme as any}
-                      sections={livePreviewSections}
-                      isPreview={true}
-                      hidePreviewBanner={true}
-                      isEnvelopeOpen={envelopePreviewOpen}
-                      onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
-                    />
+                    {previewCardInspectMode ? (
+                      <div className="w-full h-full p-4 flex flex-col items-center justify-center text-center space-y-4 pattern-damask animate-fade-in my-auto">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 text-amber-300 text-[10px] font-bold border border-amber-400/40 backdrop-blur-md">
+                          <Crown className="w-3.5 h-3.5 text-amber-400" />
+                          <span>معاينة حية لشكل كارت الدعوة الداخلي</span>
+                        </div>
+                        <div className="w-full max-w-[280px] h-[210px] shadow-2xl rounded-2xl">
+                          <InnerCardView
+                            style={innerCardStyle}
+                            coupleNames={coupleGroomAr || coupleBrideAr ? `${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}` : 'أحمد & سارة'}
+                            invitationTitle={title || 'نتشرف بحضوركم ومشاركتنا فرحتنا'}
+                            formattedDate={eventDate ? new Date(eventDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'الجمعة، ٢٠ نوفمبر ٢٠٢٦'}
+                            primaryColor={primaryColor}
+                            secondaryColor={secondaryColor}
+                            borderColor={secondaryColor || '#D4AF37'}
+                            isDark={false}
+                            verseExcerpt={customWeddingMessage?.slice(0, 50)}
+                            waxSealMonogram={waxSealMonogram || `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`}
+                            isPreview={true}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewCardInspectMode(false)}
+                          className="text-[11px] font-bold text-amber-200 hover:text-white bg-black/60 px-4 py-1.5 rounded-full border border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                        >
+                          العودة لمعاينة الظرف 💌
+                        </button>
+                      </div>
+                    ) : (
+                      /* Main Rendered Invitation Body (Controls Envelope inside) */
+                      <InvitationRenderer
+                        invitation={livePreviewInvitation}
+                        events={livePreviewEvents}
+                        theme={activeTheme as any}
+                        sections={livePreviewSections}
+                        isPreview={true}
+                        hidePreviewBanner={true}
+                        isEnvelopeOpen={envelopePreviewOpen}
+                        onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -3914,23 +5336,54 @@ function StudioContent() {
                 }}
               >
                 <div className="relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar flex-1 flex flex-col">
-                  {/* Main Rendered Invitation Body (Controls Envelope inside) */}
-                  <InvitationRenderer
-                    invitation={livePreviewInvitation}
-                    events={livePreviewEvents}
-                    theme={activeTheme as any}
-                    sections={livePreviewSections}
-                    isPreview={true}
-                    hidePreviewBanner={true}
-                    isEnvelopeOpen={envelopePreviewOpen}
-                    onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
-                  />
+                  {previewCardInspectMode ? (
+                    <div className="w-full h-full p-6 flex flex-col items-center justify-center text-center space-y-4 pattern-damask animate-fade-in my-auto">
+                      <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-black/60 text-amber-300 text-xs font-bold border border-amber-400/40 backdrop-blur-md">
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>معاينة حية لشكل كارت الدعوة الداخلي</span>
+                      </div>
+                      <div className="w-full max-w-[320px] h-[220px] shadow-2xl rounded-2xl">
+                        <InnerCardView
+                          style={innerCardStyle}
+                          coupleNames={coupleGroomAr || coupleBrideAr ? `${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}` : 'أحمد & سارة'}
+                          invitationTitle={title || 'نتشرف بحضوركم ومشاركتنا فرحتنا'}
+                          formattedDate={eventDate ? new Date(eventDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'الجمعة، ٢٠ نوفمبر ٢٠٢٦'}
+                          primaryColor={primaryColor}
+                          secondaryColor={secondaryColor}
+                          borderColor={secondaryColor || '#D4AF37'}
+                          isDark={false}
+                          verseExcerpt={customWeddingMessage?.slice(0, 50)}
+                          waxSealMonogram={waxSealMonogram || `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`}
+                          isPreview={true}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewCardInspectMode(false)}
+                        className="text-xs font-bold text-amber-200 hover:text-white bg-black/60 px-4 py-1.5 rounded-full border border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        العودة لمعاينة الظرف 💌
+                      </button>
+                    </div>
+                  ) : (
+                    /* Main Rendered Invitation Body (Controls Envelope inside) */
+                    <InvitationRenderer
+                      invitation={livePreviewInvitation}
+                      events={livePreviewEvents}
+                      theme={activeTheme as any}
+                      sections={livePreviewSections}
+                      isPreview={true}
+                      hidePreviewBanner={true}
+                      isEnvelopeOpen={envelopePreviewOpen}
+                      onEnvelopeOpen={() => setEnvelopePreviewOpen(true)}
+                    />
+                  )}
                 </div>
               </div>
             )}
 
             <p className="text-center text-[11px] text-stone-500 font-medium">
-              💡 اضغط على ختم الشمع في المظرف لتجربة حركة الفتح الملكية الفاخرة!
+              💡 اضغط على زر "كارت الدعوة" أو زر ختم الشمع في المظرف لتجربة كل أشكال الكروت والحركات الملكية!
             </p>
           </div>
         </div>
@@ -3965,7 +5418,7 @@ function StudioContent() {
           {/* Quick Activate */}
           <button
             type="button"
-            onClick={() => setShowCheckoutModal(true)}
+            onClick={handleOpenCheckoutModal}
             className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-stone-950 text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
           >
             <Sparkles className="w-3.5 h-3.5 text-stone-950" />
@@ -4052,8 +5505,26 @@ function StudioContent() {
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="01012345678"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-left dir-ltr focus:ring-2 focus:ring-[#720925] focus:outline-hidden"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs text-left dir-ltr focus:ring-2 focus:ring-[#720925] focus:outline-hidden transition-all ${
+                        customerPhone && !validatePhoneNumber(customerPhone).isValid
+                          ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
+                          : customerPhone && validatePhoneNumber(customerPhone).isValid
+                          ? 'border-emerald-400 ring-2 ring-emerald-100 bg-emerald-50/20'
+                          : 'border-stone-200'
+                      }`}
                     />
+                    {customerPhone && validatePhoneNumber(customerPhone).isValid && (
+                      <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span>رقم هاتف صالح ومجهز لاستلام رسالة تفعيل الرابط عبر واتساب ✅</span>
+                      </span>
+                    )}
+                    {customerPhone && !validatePhoneNumber(customerPhone).isValid && (
+                      <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1 mt-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-600" />
+                        <span>يرجى كتابة رقم هاتف مصري من 11 رقم (يبدأ بـ 010 أو 011 أو 012 أو 015) أو رقم دولي</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4100,14 +5571,14 @@ function StudioContent() {
                           : 'رقم محفظة فودافون كاش (Vodafone Cash):'}
                       </span>
                       <span className="text-base font-black text-amber-950 font-mono tracking-wider" dir="ltr">
-                        01064906723
+                        {paymentPhone}
                       </span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() =>
-                        copyToClipboard('01064906723', paymentMethod)
+                        copyToClipboard(paymentPhone, paymentMethod)
                       }
                       className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold text-xs hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
                     >
@@ -4116,7 +5587,7 @@ function StudioContent() {
                     </button>
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
-                    قم بتحويل مبلغ <strong className="font-bold">{currentPkg.priceLabel}</strong> إلى الرقم <strong className="font-mono font-bold" dir="ltr">01064906723</strong> عبر {paymentMethod === 'instapay' ? 'تطبيق InstaPay' : 'فودافون كاش'} ثم
+                    قم بتحويل مبلغ <strong className="font-bold">{currentPkg.priceLabel}</strong> إلى الرقم <strong className="font-mono font-bold" dir="ltr">{paymentPhone}</strong> عبر {paymentMethod === 'instapay' ? 'تطبيق InstaPay' : 'فودافون كاش'} ثم
                     التقط لقطة شاشة (Screenshot) لرسالة التأكيد وارفعها بالأسفل.
                   </p>
                 </div>
@@ -4129,7 +5600,11 @@ function StudioContent() {
                   <span className="text-[10px] text-emerald-700 font-bold">ضروري للاعتماد</span>
                 </label>
 
-                <div className="relative border-2 border-dashed border-stone-300 hover:border-[#720925] rounded-2xl p-5 text-center transition-all bg-stone-50/60 hover:bg-stone-50">
+                <div className={`relative border-2 border-dashed rounded-2xl p-5 text-center transition-all ${
+                  !paymentProofBase64 && submitError
+                    ? 'border-rose-400 bg-rose-50/30 ring-2 ring-rose-200'
+                    : 'border-stone-300 hover:border-[#720925] bg-stone-50/60 hover:bg-stone-50'
+                }`}>
                   <input
                     type="file"
                     required={!paymentProofBase64}
@@ -4204,6 +5679,110 @@ function StudioContent() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Interactive Tier Upgrade Notice Modal */}
+      {tierNoticeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl border-2 border-amber-300 text-center relative overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setTierNoticeModal(null)}
+              className="absolute top-4 left-4 p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 mx-auto flex items-center justify-center shadow-xs">
+              {tierNoticeModal.requiredPackageId === 'luxury-vip' ? (
+                <Crown className="w-8 h-8 text-amber-600" />
+              ) : (
+                <Sparkles className="w-8 h-8 text-[#720925]" />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-900 border border-amber-300">
+                <Lock className="w-3.5 h-3.5 text-amber-700" />
+                <span>
+                  {tierNoticeModal.requiredPackageId === 'luxury-vip'
+                    ? `ميزة حصرية لباقة VIP الملكية (${vipPlan.priceLabel})`
+                    : `متاحة في باقة رحلة الفرح (${journeyPlan.priceLabel}) وباقة VIP`}
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-stone-900 font-cairo">
+                {tierNoticeModal.featureTitle}
+              </h3>
+              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+                {tierNoticeModal.featureDescription}
+              </p>
+            </div>
+
+            {/* Difference calculation & current plan */}
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-amber-200 text-right space-y-2 text-xs">
+              <div className="flex items-center justify-between text-stone-600 font-medium">
+                <span>باقتك الحالية في التصميم:</span>
+                <span className="font-bold text-stone-900">
+                  {packagesList.find((p) => p.id === selectedPackage)?.name} ({packagesList.find((p) => p.id === selectedPackage)?.priceLabel})
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-amber-950 font-black pt-1 border-t border-amber-200/60">
+                <span>فرق الترقية لـ {tierNoticeModal.requiredPackageId === 'luxury-vip' ? 'باقة VIP' : 'باقة رحلة الفرح'}:</span>
+                <span className="text-sm font-black text-[#720925]">
+                  +{Math.max(
+                    0,
+                    (packagesList.find((p) => p.id === tierNoticeModal.requiredPackageId)?.price || 0) -
+                      (packagesList.find((p) => p.id === selectedPackage)?.price || 0)
+                  )}{' '}
+                  ج.م فقط
+                </span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const req = tierNoticeModal.requiredPackageId;
+                  const feat = tierNoticeModal.featureTitle;
+                  const callback = tierNoticeModal.onUpgradeAction;
+                  handleUpgradeToPackage(req, feat);
+                  if (callback) callback();
+                }}
+                className="w-full py-3.5 px-4 rounded-xl burgundy-gradient-bg text-white font-black text-xs sm:text-sm hover:opacity-95 shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>
+                  ترقية باقتي الآن وتفعيل الميزة ({packagesList.find((p) => p.id === tierNoticeModal.requiredPackageId)?.priceLabel}) 🪄
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTierNoticeModal(null)}
+                className="w-full py-2 text-xs text-stone-400 hover:text-stone-700 font-bold transition-colors cursor-pointer"
+              >
+                متابعة مع باقتي الحالية
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tier Upgrade Feedback Toast */}
+      {tierFeedbackToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-amber-400 flex items-center gap-3 animate-slide-up text-xs sm:text-sm font-bold max-w-md text-right">
+          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+          <span className="flex-1">{tierFeedbackToast}</span>
+          <button
+            type="button"
+            onClick={() => setTierFeedbackToast(null)}
+            className="text-stone-400 hover:text-white mr-2 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

@@ -62,12 +62,12 @@ async function main() {
   });
   console.log('👤 Users verified & synced for RBAC: super_admin, admin, editor');
 
-  // 2. Settings (Singleton) with updated InstaPay & Vodafone Cash contact info (01064906723)
+  // 2. Settings (Singleton) with contact info (+201019262075) and Payment info (01064906723)
   const settingsData = {
     siteName: 'Farahna',
     siteNameAr: 'فرحنا',
-    supportPhone: '+201064906723',
-    whatsappNumber: '201064906723',
+    supportPhone: '+201019262075',
+    whatsappNumber: '201019262075',
     paymentInstructionsAr:
       'الدفع متاح عبر InstaPay أو فودافون كاش على رقم 01064906723 — يرجى رفع صورة التحويل لتفعيل الدعوة ونشرها فوراً',
     defaultTimezone: 'Africa/Cairo',
@@ -82,7 +82,7 @@ async function main() {
       ...settingsData,
     },
   });
-  console.log('⚙️ System settings updated (Support & Payment phone: 01064906723).');
+  console.log('⚙️ System settings updated (Support: +201019262075, Payment: 01064906723).');
 
   // 3. Create / Sync 5 Egyptian Themes
   const themesMap: Record<string, string> = {};

@@ -223,12 +223,105 @@ const THEMES_DATA: ThemeItem[] = [
   },
 ];
 
+const resolveThemeEnvelopePalette = (slug: ThemeSlug) => {
+  switch (slug) {
+    case 'elegant-gold':
+      return {
+        envelopeBody: '#131317',
+        envelopeBodyGradient: 'linear-gradient(145deg, #1A1A22 0%, #121216 55%, #0B0B0E 100%)',
+        envelopeBorder: '#D4AF37',
+        flapColor: '#1A1A20',
+        flapBorder: '#D4AF37',
+        flapLiningBg: 'linear-gradient(135deg, #222018 0%, #151512 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #FFF0B8 0%, #E6C25E 30%, #B88E28 70%, #7D5D0D 100%)',
+        sealBorder: '#FFE28A',
+        sealShadow: '0 8px 20px rgba(0,0,0,0.8), 0 0 15px rgba(212,175,55,0.6)',
+        sealIconColor: '#261C02',
+        ribbonBg: 'linear-gradient(180deg, #D4AF37 0%, #997A15 100%)',
+      };
+    case 'royal-burgundy':
+      return {
+        envelopeBody: '#54081B',
+        envelopeBodyGradient: 'linear-gradient(145deg, #6E0D25 0%, #500619 55%, #35030F 100%)',
+        envelopeBorder: '#D4AF37',
+        flapColor: '#630B21',
+        flapBorder: '#E5C05E',
+        flapLiningBg: 'linear-gradient(135deg, #38030F 0%, #1F0108 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #B5183F 0%, #800A25 50%, #4D0313 100%)',
+        sealBorder: '#F5D77F',
+        sealShadow: '0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(212,175,55,0.5)',
+        sealIconColor: '#FDF3D6',
+        ribbonBg: 'linear-gradient(180deg, #8C0B2A 0%, #540619 100%)',
+      };
+    case 'minimal-white':
+      return {
+        envelopeBody: '#F7F3EB',
+        envelopeBodyGradient: 'linear-gradient(145deg, #FFFFFF 0%, #F5F0E6 60%, #EAE2D2 100%)',
+        envelopeBorder: '#D4AF37',
+        flapColor: '#F5EFE4',
+        flapBorder: '#D4AF37',
+        flapLiningBg: 'linear-gradient(135deg, #FAF7F2 0%, #E8DFD0 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F2EADB 45%, #C8B99D 100%)',
+        sealBorder: '#D4AF37',
+        sealShadow: '0 6px 16px rgba(0,0,0,0.2), 0 0 12px rgba(212,175,55,0.3)',
+        sealIconColor: '#7A622A',
+        ribbonBg: 'linear-gradient(180deg, #D4AF37 0%, #A8862A 100%)',
+      };
+    case 'romantic-floral':
+      return {
+        envelopeBody: '#682637',
+        envelopeBodyGradient: 'linear-gradient(145deg, #843247 0%, #682637 55%, #461421 100%)',
+        envelopeBorder: '#F5C6D6',
+        flapColor: '#762B3F',
+        flapBorder: '#F5C6D6',
+        flapLiningBg: 'linear-gradient(135deg, #4A1523 0%, #2D0913 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #FADCE6 0%, #C96883 45%, #7D2840 100%)',
+        sealBorder: '#FFEAF2',
+        sealShadow: '0 8px 20px rgba(0,0,0,0.5), 0 0 15px rgba(245,198,214,0.5)',
+        sealIconColor: '#FFFFFF',
+        ribbonBg: 'linear-gradient(180deg, #C96883 0%, #852C43 100%)',
+      };
+    case 'emerald-palace':
+      return {
+        envelopeBody: '#0D3528',
+        envelopeBodyGradient: 'linear-gradient(145deg, #134B39 0%, #0D3528 55%, #071F17 100%)',
+        envelopeBorder: '#D4AF37',
+        flapColor: '#103F30',
+        flapBorder: '#D4AF37',
+        flapLiningBg: 'linear-gradient(135deg, #1C5542 0%, #0A291E 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #FFE28A 0%, #D4AF37 50%, #8C6F18 100%)',
+        sealBorder: '#FFF0B8',
+        sealShadow: '0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(212,175,55,0.6)',
+        sealIconColor: '#0E382B',
+        ribbonBg: 'linear-gradient(180deg, #D4AF37 0%, #8C6F18 100%)',
+      };
+    case 'egyptian-oriental':
+    default:
+      return {
+        envelopeBody: '#1A365D',
+        envelopeBodyGradient: 'linear-gradient(145deg, #244677 0%, #173258 55%, #0E203B 100%)',
+        envelopeBorder: '#C69214',
+        flapColor: '#1E3E6B',
+        flapBorder: '#C69214',
+        flapLiningBg: 'linear-gradient(135deg, #2C4E7C 0%, #112642 100%)',
+        sealBg: 'radial-gradient(circle at 35% 35%, #F7E4A8 0%, #C69214 50%, #7E5B06 100%)',
+        sealBorder: '#FFEBB0',
+        sealShadow: '0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(198,146,20,0.5)',
+        sealIconColor: '#10223B',
+        ribbonBg: 'linear-gradient(180deg, #C69214 0%, #7E5B06 100%)',
+      };
+  }
+};
+
 export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGalleryProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | ThemeSlug>('all');
   const [playingTheme, setPlayingTheme] = useState<ThemeSlug | null>(null);
   const [previewTheme, setPreviewTheme] = useState<ThemeItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalEnvelopeOpen, setIsModalEnvelopeOpen] = useState(false);
+
+  const modalPalette = previewTheme ? resolveThemeEnvelopePalette(previewTheme.slug) : null;
+  const isModalDark = previewTheme?.slug === 'elegant-gold';
 
   // Play audio synthesizer motif for a specific theme
   const handlePlayMusic = (slug: ThemeSlug, e?: React.MouseEvent) => {
@@ -346,6 +439,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
             const isBurgundy = theme.slug === 'royal-burgundy';
             const isOriental = theme.slug === 'egyptian-oriental';
             const isEmerald = theme.slug === 'emerald-palace';
+            const themePalette = resolveThemeEnvelopePalette(theme.slug);
 
             const whatsappOrderUrl = getWhatsAppUrl(
               whatsappNumber,
@@ -360,7 +454,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                 <div>
                   {/* Visual Envelope & Invitation Preview Header */}
                   <div
-                    className={`h-52 bg-gradient-to-br ${theme.cardHeaderBg} relative overflow-hidden p-5 flex flex-col justify-between text-white border-b ${
+                    className={`h-56 bg-gradient-to-br ${theme.cardHeaderBg} relative overflow-hidden p-5 flex flex-col justify-between text-white border-b ${
                       isMinimal
                         ? 'border-stone-200 text-stone-900'
                         : isFloral
@@ -460,62 +554,150 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                       </button>
                     </div>
 
-                    {/* Central 3D Interactive Envelope Flap & Wax Seal Miniature */}
+                    {/* Central 3D Royal Envelope Miniature (Matches EnvelopeScreen) */}
                     <div
                       onClick={() => openEnvelopeModal(theme)}
-                      className="relative my-auto cursor-pointer group/seal flex items-center justify-center"
-                      title="اضغط لمعاينة الظرف والختم"
+                      className="relative my-auto cursor-pointer group/seal flex items-center justify-center py-0.5"
+                      title="اضغط لمعاينة الظرف والختم الملكي"
                     >
                       {/* Envelope Silhouette Container */}
                       <div
-                        className="w-48 sm:w-56 h-20 rounded-xl relative shadow-md flex items-center justify-center transition-transform group-hover/seal:scale-105 overflow-hidden"
-                        style={{
-                          backgroundColor: theme.envelopeBodyColor,
-                          border: isMinimal
-                            ? '1px solid #DCD4C7'
-                            : '1px solid rgba(255,255,255,0.2)',
-                        }}
+                        className="w-52 sm:w-60 h-22 rounded-xl relative shadow-lg flex items-center justify-center transition-all duration-300 group-hover/seal:scale-105 select-none"
+                        style={{ perspective: '800px' }}
                       >
-                        {/* Peeking Letter Card Inside */}
+                        {/* 1. Envelope Back Wall */}
                         <div
-                          className="absolute -top-1 w-40 sm:w-48 h-8 rounded-t-md shadow-xs flex items-center justify-center px-2 transition-transform group-hover/seal:-translate-y-2"
+                          className="absolute inset-0 rounded-xl border shadow-xs overflow-hidden"
                           style={{
-                            backgroundColor: isDark ? '#1C1C20' : '#FFFFFF',
-                            color: isDark ? '#F5E6C8' : '#2D1B1E',
-                            border: '1px solid rgba(212,175,55,0.4)',
-                          }}
-                        >
-                          <span className="text-[10px] font-bold font-cairo truncate">
-                            {theme.sampleCouple}
-                          </span>
-                        </div>
-
-                        {/* Top Envelope Flap Triangle */}
-                        <div
-                          className="absolute inset-x-0 top-0 h-10 transition-all origin-top"
-                          style={{
-                            backgroundColor: theme.envelopeFlapColor,
-                            clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                            borderColor: themePalette.envelopeBorder,
+                            background: themePalette.envelopeBodyGradient,
                           }}
                         />
 
-                        {/* 3D Wax Seal Badge */}
+                        {/* 2. Peeking Inner Card (Inside pocket, peeking out without white gaps) */}
                         <div
-                          className={`relative z-10 w-9 h-9 rounded-full ${theme.sealClass} wax-seal-3d flex items-center justify-center transition-transform group-hover/seal:scale-115 active:scale-90`}
+                          className="absolute inset-x-3 -top-1.5 h-14 rounded-t-lg shadow-xs flex flex-col items-center justify-start pt-1.5 px-2 border border-b-0 transition-transform duration-300 group-hover/seal:-translate-y-2.5 z-10"
+                          style={{
+                            backgroundColor: isDark ? '#1C1C22' : '#FFFDF9',
+                            borderColor: themePalette.envelopeBorder,
+                            color: isDark ? '#F5E6C8' : themePalette.flapColor,
+                          }}
                         >
-                          <div className="w-7 h-7 rounded-full border border-dashed border-amber-300/80 flex items-center justify-center text-amber-200">
-                            {isBurgundy && <Crown className="w-3.5 h-3.5" />}
-                            {isDark && <Sparkles className="w-3.5 h-3.5" />}
-                            {isMinimal && <Feather className="w-3.5 h-3.5 text-stone-700" />}
-                            {isFloral && <Heart className="w-3.5 h-3.5 fill-pink-200" />}
-                            {isOriental && <Scroll className="w-3.5 h-3.5" />}
-                            {isEmerald && <Crown className="w-3.5 h-3.5 text-emerald-300" />}
+                          <div className="flex items-center gap-1 opacity-90 scale-95">
+                            <Crown className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                            <span className="text-[9px] font-bold font-cairo truncate max-w-[145px]">
+                              {theme.sampleCouple}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 3. Main Envelope Pocket Body with layered triangular folds (Covers card sides) */}
+                        <div
+                          className="absolute inset-0 rounded-xl border overflow-hidden z-20 pointer-events-none"
+                          style={{
+                            borderColor: themePalette.envelopeBorder,
+                            background: themePalette.envelopeBodyGradient,
+                          }}
+                        >
+                          {/* Corner Filigree Accents */}
+                          <div className="absolute top-1 left-1 w-3 h-3 border-t border-l rounded-tl pointer-events-none opacity-80" style={{ borderColor: themePalette.envelopeBorder }} />
+                          <div className="absolute top-1 right-1 w-3 h-3 border-t border-r rounded-tr pointer-events-none opacity-80" style={{ borderColor: themePalette.envelopeBorder }} />
+                          <div className="absolute bottom-1 left-1 w-3 h-3 border-b border-l rounded-bl pointer-events-none opacity-80" style={{ borderColor: themePalette.envelopeBorder }} />
+                          <div className="absolute bottom-1 right-1 w-3 h-3 border-b border-r rounded-br pointer-events-none opacity-80" style={{ borderColor: themePalette.envelopeBorder }} />
+
+                          {/* Pocket Triangle Folds */}
+                          <div
+                            className="absolute inset-x-0 bottom-0 h-14"
+                            style={{
+                              clipPath: 'polygon(0 100%, 100% 100%, 50% 20%)',
+                              background: themePalette.envelopeBodyGradient,
+                              filter: 'brightness(0.92)',
+                            }}
+                          />
+                          <div
+                            className="absolute inset-y-0 left-0 w-20"
+                            style={{
+                              clipPath: 'polygon(0 0, 0 100%, 100% 50%)',
+                              background: themePalette.envelopeBodyGradient,
+                              filter: 'brightness(0.96)',
+                            }}
+                          />
+                          <div
+                            className="absolute inset-y-0 right-0 w-20"
+                            style={{
+                              clipPath: 'polygon(100% 0, 100% 100%, 0 50%)',
+                              background: themePalette.envelopeBodyGradient,
+                              filter: 'brightness(0.96)',
+                            }}
+                          />
+                        </div>
+
+                        {/* 4. Top Flap with curved royal SVG and gold border (identical to EnvelopeScreen) */}
+                        <div
+                          className="absolute inset-x-0 top-0 h-13 pointer-events-none z-30 transition-transform duration-300 origin-top group-hover/seal:-rotate-x-12"
+                          style={{
+                            filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.35))',
+                          }}
+                        >
+                          <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id={`thumbFlapGrad-${theme.slug}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                                <stop offset="0%" stopColor={themePalette.flapColor} />
+                                <stop offset="100%" stopColor={themePalette.envelopeBody} />
+                              </linearGradient>
+                            </defs>
+                            <path
+                              d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
+                              fill={`url(#thumbFlapGrad-${theme.slug})`}
+                              stroke={themePalette.flapBorder}
+                              strokeWidth="2.5"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* 5. 3D Wax Seal Stamp with V-cut Satin Ribbon Tails */}
+                        <div className="absolute top-[52%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 transition-transform duration-300 group-hover/seal:scale-110 active:scale-95">
+                          {/* Satin Ribbon Tails */}
+                          <div className="absolute top-[75%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 pointer-events-none -z-10">
+                            <div
+                              className="w-1.5 h-5 shadow-xs transform -rotate-12 origin-top"
+                              style={{
+                                background: themePalette.ribbonBg,
+                                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
+                              }}
+                            />
+                            <div
+                              className="w-1.5 h-5 shadow-xs transform rotate-12 origin-top"
+                              style={{
+                                background: themePalette.ribbonBg,
+                                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
+                              }}
+                            />
+                          </div>
+
+                          {/* Wax Seal Circle */}
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg border"
+                            style={{
+                              background: themePalette.sealBg,
+                              borderColor: themePalette.sealBorder,
+                              boxShadow: themePalette.sealShadow,
+                            }}
+                          >
+                            <div className="w-6 h-6 rounded-full border border-dashed flex items-center justify-center" style={{ borderColor: `${themePalette.sealBorder}90` }}>
+                              {isBurgundy && <Crown className="w-3 h-3 drop-shadow-xs" style={{ color: themePalette.sealIconColor }} />}
+                              {isDark && <Sparkles className="w-3 h-3 drop-shadow-xs" style={{ color: themePalette.sealIconColor }} />}
+                              {isMinimal && <Feather className="w-3 h-3 drop-shadow-xs" style={{ color: themePalette.sealIconColor }} />}
+                              {isFloral && <Heart className="w-3 h-3 drop-shadow-xs fill-current" style={{ color: themePalette.sealIconColor }} />}
+                              {isOriental && <Scroll className="w-3.5 h-3.5 drop-shadow-xs" style={{ color: themePalette.sealIconColor }} />}
+                              {isEmerald && <Crown className="w-3 h-3 drop-shadow-xs" style={{ color: themePalette.sealIconColor }} />}
+                            </div>
                           </div>
                         </div>
 
                         {/* Quick Preview Hint */}
-                        <span className="absolute bottom-1 right-2 text-[8px] font-bold opacity-75 flex items-center gap-0.5">
+                        <span className="absolute bottom-1 right-2 text-[8px] font-bold text-amber-200/90 z-40 flex items-center gap-0.5 drop-shadow-xs pointer-events-none">
                           <Maximize2 className="w-2.5 h-2.5" />
                           <span>معاينة الظرف</span>
                         </span>
@@ -733,52 +915,227 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
               </p>
             </div>
 
-            {/* Interactive Simulated Envelope Container */}
+            {/* Interactive Simulated Royal Envelope Container (Matches EnvelopeScreen) */}
             <div
-              className="relative mx-auto w-72 sm:w-80 h-48 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden transition-all duration-500"
-              style={{
-                backgroundColor: previewTheme.envelopeBodyColor,
-                border: '2px solid rgba(212,175,55,0.4)',
-              }}
+              className="relative mx-auto w-72 sm:w-84 h-48 sm:h-52 rounded-2xl flex items-center justify-center select-none"
+              style={{ perspective: '1200px' }}
             >
-              {/* Envelope Flap Triangles */}
+              {/* Golden Glow Emitter */}
               <div
-                className="absolute inset-x-0 top-0 h-28 border-b border-black/10 transition-transform origin-top duration-500"
+                className={`absolute inset-x-6 top-4 h-28 rounded-full blur-xl pointer-events-none z-10 transition-opacity duration-700 ${
+                  isModalEnvelopeOpen ? 'opacity-80' : 'opacity-0'
+                }`}
                 style={{
-                  backgroundColor: previewTheme.envelopeFlapColor,
-                  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                  transform: isModalEnvelopeOpen ? 'rotateX(180deg)' : 'none',
+                  background: 'radial-gradient(circle, rgba(255, 230, 140, 0.7) 0%, rgba(212, 175, 55, 0.35) 60%, transparent 100%)',
                 }}
               />
 
-              {/* Central Wax Seal */}
-              <div className="relative z-10">
-                <button
-                  type="button"
-                  onClick={handleModalSealClick}
-                  className={`w-20 h-20 rounded-full ${previewTheme.sealClass} wax-seal-3d flex flex-col items-center justify-center text-white cursor-pointer hover:scale-110 active:scale-95 transition-all`}
-                  title="اضغط لفتح الظرف"
-                >
-                  <div className="w-16 h-16 rounded-full border-2 border-dashed border-amber-300/80 flex flex-col items-center justify-center text-amber-200">
-                    <Heart className="w-5 h-5 fill-amber-300 text-amber-300 animate-pulse" />
-                    <span className="text-[10px] font-black tracking-wider mt-0.5">
-                      {isModalEnvelopeOpen ? 'مفتوح ✨' : 'افتح'}
-                    </span>
-                  </div>
-                </button>
-              </div>
+              {/* 1. Inner Luxury Card (Slides UP out of the pocket) */}
+              <div
+                className={`absolute inset-x-3 bottom-2 h-40 sm:h-44 rounded-xl transition-all z-25 p-3 flex flex-col justify-between text-center border-2 shadow-2xl ${
+                  isModalEnvelopeOpen
+                    ? '-translate-y-20 sm:-translate-y-24 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
+                    : 'translate-y-0 opacity-95'
+                }`}
+                style={{
+                  backgroundColor: isModalDark ? '#1C1C22' : '#FFFDF8',
+                  borderColor: modalPalette?.envelopeBorder || '#D4AF37',
+                  transitionDuration: '700ms',
+                  transitionTimingFunction: 'cubic-bezier(0.2, 0.9, 0.3, 1)',
+                }}
+              >
+                <div>
+                  <span className="text-[10px] text-amber-800 font-amiri font-bold block">
+                    ﷽
+                  </span>
+                  <span className="text-[9px] text-amber-900 font-amiri font-bold block opacity-85">
+                    «وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا»
+                  </span>
+                </div>
 
-              {/* Peeking Invitation Card when opened */}
-              {isModalEnvelopeOpen && (
-                <div className="absolute inset-x-4 bottom-3 bg-white p-3 rounded-xl shadow-lg border border-amber-300/40 text-stone-900 animate-fade-in-up">
-                  <p className="text-xs font-black text-[#720925] font-cairo">
+                <div className="py-1 border-y my-auto" style={{ borderColor: `${modalPalette?.envelopeBorder || '#D4AF37'}50` }}>
+                  <p className="text-sm sm:text-base font-black font-cairo" style={{ color: modalPalette?.flapColor || '#720925' }}>
                     {previewTheme.sampleCouple}
                   </p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">
-                    يسعدنا ويشرفنا حضوركم لتشاركونا أجمل لحظات حياتنا ❤️
+                  <p className="text-[10px] text-stone-600 font-amiri font-bold mt-0.5">
+                    نتشرف بحضوركم ومشاركتنا فرحة العمر ❤️
                   </p>
                 </div>
-              )}
+
+                <div className="flex items-center justify-center gap-1 text-[9px] font-bold text-stone-500 font-cairo">
+                  <span>📅</span>
+                  <span>الجمعة، 15 أكتوبر 2026</span>
+                </div>
+              </div>
+
+              {/* 2. Main Envelope Pocket Body */}
+              <div
+                className="absolute inset-0 rounded-2xl border-2 shadow-2xl overflow-hidden z-30 pointer-events-none transition-all"
+                style={{
+                  borderColor: modalPalette?.envelopeBorder || '#D4AF37',
+                  background: modalPalette?.envelopeBodyGradient || 'linear-gradient(145deg, #6E0D25 0%, #500619 55%, #35030F 100%)',
+                  boxShadow: isModalDark
+                    ? '0 20px 45px rgba(0,0,0,0.85), inset 0 1px 2px rgba(255,255,255,0.1)'
+                    : '0 20px 40px rgba(0,0,0,0.25), inset 0 1px 2px rgba(255,255,255,0.6)',
+                }}
+              >
+                {/* Corner Filigrees */}
+                <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 rounded-tl pointer-events-none opacity-80" style={{ borderColor: modalPalette?.envelopeBorder || '#D4AF37' }} />
+                <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 rounded-tr pointer-events-none opacity-80" style={{ borderColor: modalPalette?.envelopeBorder || '#D4AF37' }} />
+                <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 rounded-bl pointer-events-none opacity-80" style={{ borderColor: modalPalette?.envelopeBorder || '#D4AF37' }} />
+                <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 rounded-br pointer-events-none opacity-80" style={{ borderColor: modalPalette?.envelopeBorder || '#D4AF37' }} />
+
+                {/* Pocket Triangle Folds */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-28 sm:h-32"
+                  style={{
+                    clipPath: 'polygon(0 100%, 100% 100%, 50% 22%)',
+                    background: modalPalette?.envelopeBodyGradient || 'linear-gradient(145deg, #6E0D25 0%, #500619 55%, #35030F 100%)',
+                    filter: 'brightness(0.92)',
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 w-28 sm:w-34"
+                  style={{
+                    clipPath: 'polygon(0 0, 0 100%, 100% 50%)',
+                    background: modalPalette?.envelopeBodyGradient || 'linear-gradient(145deg, #6E0D25 0%, #500619 55%, #35030F 100%)',
+                    filter: 'brightness(0.96)',
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 right-0 w-28 sm:w-34"
+                  style={{
+                    clipPath: 'polygon(100% 0, 100% 100%, 0 50%)',
+                    background: modalPalette?.envelopeBodyGradient || 'linear-gradient(145deg, #6E0D25 0%, #500619 55%, #35030F 100%)',
+                    filter: 'brightness(0.96)',
+                  }}
+                />
+              </div>
+
+              {/* 3. Envelope Top Flap with 3D Flip (Matching EnvelopeScreen) */}
+              <div
+                className="absolute inset-x-0 top-0 h-26 sm:h-28 pointer-events-none"
+                style={{
+                  transformOrigin: 'top center',
+                  transformStyle: 'preserve-3d',
+                  WebkitTransformStyle: 'preserve-3d',
+                  transform: isModalEnvelopeOpen ? 'rotateX(180deg)' : 'rotateX(0deg)',
+                  transition: 'transform 750ms cubic-bezier(0.25, 1, 0.35, 1)',
+                  zIndex: isModalEnvelopeOpen ? 20 : 40,
+                }}
+              >
+                {/* Front of Flap */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'translateZ(1px)',
+                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))',
+                  }}
+                >
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id={`modalFlapGrad-${previewTheme.slug}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                        <stop offset="0%" stopColor={modalPalette?.flapColor || '#630B21'} />
+                        <stop offset="100%" stopColor={modalPalette?.envelopeBody || '#54081B'} />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
+                      fill={`url(#modalFlapGrad-${previewTheme.slug})`}
+                      stroke={modalPalette?.flapBorder || '#D4AF37'}
+                      strokeWidth="2.5"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                </div>
+
+                {/* Back of Flap (Revealed pointing UPWARDS when open) */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg) translateZ(1px)',
+                    filter: 'drop-shadow(0 -4px 6px rgba(0,0,0,0.25))',
+                  }}
+                >
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id={`modalFlapBackGrad-${previewTheme.slug}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                        <stop offset="0%" stopColor={modalPalette?.flapColor || '#630B21'} />
+                        <stop offset="100%" stopColor={modalPalette?.envelopeBody || '#54081B'} />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
+                      fill={`url(#modalFlapBackGrad-${previewTheme.slug})`}
+                      stroke={modalPalette?.flapBorder || '#D4AF37'}
+                      strokeWidth="2.5"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <path
+                      d="M 16,5 L 284,5 C 284,12 280,18 274,23 L 155,114 Q 150,118 145,114 L 26,23 C 20,18 16,12 16,5 Z"
+                      fill="none"
+                      stroke={modalPalette?.flapBorder || '#D4AF37'}
+                      strokeWidth="1.2"
+                      strokeDasharray="4 3"
+                      opacity="0.65"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* 4. Luxury 3D Wax Seal Stamp with Ribbon Tails */}
+              <div
+                className={`absolute top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer transition-all duration-300 ${
+                  isModalEnvelopeOpen
+                    ? 'opacity-0 scale-50 -translate-y-6 pointer-events-none'
+                    : 'opacity-100 scale-100 hover:scale-105 active:scale-95 animate-seal-glow'
+                }`}
+                onClick={handleModalSealClick}
+              >
+                {/* Ribbon Tails */}
+                <div className="absolute top-[80%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 pointer-events-none -z-10">
+                  <div
+                    className="w-2.5 h-8 shadow-xs transform -rotate-12 origin-top"
+                    style={{
+                      background: modalPalette?.ribbonBg || '#D4AF37',
+                      clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
+                    }}
+                  />
+                  <div
+                    className="w-2.5 h-8 shadow-xs transform rotate-12 origin-top"
+                    style={{
+                      background: modalPalette?.ribbonBg || '#D4AF37',
+                      clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
+                    }}
+                  />
+                </div>
+
+                {/* Wax Seal Circle Stamp */}
+                <div
+                  className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex flex-col items-center justify-center shadow-2xl border-2"
+                  style={{
+                    background: modalPalette?.sealBg || '#B5183F',
+                    borderColor: modalPalette?.sealBorder || '#F5D77F',
+                    boxShadow: modalPalette?.sealShadow,
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center space-y-0.5">
+                    {previewTheme.slug === 'royal-burgundy' && <Crown className="w-5 h-5 drop-shadow-sm" style={{ color: modalPalette?.sealIconColor }} />}
+                    {previewTheme.slug === 'elegant-gold' && <Sparkles className="w-5 h-5 drop-shadow-sm" style={{ color: modalPalette?.sealIconColor }} />}
+                    {previewTheme.slug === 'minimal-white' && <Feather className="w-5 h-5 drop-shadow-sm" style={{ color: modalPalette?.sealIconColor }} />}
+                    {previewTheme.slug === 'romantic-floral' && <Heart className="w-5 h-5 drop-shadow-sm fill-current" style={{ color: modalPalette?.sealIconColor }} />}
+                    {previewTheme.slug === 'egyptian-oriental' && <Scroll className="w-5 h-5 drop-shadow-sm" style={{ color: modalPalette?.sealIconColor }} />}
+                    {previewTheme.slug === 'emerald-palace' && <Crown className="w-5 h-5 drop-shadow-sm" style={{ color: modalPalette?.sealIconColor }} />}
+                    <span className="text-[9px] font-black font-cairo" style={{ color: modalPalette?.sealIconColor }}>
+                      فرحنا
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Audio & Action Prompts */}

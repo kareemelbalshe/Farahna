@@ -262,9 +262,82 @@ export const MOCK_AHMED_SARA_MINIMAL_WHITE = createAhmedSaraWithTheme('minimal-w
 export const MOCK_AHMED_SARA_ROMANTIC_FLORAL = createAhmedSaraWithTheme('romantic-floral');
 
 /**
- * 🎨 5. Theme: Egyptian Oriental
+ * 🎨 5. Theme: Egyptian Oriental (طارق & نور - Tarek & Nour)
  */
-export const MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL = createAhmedSaraWithTheme('egyptian-oriental');
+const baseOriental = createAhmedSaraWithTheme('egyptian-oriental');
+export const MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL: FullInvitationMock = {
+  ...baseOriental,
+  invitation: {
+    ...baseOriental.invitation,
+    id: 'inv-tarek-noor-005',
+    slug: 'ahmed-sara-egyptian-oriental',
+    title: 'زفاف طارق ونور — الأصيل الشرقي المصري 🪕',
+    coupleGroomAr: 'طارق فهمي',
+    coupleBrideAr: 'نور الشناوي',
+    coupleGroomEn: 'Tarek Fahmy',
+    coupleBrideEn: 'Nour El-Shennawy',
+    weddingMessageAr: `بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ\n"وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً"\n\nيسعدنا ويشرفنا دعوتكم لحضور حفل زفافنا المبارك في أجواء مصرية شرقية أصيلة بنكهة التراث. حضوركم يزين ليلتنا فرحاً وسعادة ❤️`,
+  },
+  events: [
+    {
+      id: 'evt-tarek-01',
+      invitationId: 'inv-tarek-noor-005',
+      type: 'wedding',
+      titleAr: 'حفل الزفاف والزفة المصرية الأصيلة 🪕',
+      subtitleAr: 'الليلة التراثية في قاعة الأوبرا',
+      date: getAutoRenewingDemoDate('2026-12-25T18:00:00.000Z', 40).toISOString(),
+      startTime: '٨:٠٠ م',
+      endTime: '٢:٠٠ ص',
+      venueNameAr: 'فندق سوفيتيل الجزيرة — قاعة الأوبرا',
+      addressAr: 'الزمالك، كورنيش النيل، القاهرة',
+      googleMapsUrl: 'https://maps.google.com/?q=Sofitel+Cairo+Nile+El+Gezirah',
+      descriptionAr: 'تتوفر خدمة صف السيارات الفاخرة المطلة على النيل مباشرة.',
+      dressCodeAr: 'ملابس رسمية أنيقة 🎩👗',
+      sortOrder: 1,
+      isVisible: true,
+      isHennaFemaleOnly: false,
+    },
+  ],
+};
+
+/**
+ * 🎨 6. Theme: Emerald Marble Palace (زياد & فريدة - Ziad & Farida)
+ */
+const baseEmerald = createAhmedSaraWithTheme('emerald-palace');
+export const MOCK_AHMED_SARA_EMERALD_PALACE: FullInvitationMock = {
+  ...baseEmerald,
+  invitation: {
+    ...baseEmerald.invitation,
+    id: 'inv-ziad-farida-006',
+    slug: 'ahmed-sara-emerald-palace',
+    title: 'زفاف زياد وفريدة — قصر الزمرد والرخام الملكي 🏛️',
+    coupleGroomAr: 'زياد خليل',
+    coupleBrideAr: 'فريدة عاصم',
+    coupleGroomEn: 'Ziad Khalil',
+    coupleBrideEn: 'Farida Assem',
+    weddingMessageAr: `بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ\n"وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً"\n\nيتشرف زياد وفريدة بدعوتكم لمشاركتهما ليلة العمر بين أحضان الحدائق الملكية وقصر الزمرد والرخام. نسعد بوجودكم معنا في هذه الليلة الاستثنائية ❤️`,
+  },
+  events: [
+    {
+      id: 'evt-ziad-01',
+      invitationId: 'inv-ziad-farida-006',
+      type: 'wedding',
+      titleAr: 'حفل الزفاف الملكي الفاخر 👑',
+      subtitleAr: 'الليلة الملكية في الحديقة الأثرية',
+      date: getAutoRenewingDemoDate('2026-12-12T18:00:00.000Z', 35).toISOString(),
+      startTime: '٧:٠٠ م',
+      endTime: '١:٠٠ ص',
+      venueNameAr: 'قصر البارون إمبان — الحديقة الملكية',
+      addressAr: 'شارع العروبة، مصر الجديدة، القاهرة',
+      googleMapsUrl: 'https://maps.google.com/?q=Baron+Empain+Palace',
+      descriptionAr: 'الدخول من البوابة الملكية الرئيسية مع خدمة صف السيارات الفاخرة.',
+      dressCodeAr: 'Black Tie / بدلة رسمية وفستان سواريه فاخر 🎩👗',
+      sortOrder: 1,
+      isVisible: true,
+      isHennaFemaleOnly: false,
+    },
+  ],
+};
 
 /**
  * 🌿 Special: Ahmed & Sara with Henna event having an independent themeOverride!

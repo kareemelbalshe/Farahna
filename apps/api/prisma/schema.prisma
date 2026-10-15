@@ -561,6 +561,7 @@ model Settings {
   siteNameAr             String   @default("فرحنا")
   supportPhone           String   @default("+201019262075")
   whatsappNumber         String   @default("201019262075")
+  paymentPhone           String   @default("01064906723")
   paymentInstructionsAr String   @default("الدفع متاح عبر InstaPay أو فودافون كاش — سيتم إرسال تفاصيل الدفع لحضرتك على واتساب") @db.Text
   defaultTimezone       String   @default("Africa/Cairo")
   defaultDurationDays   Int      @default(60)

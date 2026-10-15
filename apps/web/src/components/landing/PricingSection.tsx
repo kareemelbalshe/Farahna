@@ -1,30 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Check, MessageCircle, Sparkles } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
+import { fetchPricingPlans } from '@/lib/api';
 
 interface PricingSectionProps {
   whatsappNumber?: string;
 }
 
-const PACKAGES = [
+const DEFAULT_PACKAGES = [
   {
     name: 'باقة المناسبة الواحدة',
     slug: 'basic',
     price: 50,
     currency: 'ج.م',
     duration: 'صلاحية شهر كامل',
-    badge: 'مثالية للخطوبة أو كتب الكتاب',
+    badge: 'اقتصادية لمناسبة واحدة 🌸',
     isPopular: false,
     features: [
-      'مناسبة واحدة (فرح أو خطوبة أو كتب كتاب)',
-      'تصميم مخصص بأسماء العروسين وصورهم',
-      'خريطة تفاعلية للموقع والاتجاهات',
-      'عداد تنازلي لموعد المناسبة',
-      'مشاركة سريعة عبر واتساب ومسنجر',
-      'تعديلات مجانية حتى الاعتماد',
+      'مناسبة واحدة رئيسية (فرح أو خطوبة أو كتب كتاب)',
+      'تصميم مخصص بأسماء العروسين وصورة الغلاف',
+      'قوالب كلاسيكية منسقة بألوانها الأصلية وخطوط أنيقة',
+      'خريطة تفاعلية للموقع والاتجاهات على خرائط Google',
+      'عداد تنازلي لموعد الحفل ومشاركة سريعة عبر واتساب',
+      'تعديلات مجانية حتى الاعتماد النهائي',
     ],
   },
   {
@@ -37,13 +38,13 @@ const PACKAGES = [
     isPopular: true,
     features: [
       'رحلة الفرح كاملة برابط واحد (خطوبة + حنة + كتب كتاب + فرح)',
-      'تبويبات تنقل ذكية بين المناسبات',
-      'فتح الظرف التفاعلي الفاخر (بوابات القصر، ختم الشمع، السحاب، أو البتلات)',
-      'مشغل موسيقى هادئة بنقرة واحدة',
-      'تأكيد الحضور (RSVP) وحصر الضيوف',
-      'إضافة الموعد لتقويم Google و Apple',
-      'رمز QR Code عالي الدقة للطباعة',
-      'دعم تعديل أي موعد في أي وقت',
+      'تبويبات تنقل ذكية ومرنة بين المناسبات',
+      'فتح الظرف التفاعلي الفاخر ثلاثي الأبعاد بجميع حركاته',
+      'تخصيص درجات الألوان الملكية والذهبية المقترحة',
+      '5 خطوط عربية فاخرة و5 باترنات وأشكال بطاقات مذهبة',
+      'مشغل موسيقى هادئة ورومانسية مع خيار رابط MP3',
+      'تأكيد الحضور (RSVP) وإضافة الموعد لتقويم الهاتف',
+      'رمز QR Code عالي الدقة للطباعة والمشاركة',
     ],
   },
   {
@@ -52,20 +53,47 @@ const PACKAGES = [
     price: 150,
     currency: 'ج.م',
     duration: 'صلاحية ٦ شهور',
-    badge: 'فخامة ملكية وتخصيص كامل',
+    badge: 'فخامة ملكية وتخصيص كامل 💎',
     isPopular: false,
     features: [
-      'كل مميزات باقة رحلة الفرح الشاملة',
-      'تخصيص كامل لحركات الفتح وباترنات الرخام والداماسك وغبار الذهب',
-      'قسم ليلة الحنة المخصص للسيدات بخصوصية تامة',
-      'معرض صور غير محدود لجلسة التصوير',
-      'إمكانية حجز اسم نطاق خاص (Custom Domain)',
-      'أولوية تصميم وتسليم خلال ساعات',
+      'كل مميزات باقة رحلة الفرح الشاملة بالكامل',
+      'تخصيص حر 100% لعجلة الألوان وكافة الخطوط الـ 10 والباترنات',
+      'ختم شمعي مخصص بحروف العروسين للظرف الملكي (Monogram)',
+      'ألبوم صور وجاليري الذكريات الفاخر بجلسة التصوير (Gallery)',
+      'قسم ليلة الحنة المخصص للسيدات مع رمز خصوصية سري',
+      'تأثيرات البريق والشيمر الذهبي الملكي وشارة VIP',
+      'رفع صوتي مباشر من الهاتف وغلاف مشاركة مخصص للواتساب',
+      'أولوية تسليم وتجهيز فورية خلال ساعات',
     ],
   },
 ];
 
 export function PricingSection({ whatsappNumber = '201019262075' }: PricingSectionProps) {
+  const [packages, setPackages] = useState(DEFAULT_PACKAGES);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchPricingPlans().then((backendPlans) => {
+      if (!mounted || !backendPlans || backendPlans.length === 0) return;
+      setPackages((prev) =>
+        prev.map((pkg) => {
+          const matched = backendPlans.find((bp) => bp.slug === pkg.slug);
+          if (matched) {
+            return {
+              ...pkg,
+              price: matched.price,
+              currency: matched.currency === 'EGP' ? 'ج.م' : matched.currency || 'ج.م',
+              badge: matched.badge || pkg.badge,
+            };
+          }
+          return pkg;
+        })
+      );
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
   return (
     <section id="pricing" className="py-20 lg:py-28 bg-white border-b border-stone-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,7 +112,7 @@ export function PricingSection({ whatsappNumber = '201019262075' }: PricingSecti
 
         {/* Pricing Cards */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {PACKAGES.map((pkg) => {
+          {packages.map((pkg) => {
             const message = `مرحباً، حابب أطلب [${pkg.name}] بسعر ${pkg.price} ج.م من منصة فرحنا ❤️`;
             const whatsappUrl = getWhatsAppUrl(whatsappNumber, message);
 

@@ -20,10 +20,13 @@ export const revalidate = 60; // Revalidate every minute
 
 export default async function LandingPage() {
   const settings = await fetchSiteSettings();
-  const whatsappNumber =
+  const rawWhatsapp =
     settings?.whatsappNumber || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '201019262075';
-  const supportPhone =
+  const rawPhone =
     settings?.supportPhone || process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+201019262075';
+  // Ensure communication is always on +201019262075 and payment is on 01064906723
+  const whatsappNumber = rawWhatsapp.includes('64906723') ? '201019262075' : rawWhatsapp;
+  const supportPhone = rawPhone.includes('64906723') ? '+201019262075' : rawPhone;
 
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col justify-between bg-[#FAF7F2] text-stone-900 selection:bg-rose-100 selection:text-[#720925]">

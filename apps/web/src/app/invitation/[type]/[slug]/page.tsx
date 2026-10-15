@@ -9,6 +9,7 @@ import {
   MOCK_AHMED_SARA_MINIMAL_WHITE,
   MOCK_AHMED_SARA_ROMANTIC_FLORAL,
   MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL,
+  MOCK_AHMED_SARA_EMERALD_PALACE,
   MOCK_AHMED_SARA_THEME_OVERRIDE,
   MOCK_OMAR_SALMA,
   MOCK_MARIAM_YOUSSEF,
@@ -64,6 +65,7 @@ function getMockData(slug: string, searchParams?: PageProps['searchParams']) {
   if (slug === 'ahmed-sara-minimal-white') return MOCK_AHMED_SARA_MINIMAL_WHITE;
   if (slug === 'ahmed-sara-romantic-floral') return MOCK_AHMED_SARA_ROMANTIC_FLORAL;
   if (slug === 'ahmed-sara-egyptian-oriental') return MOCK_AHMED_SARA_EGYPTIAN_ORIENTAL;
+  if (slug === 'ahmed-sara-emerald-palace') return MOCK_AHMED_SARA_EMERALD_PALACE;
 
   // If custom theme slug like ahmed-sara-[any-slug]
   if (
