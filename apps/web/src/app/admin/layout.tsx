@@ -240,6 +240,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
+  // Prevent premature mounting of protected pages before auth state is verified
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#F7F4EE] flex items-center justify-center font-cairo text-stone-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-[#720925] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-stone-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Filter navigation items by active user role
   const visibleNavItems = ADMIN_NAV_ITEMS.filter((item) =>
     item.allowedRoles.includes(userRole)

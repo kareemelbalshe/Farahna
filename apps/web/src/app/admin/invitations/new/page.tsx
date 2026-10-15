@@ -181,6 +181,10 @@ export default function NewInvitationPage() {
   // 4. Invitation Form State
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
+  const [slugSuffix, setSlugSuffix] = useState<string>(() =>
+    Math.random().toString(36).substring(2, 6).toLowerCase()
+  );
+  const [isSlugCustomized, setIsSlugCustomized] = useState(false);
   const [coupleGroomAr, setCoupleGroomAr] = useState('');
   const [coupleBrideAr, setCoupleBrideAr] = useState('');
   const [eventDate, setEventDate] = useState('2026-11-20T19:00:00');
@@ -191,20 +195,37 @@ export default function NewInvitationPage() {
   const currentTypeConfig = INVITATION_TYPES.find((t) => t.id === type) || INVITATION_TYPES[0];
   const currentPkg = PACKAGES_CONFIG.find((p) => p.id === selectedPackage) || PACKAGES_CONFIG[1];
 
+  const randomizeSuffix = () => {
+    setSlugSuffix(Math.random().toString(36).substring(2, 6).toLowerCase());
+  };
+
   useEffect(() => {
-    Promise.all([adminFetch('/customers'), adminFetch('/themes')]).then(
-      ([custRes, themeRes]) => {
-        if (custRes.success && custRes.data.customers?.length > 0) {
+    let mounted = true;
+    Promise.all([
+      adminFetch('/customers').catch(() => ({ success: false, data: { customers: [] } })),
+      adminFetch('/themes').catch(() => ({ success: false, data: [] })),
+    ])
+      .then(([custRes, themeRes]) => {
+        if (!mounted) return;
+        if (custRes?.success && custRes.data?.customers?.length > 0) {
           setCustomers(custRes.data.customers);
           setCustomerId(custRes.data.customers[0].id);
         }
-        if (themeRes.success && themeRes.data?.length > 0) {
+        if (themeRes?.success && Array.isArray(themeRes.data) && themeRes.data.length > 0) {
           setThemes(themeRes.data);
           setThemeId(themeRes.data[0].id);
         }
-        setLoading(false);
-      }
-    );
+      })
+      .catch((err) => {
+        console.warn('Error loading admin new page data:', err);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // When changing invitation type
@@ -248,9 +269,13 @@ export default function NewInvitationPage() {
       }
     }
 
-    if (!slug) {
-      const generatedSlug = generateInvitationSlug(val1, val2);
-      setSlug(generatedSlug);
+    if (!isSlugCustomized) {
+      const part1 = transliterateArabicToSlug(val1.trim().split(/\s+/)[0]);
+      const part2 = transliterateArabicToSlug(val2.trim().split(/\s+/)[0]);
+      const combined = [part1, part2].filter(Boolean).join('-');
+      if (combined) {
+        setSlug(combined);
+      }
     }
   };
 
@@ -298,19 +323,24 @@ export default function NewInvitationPage() {
         }
       }
 
-      // 2. Sanitize Slug
-      const cleanSlug = (slug || generateInvitationSlug(coupleGroomAr, coupleBrideAr))
+      // 2. Sanitize and combine user's slug with the random suffix
+      const userBaseSlug = (slug || transliterateArabicToSlug(`${coupleGroomAr}-${coupleBrideAr}`) || 'farah')
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9-]/g, '')
         .replace(/^-+|-+$/g, '');
+
+      // Ensure random characters are appended to the user's slug
+      const finalSlug = userBaseSlug.endsWith(`-${slugSuffix}`)
+        ? userBaseSlug
+        : `${userBaseSlug}-${slugSuffix}`;
 
       const payload = {
         customerId: resolvedCustomerId || undefined,
         title:
           title ||
           `${currentTypeConfig.title} - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''}`,
-        slug: cleanSlug || `farah-${Date.now().toString().slice(-6)}`,
+        slug: finalSlug || `farah-${Date.now().toString().slice(-6)}-${slugSuffix}`,
         type,
         coupleGroomAr: coupleGroomAr || (type === 'custom' ? 'المحتفى به' : 'العريس'),
         coupleBrideAr: coupleBrideAr || (type === 'custom' ? 'المناسبة' : 'العروس'),
@@ -646,42 +676,76 @@ export default function NewInvitationPage() {
               />
             </div>
 
-            {/* Slug with DYNAMIC Prefix matching the chosen type */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-stone-700 block">
-                  الرابط المختصر الفريد (Slug بالإنجليزية والأرقام): *
+            {/* Slug with DYNAMIC Prefix matching the chosen type + User's slug + Random Suffix */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <label className="text-xs font-bold text-stone-700 block flex items-center gap-1.5">
+                  <span>الرابط المخصص للدعوة (مع حروف عشوائية فريدة): *</span>
                 </label>
-                <span className="text-[11px] font-mono text-[#720925] font-bold">
+                <button
+                  type="button"
+                  onClick={randomizeSuffix}
+                  className="text-[11px] font-bold text-[#720925] hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  title="تغيير الحروف العشوائية"
+                >
+                  <span>🎲 تغيير الحروف العشوائية ({slugSuffix})</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                {/* Prefix Label */}
+                <div className="flex items-center px-3 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-xs font-mono text-stone-600 dir-ltr select-none shrink-0 font-bold">
                   {currentTypeConfig.slugPrefix}
+                </div>
+
+                {/* User Base Slug Input */}
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    required
+                    pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    minLength={2}
+                    maxLength={50}
+                    value={slug}
+                    onChange={(e) => {
+                      setIsSlugCustomized(true);
+                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+                    }}
+                    placeholder={
+                      type === 'custom'
+                        ? 'dr-ahmed-graduation'
+                        : type === 'henna'
+                        ? 'sara-henna-night'
+                        : 'ahmed-sara'
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs font-mono text-left dir-ltr bg-white focus:border-[#720925] focus:ring-1 focus:ring-[#720925]"
+                  />
+                </div>
+
+                {/* Random Characters Badge */}
+                <div className="flex items-center gap-1 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 font-mono text-xs font-bold shrink-0 dir-ltr select-none">
+                  <span className="text-amber-500 font-bold">-</span>
+                  <span className="text-amber-900 font-black">{slugSuffix}</span>
+                </div>
+              </div>
+
+              {/* Live Link Result Preview */}
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs font-mono flex items-center justify-between gap-2 flex-wrap">
+                <div className="text-stone-700 truncate dir-ltr text-left">
+                  <span className="text-stone-400">https://farahna.menuflowx.com{currentTypeConfig.slugPrefix}</span>
+                  <span className="text-[#720925] font-black">{slug ? slug.replace(/^-+|-+$/g, '') : 'link'}-{slugSuffix}</span>
+                </div>
+                <span className="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0">
+                  الرابط النهائي الناتج ✅
                 </span>
               </div>
 
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-mono select-none">
-                  {currentTypeConfig.slugPrefix}
-                </span>
-                <input
-                  type="text"
-                  required
-                  pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                  minLength={3}
-                  maxLength={60}
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  placeholder={
-                    type === 'custom'
-                      ? 'dr-ahmed-graduation'
-                      : type === 'henna'
-                      ? 'sara-henna-night'
-                      : 'ahmed-sara'
-                  }
-                  className="w-full pl-52 pr-4 py-2.5 rounded-xl border border-stone-200 text-xs font-mono text-left dir-ltr"
-                />
-              </div>
+              <p className="text-[11px] text-stone-500">
+                💡 يتم أخذ الرابط منك وإضافة حروف عشوائية تلقائياً (<code className="font-mono text-[#720925] font-bold">-{slugSuffix}</code>) لضمان الخصوصية وعدم تكرار الرابط مع أي دعوة أخرى.
+              </p>
 
-              {slug && slug.length < 3 && (
-                <span className="text-[10px] text-amber-700 block">⚠️ الرابط يجب أن يكون 3 أحرف على الأقل</span>
+              {slug && slug.length < 2 && (
+                <span className="text-[10px] text-amber-700 block">⚠️ الرابط يجب أن يكون حرفين على الأقل</span>
               )}
               {['admin', 'api', 'auth', 'login', 'preview', 'settings', 'static', 'storage', 'health', 'media'].includes(slug) && (
                 <span className="text-[10px] text-rose-700 font-bold block">❌ هذا الاسم محجوز لصفحات النظام، يرجى اختيار اسم آخر</span>

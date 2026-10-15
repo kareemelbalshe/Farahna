@@ -126,24 +126,30 @@ export async function fetchSiteSettings() {
 }
 
 export async function adminFetch(endpoint: string, options: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    };
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (res.status === 401 && typeof window !== 'undefined') {
-    localStorage.removeItem('farahna_token');
-    window.location.href = '/admin/login';
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('farahna_token');
+      window.location.href = '/admin/login';
+      return { success: false, message: 'انتهت صلاحية الجلسة' };
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.error('adminFetch network error:', err);
+    return { success: false, message: err?.message || 'تعذر الاتصال بالخادم' };
   }
-
-  return await res.json();
 }
 
 export interface PricingPlanItem {

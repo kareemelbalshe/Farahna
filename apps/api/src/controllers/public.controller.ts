@@ -428,6 +428,9 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
     const groom = (invInput.coupleGroomAr || 'groom').trim();
     const bride = (invInput.coupleBrideAr || 'bride').trim();
     let baseSlug = (invInput.slug ? String(invInput.slug).trim() : generateInvitationSlug(groom, bride));
+    if (invInput.slug && !/-[a-z0-9]{3,6}$/.test(baseSlug)) {
+      baseSlug = `${baseSlug}-${nanoid(4).toLowerCase()}`;
+    }
     let finalSlug = baseSlug;
     let counter = 1;
     while (await prisma.invitation.findUnique({ where: { slug: finalSlug } })) {
