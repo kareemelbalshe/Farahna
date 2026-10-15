@@ -108,6 +108,7 @@ export default function VisualInvitationBuilderPage() {
   const [activeTab, setActiveTab] = useState<'couple' | 'events' | 'theme' | 'sections' | 'media'>('couple');
   const [adminMobileView, setAdminMobileView] = useState<'editor' | 'preview'>('editor');
   const [previewTokenCopied, setPreviewTokenCopied] = useState(false);
+  const [guestListCopied, setGuestListCopied] = useState(false);
   const [successNotice, setSuccessNotice] = useState('');
   const [envelopeResetKey, setEnvelopeResetKey] = useState(0);
 
@@ -477,8 +478,6 @@ export default function VisualInvitationBuilderPage() {
   };
 
   const previewUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/preview/${invitation.previewToken}`;
-
-  const [guestListCopied, setGuestListCopied] = useState(false);
   const guestListUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/guests/${invitation.previewToken || invitation.id}`;
 
   const copyGuestListLink = () => {
