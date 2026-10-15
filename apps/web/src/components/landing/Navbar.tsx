@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Heart, MessageCircle, Sparkles, Menu, X } from 'lucide-react';
+import { Heart, MessageCircle, Sparkles, Menu, X, Facebook, Instagram } from 'lucide-react';
 import { getWhatsAppUrl, createInquiryWhatsAppMessage } from '@/lib/whatsapp';
+import { FARAHNA_SOCIAL_LINKS } from '@farahna/shared';
 
 interface NavbarProps {
   whatsappNumber?: string;
@@ -24,6 +25,40 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-stone-200/60 shadow-sm transition-all">
+      {/* Top Announcement & Social Links Bar */}
+      <div className="bg-[#720925] text-white text-[11px] py-1.5 px-4 border-b border-rose-900/40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="hidden sm:inline">✨ صمم دعوة زفافك الملكية التفاعلية أو تابع أحدث أعمالنا</span>
+            <span className="sm:hidden">✨ منصة فرحنا لدعوات الأعراس الملكية</span>
+          </div>
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
+            <span className="text-amber-200/80 text-[10px] hidden md:inline">تابعونا:</span>
+            <a
+              href={FARAHNA_SOCIAL_LINKS.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-amber-300 transition-colors py-0.5 px-2 rounded-md hover:bg-white/10"
+              title="صفحة فرحنا الرسمية على فيسبوك"
+            >
+              <Facebook className="w-3.5 h-3.5 fill-current" />
+              <span>فيسبوك</span>
+            </a>
+            <span className="opacity-30">|</span>
+            <a
+              href={FARAHNA_SOCIAL_LINKS.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-amber-300 transition-colors py-0.5 px-2 rounded-md hover:bg-white/10"
+              title="حساب إنستجرام الرسمي @farahna.10"
+            >
+              <Instagram className="w-3.5 h-3.5" />
+              <span className="font-sans">{FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
@@ -107,6 +142,28 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
             ))}
           </nav>
           <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+            {/* Social Follow Links */}
+            <div className="grid grid-cols-2 gap-2 pb-1">
+              <a
+                href={FARAHNA_SOCIAL_LINKS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#1877F2]/10 text-[#1877F2] font-bold text-xs hover:bg-[#1877F2] hover:text-white transition-colors border border-[#1877F2]/20"
+              >
+                <Facebook className="w-4 h-4 fill-current" />
+                <span>فيسبوك</span>
+              </a>
+              <a
+                href={FARAHNA_SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-pink-50 text-[#DD2A7B] font-bold text-xs hover:bg-[#DD2A7B] hover:text-white transition-colors border border-pink-200"
+              >
+                <Instagram className="w-4 h-4" />
+                <span className="font-sans">{FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
+              </a>
+            </div>
+
             <a
               href={whatsappUrl}
               target="_blank"

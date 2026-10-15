@@ -3,7 +3,7 @@
  * Provides instant, zero-dependency melodic signatures for each Farahna invitation theme.
  */
 
-type ThemeSlug = 'royal-burgundy' | 'elegant-gold' | 'minimal-white' | 'romantic-floral' | 'egyptian-oriental';
+type ThemeSlug = 'royal-burgundy' | 'elegant-gold' | 'minimal-white' | 'romantic-floral' | 'egyptian-oriental' | 'emerald-palace';
 
 let audioCtx: AudioContext | null = null;
 
@@ -155,6 +155,29 @@ export function playThemeMelody(slug: ThemeSlug, onFinished?: () => void): () =>
         osc.stop(now + idx * 0.18 + 1.0);
       });
       duration = 2.1;
+      break;
+    }
+
+    case 'emerald-palace': {
+      // Imperial Palace Chimes / Royal Harp & Bells (E4, G#4, B4, E5, G#5)
+      const freqs = [329.63, 415.30, 493.88, 659.25, 830.61];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const noteGain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+
+        noteGain.gain.setValueAtTime(0.001, now + idx * 0.15);
+        noteGain.gain.exponentialRampToValueAtTime(0.32, now + idx * 0.15 + 0.03);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.15 + 1.3);
+
+        osc.connect(noteGain);
+        noteGain.connect(masterGain);
+
+        osc.start(now + idx * 0.15);
+        osc.stop(now + idx * 0.15 + 1.4);
+      });
+      duration = 2.2;
       break;
     }
   }

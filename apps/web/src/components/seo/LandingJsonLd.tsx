@@ -68,9 +68,8 @@ export function LandingJsonLd({
       closes: '23:59',
     },
     sameAs: [
-      'https://instagram.com/farahna_eg',
-      'https://facebook.com/farahna.eg',
-      'https://tiktok.com/@farahna_eg',
+      'https://www.facebook.com/profile.php?id=61595083454281',
+      'https://www.instagram.com/farahna.10/',
     ],
   };
 

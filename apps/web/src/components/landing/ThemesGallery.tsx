@@ -33,7 +33,8 @@ type ThemeSlug =
   | 'elegant-gold'
   | 'minimal-white'
   | 'romantic-floral'
-  | 'egyptian-oriental';
+  | 'egyptian-oriental'
+  | 'emerald-palace';
 
 interface ThemeItem {
   name: string;
@@ -193,6 +194,33 @@ const THEMES_DATA: ThemeItem[] = [
     sampleCouple: 'عقد قران مبارك — مسجد الشرطة',
     atmosphereTag: 'كتب الكتاب والمناسبات التاريخية',
   },
+  {
+    name: 'Emerald Palace',
+    nameAr: 'الزمردي وقصر الرخام',
+    slug: 'emerald-palace',
+    demoUrl: '/invitation/wedding/ahmed-sara-emerald-palace',
+    badge: 'فخامة القصور 🏛️',
+    description:
+      'طابع ملكي استثنائي يجمع بين الأخضر الزمردي العميق، عروق الرخام الإيطالي، وبوابات القصر المزدوجة.',
+    features: ['بوابات القصر المزدوجة Gatefold', 'خلفية رخام كرارا فاخرة', 'تدرجات الزمرد والذهب الملكي'],
+    icon: Crown,
+    musicVibe: 'أجراس القصر والهارب الإمبراطوري 🏛️',
+    fontName: 'خط ديواني جلي فخم',
+    accentColor: '#D4AF37',
+    primaryColor: '#0C4A34',
+    palette: [
+      { name: 'زمردي ملكي', hex: '#0C4A34' },
+      { name: 'ذهب إمبراطوري', hex: '#D4AF37' },
+      { name: 'رخام كرارا', hex: '#F7FBF9' },
+      { name: 'غابات عميقة', hex: '#06291D' },
+    ],
+    cardHeaderBg: 'from-[#041A12] via-[#0C4A34] to-[#03150E]',
+    sealClass: 'wax-seal-emerald',
+    envelopeFlapColor: '#06291D',
+    envelopeBodyColor: '#093B2A',
+    sampleCouple: 'زياد خليل & فريدة المنشاوي',
+    atmosphereTag: 'قصور الأفراح والفلل الخاصة الفاخرة',
+  },
 ];
 
 export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGalleryProps) {
@@ -263,7 +291,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-200/90 shadow-xs text-xs font-bold font-cairo">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-            <span>٥ تجارب بصرية وموسيقية فاخرة جاهزة للتخصيص</span>
+            <span>٦ تجارب بصرية وموسيقية فاخرة جاهزة للتخصيص</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 tracking-tight font-cairo leading-snug">
@@ -274,7 +302,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
           </h2>
 
           <p className="text-stone-600 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto font-normal">
-            كل ثيم مش مجرد لون، ده تجربة بصرية كاملة تشمل الظرف التفاعلي، الخطوط، الأزرار، وحركات الظهور.
+            كل ثيم مش مجرد لون، ده تجربة بصرية كاملة تشمل أنماط فتح الظرف التفاعلي (بوابة القصر، ختم الشمع، السحاب، البتلات)، الخطوط، وباترنات الرخام والداماسك الفاخرة.
           </p>
         </div>
 
@@ -289,7 +317,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                 : 'bg-white/80 hover:bg-white text-stone-700 border border-stone-200 shadow-xs'
             }`}
           >
-            جميع الثيمات (٥)
+            جميع الثيمات (٦)
           </button>
           {THEMES_DATA.map((t) => (
             <button
@@ -317,6 +345,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
             const isDark = theme.slug === 'elegant-gold';
             const isBurgundy = theme.slug === 'royal-burgundy';
             const isOriental = theme.slug === 'egyptian-oriental';
+            const isEmerald = theme.slug === 'emerald-palace';
 
             const whatsappOrderUrl = getWhatsAppUrl(
               whatsappNumber,
@@ -378,6 +407,9 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                             'repeating-linear-gradient(45deg, #c69214 0, #c69214 1px, transparent 0, transparent 16px)',
                         }}
                       />
+                    )}
+                    {isEmerald && (
+                      <div className="absolute inset-0 opacity-20 pointer-events-none pattern-marble" />
                     )}
 
                     {/* Top Row: Badge & Audio Preview Button */}
@@ -478,6 +510,7 @@ export function ThemesGallery({ whatsappNumber = '201019262075' }: ThemesGallery
                             {isMinimal && <Feather className="w-3.5 h-3.5 text-stone-700" />}
                             {isFloral && <Heart className="w-3.5 h-3.5 fill-pink-200" />}
                             {isOriental && <Scroll className="w-3.5 h-3.5" />}
+                            {isEmerald && <Crown className="w-3.5 h-3.5 text-emerald-300" />}
                           </div>
                         </div>
 

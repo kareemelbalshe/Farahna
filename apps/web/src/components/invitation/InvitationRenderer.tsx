@@ -8,6 +8,7 @@ import {
   InvitationSectionDTO,
 } from '@farahna/shared';
 import { EnvelopeScreen } from './EnvelopeScreen';
+import { FloatingParticles } from './FloatingParticles';
 import { MusicPlayer } from './MusicPlayer';
 import { CoverHeroSection } from './CoverHeroSection';
 import { CoupleNamesSection } from './CoupleNamesSection';
@@ -210,6 +211,26 @@ export function InvitationRenderer({
     (safeInv as any).themeConfig?.waxSealMonogram ||
     null;
 
+  const openingStyle =
+    safeInv.themeConfig?.openingStyle ||
+    (theme?.config as any)?.openingStyle ||
+    'wax-seal';
+
+  const backgroundPattern =
+    safeInv.themeConfig?.backgroundPattern ||
+    (theme?.config as any)?.backgroundPattern ||
+    (isDark ? 'stars' : 'damask');
+
+  const innerCardStyle =
+    safeInv.themeConfig?.innerCardStyle ||
+    (theme?.config as any)?.innerCardStyle ||
+    'arched';
+
+  const floatingParticles =
+    safeInv.themeConfig?.floatingParticles ||
+    (theme?.config as any)?.floatingParticles ||
+    (isVip ? 'golden-dust' : 'none');
+
   const isEnvelopeActive = Boolean(
     safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen
   );
@@ -220,7 +241,7 @@ export function InvitationRenderer({
         isPreview && isEnvelopeActive
           ? 'h-full max-h-full overflow-hidden'
           : 'min-h-full'
-      } flex flex-col transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden ${
+      } flex flex-col transition-colors selection:bg-[#720925] selection:text-white relative overflow-x-hidden pattern-${backgroundPattern} ${
         isDark ? 'invitation-dark-theme dark' : ''
       }`}
       style={{
@@ -240,6 +261,9 @@ export function InvitationRenderer({
         />
       )}
 
+      {/* Floating Particles Effect (Gold Dust or Rose Petals) */}
+      <FloatingParticles type={floatingParticles} />
+
       {/* Floating Royal Gold Shimmer Effect for VIP */}
       {enableRoyalShimmer && (
         <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden">
@@ -257,7 +281,7 @@ export function InvitationRenderer({
         </div>
       )}
 
-      {/* 💌 Envelope Opening Overlay */}
+      {/* 💌 Envelope / Opening Screen Overlay */}
       {safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen && (
         <EnvelopeScreen
           coupleNames={coupleNames}
@@ -274,6 +298,9 @@ export function InvitationRenderer({
           eventDate={effectiveEventDate}
           invitationTitle={safeInv.title}
           waxSealMonogram={waxSealMonogram}
+          openingStyle={openingStyle}
+          backgroundPattern={backgroundPattern}
+          innerCardStyle={innerCardStyle}
           isPreview={isPreview}
         />
       )}

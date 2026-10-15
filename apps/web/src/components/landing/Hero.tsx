@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { MessageCircle, Eye, Sparkles, MapPin, Calendar, Music, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Eye, Sparkles, MapPin, Calendar, Music, ShieldCheck, Facebook, Instagram } from 'lucide-react';
 import { getWhatsAppUrl, createInquiryWhatsAppMessage } from '@/lib/whatsapp';
+import { FARAHNA_SOCIAL_LINKS } from '@farahna/shared';
 
 interface HeroProps {
   whatsappNumber?: string;
@@ -24,7 +25,7 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
           <div className="lg:col-span-7 text-center lg:text-right space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-200/80 text-xs sm:text-sm font-bold shadow-sm">
               <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>دعوة مصممة مخصوص ليكم — مش مجرد قالب جاهز</span>
+              <span>دعوة مصممة مخصوص ليكم — حركات فتح 3D وباترنات فاخرة ✨</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-stone-900 leading-[1.25] tracking-tight font-cairo">
@@ -35,7 +36,7 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
             </h1>
 
             <p className="text-lg sm:text-xl text-stone-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-              دعوة إلكترونية فاخرة تجمع كل مناسباتكم: <strong className="text-stone-800">الخطوبة، الحنة، كتب الكتاب، والفرح</strong> في رابط واحد أنيق بصوركم وموقع القاعات والعد التنازلي وتأكيد الحضور.
+              دعوة إلكترونية فاخرة تجمع كل مناسباتكم بحركات فتح 3D وباترنات رخامية وداماسك ملكية: <strong className="text-stone-800">الخطوبة، الحنة، كتب الكتاب، والفرح</strong> في رابط واحد أنيق بصوركم وموقع القاعات والعد التنازلي وتأكيد الحضور.
             </p>
 
             {/* CTAs */}
@@ -81,6 +82,29 @@ export function Hero({ whatsappNumber = '201019262075' }: HeroProps) {
                 <p className="text-2xl font-black text-stone-800 font-cairo">١٠٠٪ مصري</p>
                 <p className="text-xs text-stone-500 font-medium">مصمم لتقاليدنا وأفراحنا</p>
               </div>
+            </div>
+
+            {/* Social Follow Strip */}
+            <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3 text-xs text-stone-600">
+              <span className="font-semibold text-stone-700">تابعونا لمشاهدة أحدث النماذج والأفكار:</span>
+              <a
+                href={FARAHNA_SOCIAL_LINKS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-[#1877F2] hover:bg-[#1877F2] hover:text-white font-bold transition-all border border-blue-200 shadow-2xs"
+              >
+                <Facebook className="w-3.5 h-3.5 fill-current" />
+                <span>فيسبوك</span>
+              </a>
+              <a
+                href={FARAHNA_SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-50 text-[#DD2A7B] hover:bg-[#DD2A7B] hover:text-white font-bold transition-all border border-pink-200 shadow-2xs"
+              >
+                <Instagram className="w-3.5 h-3.5" />
+                <span className="font-sans">{FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
+              </a>
             </div>
           </div>
 

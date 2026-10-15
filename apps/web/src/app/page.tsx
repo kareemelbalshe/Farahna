@@ -39,7 +39,7 @@ export default async function LandingPage() {
       {/* 4. Why Farahna — The Value Proposition & Digital vs Paper Comparison */}
       <WhyFarahna whatsappNumber={whatsappNumber} />
 
-      {/* 5. Themes Showcase — 5 Visual Styles with Audio Signatures & Wax Seals */}
+      {/* 5. Themes Showcase — 6 Visual Styles with Audio Signatures, 3D Opening Styles & Luxury Textures */}
       <ThemesGallery whatsappNumber={whatsappNumber} />
 
       {/* 6. Package Demos — Live Interactive Demos */}

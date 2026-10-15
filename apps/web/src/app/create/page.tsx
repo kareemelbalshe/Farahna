@@ -52,6 +52,10 @@ import {
   DEFAULT_SECTIONS,
   ARABIC_WEDDING_FONTS,
   WeddingFontOption,
+  OPENING_STYLE_PRESETS,
+  BACKGROUND_PATTERN_PRESETS,
+  INNER_CARD_STYLE_PRESETS,
+  FLOATING_PARTICLES_PRESETS,
   generateInvitationSlug,
   extractCoordinatesFromUrl,
   resolveCityCoordinates,
@@ -261,6 +265,12 @@ function StudioContent() {
   const [customPrimaryColor, setCustomPrimaryColor] = useState<string>('#720925');
   const [customSecondaryColor, setCustomSecondaryColor] = useState<string>('#D4AF37');
   const [customBackgroundColor, setCustomBackgroundColor] = useState<string>('#FAF7F2');
+
+  // Diverse Animations, Patterns & Inner Card Styles
+  const [openingStyle, setOpeningStyle] = useState('wax-seal');
+  const [backgroundPattern, setBackgroundPattern] = useState('damask');
+  const [innerCardStyle, setInnerCardStyle] = useState('arched');
+  const [floatingParticles, setFloatingParticles] = useState('golden-dust');
 
   // Couple Details
   const [coupleGroomAr, setCoupleGroomAr] = useState('');
@@ -567,6 +577,14 @@ function StudioContent() {
           themeParam ||
           matchedMock?.invitation?.themeId?.replace(/^theme-/, '') ||
           matchedDemo?.themeSlug;
+        const openingStyleParam = searchParams.get('openingStyle');
+        const patternParam = searchParams.get('pattern');
+        const cardStyleParam = searchParams.get('cardStyle');
+
+        if (openingStyleParam) setOpeningStyle(openingStyleParam);
+        if (patternParam) setBackgroundPattern(patternParam);
+        if (cardStyleParam) setInnerCardStyle(cardStyleParam);
+
         if (targetTheme) {
           const formattedThemeId = targetTheme.startsWith('theme-') ? targetTheme : `theme-${targetTheme}`;
           setSelectedThemeId(formattedThemeId);
@@ -577,6 +595,10 @@ function StudioContent() {
             setCustomPrimaryColor(themeObj.config.primaryColor || '#720925');
             setCustomSecondaryColor(themeObj.config.secondaryColor || '#D4AF37');
             setCustomBackgroundColor(themeObj.config.backgroundColor || '#FAF7F2');
+            if (themeObj.config.openingStyle && !openingStyleParam) setOpeningStyle(themeObj.config.openingStyle);
+            if (themeObj.config.backgroundPattern && !patternParam) setBackgroundPattern(themeObj.config.backgroundPattern);
+            if (themeObj.config.innerCardStyle && !cardStyleParam) setInnerCardStyle(themeObj.config.innerCardStyle);
+            if (themeObj.config.floatingParticles) setFloatingParticles(themeObj.config.floatingParticles);
           }
         }
 
@@ -959,6 +981,10 @@ function StudioContent() {
             textColor,
             fontFamily: selectedFont,
             selectedPackage,
+            openingStyle,
+            backgroundPattern,
+            innerCardStyle,
+            floatingParticles,
             customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
             hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
             hennaMessage,
@@ -1108,6 +1134,11 @@ function StudioContent() {
       setCustomPrimaryColor(matched.config.primaryColor || '#720925');
       setCustomSecondaryColor(matched.config.secondaryColor || '#D4AF37');
       setCustomBackgroundColor(matched.config.backgroundColor || '#FAF7F2');
+      if (matched.config.openingStyle) setOpeningStyle(matched.config.openingStyle);
+      if (matched.config.backgroundPattern) setBackgroundPattern(matched.config.backgroundPattern);
+      if (matched.config.innerCardStyle) setInnerCardStyle(matched.config.innerCardStyle);
+      if (matched.config.floatingParticles) setFloatingParticles(matched.config.floatingParticles);
+      setEnvelopePreviewOpen(false); // Trigger fresh opening animation in preview!
     }
   };
 
@@ -1166,6 +1197,10 @@ function StudioContent() {
       textColor,
       fontFamily: selectedFont,
       selectedPackage,
+      openingStyle,
+      backgroundPattern,
+      innerCardStyle,
+      floatingParticles,
       hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
       hennaMessage,
       hennaSpecialEnabled:
@@ -2701,6 +2736,183 @@ function StudioContent() {
                   </p>
                 </div>
               </div>
+
+              {/* 5.4: Opening Animation Style (حركة الفتح التفاعلية في الأول) */}
+              <div className="space-y-3 pt-3 border-t border-stone-100">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <label className="text-xs font-bold text-stone-800 block">
+                      د. حركة فتح الدعوة في البداية (Opening Animation):
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    تنوع مذهل يبهر المعازيم ✨
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {OPENING_STYLE_PRESETS.map((preset) => {
+                    const isSelected = openingStyle === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          setOpeningStyle(preset.id);
+                          setEnvelopePreviewOpen(false); // Reset envelope so opening animation plays!
+                        }}
+                        className={`p-3.5 rounded-2xl border-2 text-right transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? 'border-[#720925] bg-rose-50/70 shadow-sm ring-2 ring-[#720925]/20'
+                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-black text-stone-900 flex items-center gap-1.5">
+                            <span>{preset.icon}</span>
+                            <span>{preset.nameAr}</span>
+                          </span>
+                          {preset.badgeAr && (
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                              {preset.badgeAr}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-stone-500 leading-relaxed">
+                          {preset.descriptionAr}
+                        </p>
+                        {isSelected && (
+                          <div className="pt-1 flex items-center gap-1 text-[10px] font-bold text-[#720925]">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>محدد ومعروض الآن في شاشة الهاتف 📱</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5.5: Background Pattern & Texture (باترن وزخرفة الخلفية) */}
+              <div className="space-y-3 pt-3 border-t border-stone-100">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Palette className="w-4 h-4 text-amber-600" />
+                    <label className="text-xs font-bold text-stone-800 block">
+                      هـ. باترن وزخرفة الخلفية (Background Patterns):
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-stone-500 font-bold bg-stone-100 px-2.5 py-0.5 rounded-full">
+                    8 باترنات ملكية فائقة الجمال 🎨
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {BACKGROUND_PATTERN_PRESETS.map((p) => {
+                    const isSelected = backgroundPattern === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setBackgroundPattern(p.id)}
+                        className={`p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                          isSelected
+                            ? 'border-[#720925] bg-rose-50/80 shadow-xs ring-2 ring-[#720925]/20'
+                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                        }`}
+                      >
+                        <div
+                          className={`w-10 h-10 rounded-lg border border-stone-300 shadow-2xs flex items-center justify-center text-base ${p.previewClass}`}
+                          style={{ backgroundColor: isDarkBackground ? '#18181B' : '#FAF7F2' }}
+                        >
+                          <span>{p.icon}</span>
+                        </div>
+                        <span className="text-[11px] font-bold text-stone-900 block truncate w-full">
+                          {p.nameAr}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5.6: Inner Card Shape & Style (شكل وتصميم البطاقة الداخلية) */}
+              <div className="space-y-3 pt-3 border-t border-stone-100">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-amber-600" />
+                    <label className="text-xs font-bold text-stone-800 block">
+                      و. شكل وتصميم البطاقة الداخلية (Inner Card Style):
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    أقواس ملكية وإطارات ذهبية 🏰
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {INNER_CARD_STYLE_PRESETS.map((card) => {
+                    const isSelected = innerCardStyle === card.id;
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        onClick={() => setInnerCardStyle(card.id)}
+                        className={`p-3 rounded-xl border-2 text-right transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          isSelected
+                            ? 'border-[#720925] bg-rose-50/70 shadow-xs ring-2 ring-[#720925]/20'
+                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-stone-900 flex items-center gap-1">
+                            <span>{card.icon}</span>
+                            <span>{card.nameAr}</span>
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#720925]" />}
+                        </div>
+                        <p className="text-[10px] text-stone-500 leading-snug">
+                          {card.descriptionAr}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5.7: Floating Particles (تأثير الجزيئات المتطايرة) */}
+              <div className="space-y-3 pt-3 border-t border-stone-100">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <label className="text-xs font-bold text-stone-800 block">
+                      ز. الجزيئات الساحرة المتطايرة في الخلفية (Floating Atmosphere):
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {FLOATING_PARTICLES_PRESETS.map((pt) => {
+                    const isSelected = floatingParticles === pt.id;
+                    return (
+                      <button
+                        key={pt.id}
+                        type="button"
+                        onClick={() => setFloatingParticles(pt.id)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-[#720925] text-white shadow-xs'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                        }`}
+                      >
+                        <span>{pt.icon}</span>
+                        <span>{pt.nameAr}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </section>
 
             {/* Step 6: Event Date, Time & Venue (إدارة مواعيد ومواقع مناسبات الفرح) */}
@@ -3646,9 +3858,11 @@ function StudioContent() {
                 <button
                   type="button"
                   onClick={() => setEnvelopePreviewOpen((prev) => !prev)}
-                  className="text-xs font-bold text-[#720925] hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border border-amber-300 hover:bg-amber-100 shadow-2xs transition-all cursor-pointer"
+                  title="إعادة تشغيل حركة الفتح الملكية"
                 >
-                  {envelopePreviewOpen ? 'إعادة إغلاق الظرف 💌' : 'فتح المظرف الملكي 🪄'}
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{envelopePreviewOpen ? 'إعادة تجربة حركة الفتح 🔄' : 'فتح الدعوة الملكية 🪄'}</span>
                 </button>
               ) : (
                 <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">

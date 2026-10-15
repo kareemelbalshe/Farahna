@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Heart, MessageCircle, Sparkles, Crown } from 'lucide-react';
+import { Heart, MessageCircle, Sparkles, Crown, Facebook, Instagram } from 'lucide-react';
 import Link from 'next/link';
+import { FARAHNA_SOCIAL_LINKS } from '@farahna/shared';
 
 interface ClosingMessageSectionProps {
   closingMessageAr?: string | null;
@@ -106,22 +107,71 @@ export function ClosingMessageSection({
               <span>الباقات والأسعار</span>
             </Link>
           )}
+
+          {/* Social Follow Strip in Invitation Footer */}
+          <div className="pt-3 border-t border-amber-200/60 dark:border-stone-800 space-y-2 w-full">
+            <p className="text-[11px] font-bold text-stone-700 dark:text-stone-300">
+              تابعوا جديد تصاميمنا وأفراحنا:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+              <a
+                href={FARAHNA_SOCIAL_LINKS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#1877F2]/10 hover:bg-[#1877F2] text-[#1877F2] hover:text-white border border-[#1877F2]/30 text-xs font-bold transition-all shadow-xs group"
+              >
+                <Facebook className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
+                <span>صفحتنا على فيسبوك</span>
+              </a>
+              <a
+                href={FARAHNA_SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-pink-50 hover:bg-gradient-to-r hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] text-[#DD2A7B] hover:text-white border border-pink-200 text-xs font-bold transition-all shadow-xs group"
+              >
+                <Instagram className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>إنستجرام {FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* 3. Farahna Official Platform Brand Stamp */}
-      <div className="pt-2 space-y-1">
+      <div className="pt-2 space-y-2">
         <p className="text-[11px] text-stone-400 theme-muted">
           صُنعت بكل حب وفخامة بواسطة منصة
         </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-black tracking-wide hover:underline transition-all"
-          style={{ color: primaryColor }}
-        >
-          <span>فرحنا — Farahna.menuflowx.com</span>
-          <span className="text-[10px] text-stone-400 theme-muted font-normal">| بطاقات الأعراس الرقمية الفاخرة</span>
-        </Link>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-black tracking-wide hover:underline transition-all"
+            style={{ color: primaryColor }}
+          >
+            <span>فرحنا — Farahna.menuflowx.com</span>
+            <span className="text-[10px] text-stone-400 theme-muted font-normal">| بطاقات الأعراس الرقمية الفاخرة</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <a
+              href={FARAHNA_SOCIAL_LINKS.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 text-stone-400 hover:text-[#1877F2] transition-colors"
+              title="فيسبوك فرحنا"
+            >
+              <Facebook className="w-3.5 h-3.5 fill-current" />
+            </a>
+            <a
+              href={FARAHNA_SOCIAL_LINKS.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 text-stone-400 hover:text-[#DD2A7B] transition-colors"
+              title="إنستجرام فرحنا"
+            >
+              <Instagram className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
       </div>
     </footer>
   );

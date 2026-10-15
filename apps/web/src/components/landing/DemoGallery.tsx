@@ -26,6 +26,11 @@ export interface DemoItem {
   coverGradient: string;
   accentColor: string;
   badge: string;
+  openingStyle?: string;
+  openingNameAr?: string;
+  backgroundPattern?: string;
+  patternNameAr?: string;
+  innerCardStyle?: string;
 }
 
 export const DEFAULT_DEMOS: DemoItem[] = [
@@ -50,6 +55,11 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     coverGradient: 'from-[#720925] via-[#4A0517] to-[#1F0209]',
     accentColor: '#D4AF37',
     badge: 'رحلة كاملة ٤ مناسبات 👑',
+    openingStyle: 'wax-seal',
+    openingNameAr: 'الظرف الملكي مع ختم الشمع 💌',
+    backgroundPattern: 'damask',
+    patternNameAr: 'زخارف دمشقية أرابيسك ⚜️',
+    innerCardStyle: 'arched',
   },
   {
     id: 'demo-2',
@@ -72,6 +82,11 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     coverGradient: 'from-[#1E1E22] via-[#141416] to-[#0A0A0C]',
     accentColor: '#D4AF37',
     badge: 'خطوبة شيك ✨',
+    openingStyle: 'gatefold',
+    openingNameAr: 'بوابات القصر الفرنسي 🏛️',
+    backgroundPattern: 'stars',
+    patternNameAr: 'سماء ليلية مرصعة بالنجوم ✨',
+    innerCardStyle: 'double-gold',
   },
   {
     id: 'demo-3',
@@ -94,6 +109,11 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     coverGradient: 'from-[#9C5162] via-[#7B3C4B] to-[#451C26]',
     accentColor: '#FBCFE8',
     badge: 'خاص بالسيدات فقط 🌿',
+    openingStyle: 'blooming',
+    openingNameAr: 'تفتح بتلات الورد 🌸',
+    backgroundPattern: 'floral',
+    patternNameAr: 'ورود وأوراق مائية 🌸',
+    innerCardStyle: 'arched',
   },
   {
     id: 'demo-4',
@@ -116,6 +136,11 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     coverGradient: 'from-[#3A4A58] via-[#2A3742] to-[#1B242C]',
     accentColor: '#E2E8F0',
     badge: 'طابع إسلامي أصيل 📜',
+    openingStyle: 'slider',
+    openingNameAr: 'الجراب المخملي المنزلق 💎',
+    backgroundPattern: 'parchment',
+    patternNameAr: 'ورق قطني ملكي محبب 📜',
+    innerCardStyle: 'deckle',
   },
   {
     id: 'demo-5',
@@ -138,6 +163,38 @@ export const DEFAULT_DEMOS: DemoItem[] = [
     coverGradient: 'from-[#2C1810] via-[#3D2314] to-[#1A0F0A]',
     accentColor: '#E5A93C',
     badge: 'طابع مصري شرقي أصيل 🪕',
+    openingStyle: 'gatefold',
+    openingNameAr: 'بوابات القصر الملكي 🏛️',
+    backgroundPattern: 'zellige',
+    patternNameAr: 'مشربية وفسيفساء أندلسية 🪟',
+    innerCardStyle: 'royal-crest',
+  },
+  {
+    id: 'demo-6',
+    slug: 'ahmed-sara-emerald-palace',
+    packageId: 'luxury-vip',
+    packageBadge: 'باقة VIP التصميم الخاص (150 ج.م) 💎',
+    type: 'wedding',
+    typeNameAr: 'قصر الزمرد والرخام الملكي',
+    coupleNames: 'زياد & فريدة',
+    groomName: 'زياد خليل',
+    brideName: 'فريدة عاصم',
+    date: 'السبت، ١٢ ديسمبر ٢٠٢٦',
+    venue: 'قصر البارون إمبان — الحديقة الملكية',
+    city: 'مصر الجديدة، القاهرة',
+    themeName: 'الزمردي وقصر الرخام',
+    themeSlug: 'emerald-palace',
+    previewUrl: '/invitation/wedding/ahmed-sara?theme=emerald-palace',
+    eventsCount: 1,
+    eventsList: ['حفل الزفاف'],
+    coverGradient: 'from-[#0E382B] via-[#165642] to-[#08261C]',
+    accentColor: '#D4AF37',
+    badge: 'رخام إيطالي وعروق ذهب 🏛️',
+    openingStyle: 'gatefold',
+    openingNameAr: 'بوابات القصر الملكي 🏛️',
+    backgroundPattern: 'marble',
+    patternNameAr: 'رخام إيطالي وعروق ذهب 🏛️',
+    innerCardStyle: 'arched',
   },
 ];
 
@@ -155,7 +212,13 @@ export function DemoGallery({
   const filteredDemos =
     activeFilter === 'all'
       ? demos
-      : demos.filter((item) => item.type === activeFilter || item.packageId === activeFilter);
+      : demos.filter(
+          (item) =>
+            item.type === activeFilter ||
+            item.packageId === activeFilter ||
+            item.openingStyle === activeFilter ||
+            item.backgroundPattern === activeFilter
+        );
 
   return (
     <section id="demos" className="py-20 lg:py-28 bg-white relative">
@@ -164,27 +227,27 @@ export function DemoGallery({
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#720925] border border-rose-200 text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            معرض النماذج الافتراضية لكافة البقات
+            معرض النماذج الافتراضية والأنيميشنات الحية
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 tracking-tight font-cairo">
-            نماذج افتراضية حية لكل الباقات <br />
-            <span className="text-[#720925]">اختر نموذجك وعدّل عليه ببياناتك الحقيقية ❤️</span>
+            نماذج كروت تفاعلية بأنيميشنات وباترنات ساحرة <br />
+            <span className="text-[#720925]">تنوع مبهر في فتح الظرف والشكل الداخلي والخلفيات ❤️</span>
           </h2>
           <p className="text-stone-600 text-base sm:text-lg">
-            تصفح نماذج جاهزة لكل باقة وميزاتها، عاين الدعوة بفتح الظرف الملكي والموسيقى، وبنقرة زر واحدة اجعلها نقطة البداية لتصميم دعوتك الخاصة!
+            عاين روعة الفتح في البداية (بوابات القصر، الظرف الملكي، الكارت المنزلق، تفتح الورود) مع خلفيات الرخام الإيطالي، الأرابيسك المذهب، وزخارف الزهور، وبنقرة واحدة ابدأ تصميمك!
           </p>
 
           {/* Filter Pills */}
           <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
             {[
-              { id: 'all', label: 'كل النماذج' },
+              { id: 'all', label: 'كل النماذج 🌟' },
+              { id: 'gatefold', label: '🏛️ بوابات القصر (Gatefold)' },
+              { id: 'wax-seal', label: '💌 الظرف الملكي بختم الشمع' },
+              { id: 'slider', label: '💎 الكارت المنزلق' },
+              { id: 'blooming', label: '🌸 تفتح بتلات الورد' },
               { id: 'wedding-journey', label: '👑 باقة رحلة الفرح (95 ج.م)' },
               { id: 'luxury-vip', label: '💎 باقة VIP (150 ج.م)' },
               { id: 'basic', label: '🌸 باقة المناسبة الواحدة (50 ج.م)' },
-              { id: 'wedding', label: 'أفراح وزفاف' },
-              { id: 'engagement', label: 'خطوبة' },
-              { id: 'henna', label: 'ليلة حنة' },
-              { id: 'katb_ketab', label: 'كتب كتاب' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -192,7 +255,7 @@ export function DemoGallery({
                 onClick={() => setActiveFilter(tab.id)}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeFilter === tab.id
-                    ? 'burgundy-gradient-bg text-white shadow-sm'
+                    ? 'burgundy-gradient-bg text-white shadow-sm ring-2 ring-amber-400/50'
                     : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                 }`}
               >
@@ -276,13 +339,27 @@ export function DemoGallery({
                         <p className="text-[11px] text-stone-500">{demo.city}</p>
                       </div>
                     </div>
+
+                    {/* Opening Animation & Pattern Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-100">
+                      {demo.openingNameAr && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                          {demo.openingNameAr}
+                        </span>
+                      )}
+                      {demo.patternNameAr && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                          {demo.patternNameAr}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Card Action Buttons */}
                 <div className="p-5 pt-0 space-y-2">
                   <Link
-                    href={`/create?template=${demo.slug}&package=${demo.packageId}&theme=${demo.themeSlug}&type=${demo.type}&groom=${encodeURIComponent(demo.groomName)}&bride=${encodeURIComponent(demo.brideName)}&venue=${encodeURIComponent(demo.venue)}&city=${encodeURIComponent(demo.city)}`}
+                    href={`/create?template=${demo.slug}&package=${demo.packageId}&theme=${demo.themeSlug}&type=${demo.type}&openingStyle=${demo.openingStyle || 'wax-seal'}&pattern=${demo.backgroundPattern || 'damask'}&cardStyle=${demo.innerCardStyle || 'arched'}&groom=${encodeURIComponent(demo.groomName)}&bride=${encodeURIComponent(demo.brideName)}&venue=${encodeURIComponent(demo.venue)}&city=${encodeURIComponent(demo.city)}`}
                     className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 active:scale-95 border border-amber-400 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-stone-950" />

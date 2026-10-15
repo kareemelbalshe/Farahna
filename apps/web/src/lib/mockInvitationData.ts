@@ -148,6 +148,10 @@ export interface ThemeConfigOverrides {
   fontFamily?: string;
   envelopeStyle?: string;
   cardStyle?: string;
+  openingStyle?: string;
+  backgroundPattern?: string;
+  innerCardStyle?: string;
+  floatingParticles?: string;
 }
 
 /**
@@ -168,6 +172,10 @@ export function createAhmedSaraWithTheme(
     ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : {}),
     ...(overrides?.envelopeStyle ? { envelopeStyle: overrides.envelopeStyle } : {}),
     ...(overrides?.cardStyle ? { cardStyle: overrides.cardStyle } : {}),
+    ...(overrides?.openingStyle ? { openingStyle: overrides.openingStyle } : {}),
+    ...(overrides?.backgroundPattern ? { backgroundPattern: overrides.backgroundPattern } : {}),
+    ...(overrides?.innerCardStyle ? { innerCardStyle: overrides.innerCardStyle } : {}),
+    ...(overrides?.floatingParticles ? { floatingParticles: overrides.floatingParticles } : {}),
   };
 
   const theme: ThemeDTO = {

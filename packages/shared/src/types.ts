@@ -179,6 +179,26 @@ export type InvitationStatus =
 
 export type InvitationPrivacy = 'public' | 'unlisted' | 'private';
 
+export type OpeningStyleType = 'wax-seal' | 'gatefold' | 'slider' | 'blooming';
+export type BackgroundPatternType =
+  | 'damask'
+  | 'marble'
+  | 'floral'
+  | 'zellige'
+  | 'parchment'
+  | 'stars'
+  | 'geometric'
+  | 'dots'
+  | 'none';
+export type InnerCardStyleType =
+  | 'arched'
+  | 'double-gold'
+  | 'frosted'
+  | 'deckle'
+  | 'royal-crest'
+  | 'minimal';
+export type FloatingParticlesType = 'none' | 'golden-dust' | 'rose-petals' | 'sparkles';
+
 export interface ThemeConfig {
   primaryColor?: string;
   secondaryColor?: string;
@@ -192,6 +212,10 @@ export interface ThemeConfig {
   decorations?: string[];
   whatsappPhone?: string | null;
   whatsappContactEnabled?: boolean;
+  openingStyle?: OpeningStyleType | string;
+  backgroundPattern?: BackgroundPatternType | string;
+  innerCardStyle?: InnerCardStyleType | string;
+  floatingParticles?: FloatingParticlesType | string;
 }
 
 export interface InvitationDTO {

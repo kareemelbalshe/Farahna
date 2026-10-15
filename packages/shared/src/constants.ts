@@ -48,6 +48,186 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, { ar: string; color: s
   refunded: { ar: 'مسترد', color: 'slate' },
 };
 
+export interface OpeningStylePreset {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  icon: string;
+  descriptionAr: string;
+  badgeAr?: string;
+}
+
+export const OPENING_STYLE_PRESETS: OpeningStylePreset[] = [
+  {
+    id: 'wax-seal',
+    nameAr: 'الظرف الملكي مع ختم الشمع 💌',
+    nameEn: 'Royal Wax Seal Envelope',
+    icon: '💌',
+    descriptionAr: 'ظرف كلاسيكي فاخر يفتح بكسر ختم الشمع ثلاثي الأبعاد مع انزلاق البطاقة للأعلى وشرارات ذهبية',
+    badgeAr: 'الأكثر شعبية 👑',
+  },
+  {
+    id: 'gatefold',
+    nameAr: 'بوابات القصر الملكي (Gatefold) 🏛️',
+    nameEn: 'Royal Palace French Doors',
+    icon: '🏛️',
+    descriptionAr: 'دفتان مذهبتان تنفتحان لليمين واليسار كأبواب القصر الفخم مع حل الشريط الحريري وظهور الكارت',
+    badgeAr: 'فخامة ملكية VIP ✨',
+  },
+  {
+    id: 'slider',
+    nameAr: 'الجراب المخملي والبطاقة المنزلقة 💎',
+    nameEn: 'Luxury Velvet Sleeve Slider',
+    icon: '💎',
+    descriptionAr: 'جراب ليزري فاخر تنزلق منه البطاقة للأعلى بحركة ناعمة وانعكاس شيمر ذهبي ساحر',
+    badgeAr: 'مودرن شيك 🕊️',
+  },
+  {
+    id: 'blooming',
+    nameAr: 'الزهور المتفتحة والشيفون 🌸',
+    nameEn: 'Blooming Floral Petals Reveal',
+    icon: '🌸',
+    descriptionAr: 'بتلات الورد والشيفون الرقيق تتفتح بانسيابية مذهلة من المركز كاشفة عن بطاقة الفرح',
+    badgeAr: 'رومانسي ساحر 🌹',
+  },
+];
+
+export interface BackgroundPatternPreset {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  icon: string;
+  descriptionAr: string;
+  previewClass: string;
+}
+
+export const BACKGROUND_PATTERN_PRESETS: BackgroundPatternPreset[] = [
+  {
+    id: 'damask',
+    nameAr: 'زخارف دمشقية أرابيسك ⚜️',
+    nameEn: 'Damask Arabesque',
+    icon: '⚜️',
+    descriptionAr: 'نقوش نباتية وهندسية شرقية مذهبة بنعومة وتوازن ملكي راقٍ',
+    previewClass: 'pattern-damask',
+  },
+  {
+    id: 'marble',
+    nameAr: 'رخام إيطالي وعروق ذهب 🏛️',
+    nameEn: 'Carrara Gold Vein Marble',
+    icon: '🏛️',
+    descriptionAr: 'ملمس الرخام الملكي الفاخر متداخل مع عروق الذهب المشعة',
+    previewClass: 'pattern-marble',
+  },
+  {
+    id: 'floral',
+    nameAr: 'زهور وأوراق مائية رقيقة 🌸',
+    nameEn: 'Romantic Botanical Watercolor',
+    icon: '🌸',
+    descriptionAr: 'باقات ورود وأوراق أوكالبتوس ناعمة مرسومة بالألوان المائية',
+    previewClass: 'pattern-floral',
+  },
+  {
+    id: 'zellige',
+    nameAr: 'مشربية وفسيفساء أندلسية 🪟',
+    nameEn: 'Andalusian Zellige Lattice',
+    icon: '🪟',
+    descriptionAr: 'شبكة هندسية أندلسية رصينة بنقاط ذهبية دقيقة',
+    previewClass: 'pattern-zellige',
+  },
+  {
+    id: 'parchment',
+    nameAr: 'ورق قطني ملكي محبب 📜',
+    nameEn: 'Textured Cotton Parchment',
+    icon: '📜',
+    descriptionAr: 'ملمس نسيج الورق القطني الفاخر المعتمد في أرقى كروت الزفاف',
+    previewClass: 'pattern-parchment',
+  },
+  {
+    id: 'stars',
+    nameAr: 'سماء ليلية مرصعة بالنجوم ✨',
+    nameEn: 'Celestial Midnight Stars',
+    icon: '✨',
+    descriptionAr: 'أجواء ليلية ملكية غامرة مع جزيئات ذهبية متلألئة',
+    previewClass: 'pattern-stars',
+  },
+  {
+    id: 'geometric',
+    nameAr: 'أرت ديكو هندسي مذهب 📐',
+    nameEn: 'Art Deco Geometric Gold',
+    icon: '📐',
+    descriptionAr: 'خطوط ذهبية متناظرة وأشكال ماسية عصرية وشديدة الفخامة',
+    previewClass: 'pattern-geometric',
+  },
+  {
+    id: 'dots',
+    nameAr: 'نقاط ذهبية كلاسيكية هادئة 🫧',
+    nameEn: 'Classic Gold Micro Dots',
+    icon: '🫧',
+    descriptionAr: 'نقاط متباعدة ناعمة تضفي لمسة من الوقار والأناقة البسيطة',
+    previewClass: 'pattern-dots',
+  },
+];
+
+export interface InnerCardStylePreset {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  icon: string;
+  descriptionAr: string;
+}
+
+export const INNER_CARD_STYLE_PRESETS: InnerCardStylePreset[] = [
+  {
+    id: 'arched',
+    nameAr: 'القوس الملكي المقوس 🏰',
+    nameEn: 'Arched Palace Portal',
+    icon: '🏰',
+    descriptionAr: 'قمة مقوسة بإطار ذهبي مزدوج تشبه بوابات القصور والأعراس الملكية العالمية',
+  },
+  {
+    id: 'double-gold',
+    nameAr: 'إطار مذهب مزدوج مع زوايا أرابيسك 🖼️',
+    nameEn: 'Double Gold Filigree Frame',
+    icon: '🖼️',
+    descriptionAr: 'إطار ذهبي محدد بحواف متوازية وزخارف نباتية دقيقة في الزوايا الأربع',
+  },
+  {
+    id: 'frosted',
+    nameAr: 'بلور زجاجي مشع (Frosted Glass) 🪞',
+    nameEn: 'Frosted Glassmorphism Glow',
+    icon: '🪞',
+    descriptionAr: 'سطح زجاجي بلوري شفاف يعكس الضوء بنقاء وتوهج ساحر',
+  },
+  {
+    id: 'deckle',
+    nameAr: 'حواف أثرية قطنية (Deckle Edge) 📜',
+    nameEn: 'Vintage Handcrafted Deckle Edge',
+    icon: '📜',
+    descriptionAr: 'حواف ورق يدوي الصنع غير منتظمة مع طابع كلاسيكي عتيق',
+  },
+  {
+    id: 'royal-crest',
+    nameAr: 'شارة المونوغرام والتاج الملكي 👑',
+    nameEn: 'Embossed Royal Monogram Crest',
+    icon: '👑',
+    descriptionAr: 'شارة بارزة بأسماء العروسين وتطريز معدني مذهب عالي الفخامة',
+  },
+];
+
+export interface FloatingParticlesPreset {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  icon: string;
+}
+
+export const FLOATING_PARTICLES_PRESETS: FloatingParticlesPreset[] = [
+  { id: 'none', nameAr: 'بدون جزيئات', nameEn: 'None', icon: '🚫' },
+  { id: 'golden-dust', nameAr: 'بريق الذهب المتلألئ ✨', nameEn: 'Golden Dust', icon: '✨' },
+  { id: 'rose-petals', nameAr: 'بتلات الورد المتطايرة 🌸', nameEn: 'Rose Petals', icon: '🌸' },
+  { id: 'sparkles', nameAr: 'نجوم وشرارات ملكية 💫', nameEn: 'Royal Sparkles', icon: '💫' },
+];
+
 export const DEFAULT_THEMES = [
   {
     name: 'Royal Burgundy',
@@ -63,13 +243,17 @@ export const DEFAULT_THEMES = [
       envelopeStyle: 'wax-seal-burgundy',
       cardStyle: 'bordered-gold',
       animationStyle: 'smooth-reveal',
+      openingStyle: 'wax-seal',
+      backgroundPattern: 'damask',
+      innerCardStyle: 'arched',
+      floatingParticles: 'golden-dust',
       decorations: ['gold-leaves', 'ornate-border'],
     },
     sortOrder: 1,
   },
   {
     name: 'Elegant Gold',
-    nameAr: 'الذهبي الفاخر',
+    nameAr: 'الذهبي الفاخر Dark Mode',
     slug: 'elegant-gold',
     config: {
       primaryColor: '#D4AF37',
@@ -81,13 +265,17 @@ export const DEFAULT_THEMES = [
       envelopeStyle: 'gold-foil',
       cardStyle: 'glass-dark-gold',
       animationStyle: 'luxurious-fade',
+      openingStyle: 'gatefold',
+      backgroundPattern: 'stars',
+      innerCardStyle: 'double-gold',
+      floatingParticles: 'sparkles',
       decorations: ['sparkle', 'geometric-gold'],
     },
     sortOrder: 2,
   },
   {
     name: 'Minimal White',
-    nameAr: 'الأبيض الهادئ',
+    nameAr: 'الأبيض الهادئ النقي',
     slug: 'minimal-white',
     config: {
       primaryColor: '#2B2B2B',
@@ -99,6 +287,10 @@ export const DEFAULT_THEMES = [
       envelopeStyle: 'clean-ribbon',
       cardStyle: 'shadow-minimal',
       animationStyle: 'gentle-slide',
+      openingStyle: 'slider',
+      backgroundPattern: 'parchment',
+      innerCardStyle: 'deckle',
+      floatingParticles: 'none',
       decorations: ['minimal-line'],
     },
     sortOrder: 3,
@@ -117,6 +309,10 @@ export const DEFAULT_THEMES = [
       envelopeStyle: 'floral-seal',
       cardStyle: 'soft-floral-border',
       animationStyle: 'petal-float',
+      openingStyle: 'blooming',
+      backgroundPattern: 'floral',
+      innerCardStyle: 'arched',
+      floatingParticles: 'rose-petals',
       decorations: ['watercolor-roses', 'eucalyptus'],
     },
     sortOrder: 4,
@@ -135,9 +331,35 @@ export const DEFAULT_THEMES = [
       envelopeStyle: 'arabesque-stamp',
       cardStyle: 'islamic-geometric',
       animationStyle: 'fade-scale',
+      openingStyle: 'gatefold',
+      backgroundPattern: 'zellige',
+      innerCardStyle: 'royal-crest',
+      floatingParticles: 'golden-dust',
       decorations: ['arabesque-corners', 'mashrabiya-pattern'],
     },
     sortOrder: 5,
+  },
+  {
+    name: 'Emerald Marble Palace',
+    nameAr: 'الزمردي وقصر الرخام',
+    slug: 'emerald-palace',
+    config: {
+      primaryColor: '#0E382B',
+      secondaryColor: '#D4AF37',
+      accentColor: '#1B5442',
+      backgroundColor: '#F4F9F6',
+      textColor: '#0B261D',
+      fontFamily: "'Amiri', serif",
+      envelopeStyle: 'wax-seal-emerald',
+      cardStyle: 'arched-emerald-gold',
+      animationStyle: 'smooth-reveal',
+      openingStyle: 'gatefold',
+      backgroundPattern: 'marble',
+      innerCardStyle: 'arched',
+      floatingParticles: 'golden-dust',
+      decorations: ['gold-leaves', 'marble-accents'],
+    },
+    sortOrder: 6,
   },
 ];
 
@@ -274,4 +496,10 @@ export const ARABIC_WEDDING_FONTS: WeddingFontOption[] = [
     category: 'heritage',
   },
 ];
+
+export const FARAHNA_SOCIAL_LINKS = {
+  facebook: 'https://www.facebook.com/profile.php?id=61595083454281',
+  instagram: 'https://www.instagram.com/farahna.10/',
+  instagramHandle: '@farahna.10',
+};
 

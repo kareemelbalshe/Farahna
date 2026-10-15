@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Heart, MessageCircle, Phone, Instagram, Facebook } from 'lucide-react';
 import { getWhatsAppUrl, createInquiryWhatsAppMessage } from '@/lib/whatsapp';
+import { FARAHNA_SOCIAL_LINKS } from '@farahna/shared';
 
 interface FooterProps {
   whatsappNumber?: string;
@@ -125,6 +126,28 @@ export function Footer({
               <div className="text-xs text-stone-400 flex items-center gap-2">
                 <Phone className="w-4 h-4" />
                 <span>هاتف: {supportPhone}</span>
+              </div>
+              <div className="pt-2 flex items-center gap-2.5">
+                <a
+                  href={FARAHNA_SOCIAL_LINKS.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-[#1877F2] text-stone-300 hover:text-white transition-all text-xs font-bold border border-stone-800"
+                  title="صفحة فيسبوك"
+                >
+                  <Facebook className="w-3.5 h-3.5 fill-current" />
+                  <span>فيسبوك</span>
+                </a>
+                <a
+                  href={FARAHNA_SOCIAL_LINKS.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-[#DD2A7B] text-stone-300 hover:text-white transition-all text-xs font-bold border border-stone-800"
+                  title="حساب إنستجرام @farahna.10"
+                >
+                  <Instagram className="w-3.5 h-3.5" />
+                  <span className="font-sans">{FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
+                </a>
               </div>
             </div>
           </div>
