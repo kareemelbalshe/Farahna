@@ -126,7 +126,10 @@ export function Footer({
                 className="inline-flex items-center gap-2 text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
               >
                 <MessageCircle className="w-4 h-4 fill-current shrink-0" />
-                <span dir="ltr">واتساب: +20 10 1926 2075</span>
+                <span className="inline-flex items-center gap-1.5 text-xs">
+                  <span>واتساب:</span>
+                  <bdi dir="ltr" className="font-mono font-bold tracking-wide">+20 10 1926 2075</bdi>
+                </span>
               </a>
 
               <a
@@ -134,7 +137,10 @@ export function Footer({
                 className="text-xs text-stone-300 hover:text-white flex items-center gap-2 transition-colors"
               >
                 <Phone className="w-4 h-4 shrink-0 text-amber-400" />
-                <span dir="ltr">هاتف: +20 10 1926 2075</span>
+                <span className="inline-flex items-center gap-1.5 text-xs">
+                  <span>هاتف:</span>
+                  <bdi dir="ltr" className="font-mono font-bold tracking-wide">+20 10 1926 2075</bdi>
+                </span>
               </a>
 
               <div className="pt-2 flex items-center gap-2.5">
