@@ -5190,12 +5190,12 @@ function StudioContent() {
 
           {/* Live Mobile Device Mockup Column (Right on Desktop) */}
           <div
-            className={`lg:col-span-5 lg:sticky lg:top-24 space-y-4 ${
+            className={`lg:col-span-5 lg:sticky lg:top-[74px] space-y-2.5 ${
               activeTab === 'editor' ? 'hidden lg:block' : 'block'
             }`}
           >
             {/* Device Mockup Header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/90 backdrop-blur-xs rounded-2xl border border-stone-200/90 shadow-xs">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-white/90 backdrop-blur-xs rounded-2xl border border-stone-200/90 shadow-xs">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-stone-800 flex items-center gap-1.5">
                   <Smartphone className="w-4 h-4 text-[#720925]" />
@@ -5264,11 +5264,19 @@ function StudioContent() {
 
             {/* Frame Container */}
             {previewViewMode === 'phone' ? (
-              <div className="relative mx-auto w-full max-w-[min(345px,calc(100vw-24px))] sm:max-w-[370px] h-[600px] min-[390px]:h-[660px] sm:h-[720px] bg-stone-900 rounded-[40px] sm:rounded-[46px] p-2.5 sm:p-3 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col">
+              <div
+                className="relative mx-auto w-auto max-w-[min(345px,calc(100vw-32px))] sm:max-w-[350px] bg-stone-900 rounded-[38px] sm:rounded-[44px] p-2 sm:p-2.5 shadow-2xl border-4 border-stone-800 ring-2 sm:ring-4 ring-stone-950/15 overflow-hidden flex flex-col"
+                style={{
+                  height: 'min(640px, calc(100dvh - 145px))',
+                  maxHeight: 'calc(100dvh - 145px)',
+                  minHeight: '440px',
+                  aspectRatio: '9 / 18.5',
+                }}
+              >
                 {/* Speaker & Camera Notch */}
-                <div className="w-24 sm:w-32 h-3.5 sm:h-4 bg-stone-950 rounded-b-xl mx-auto mb-2 shrink-0 z-50 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-stone-900 mr-1.5 sm:mr-2" />
-                  <div className="w-7 sm:w-10 h-1 bg-stone-800 rounded-full" />
+                <div className="w-24 sm:w-28 h-3 sm:h-3.5 bg-stone-950 rounded-b-xl mx-auto mb-1.5 shrink-0 z-50 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-stone-900 mr-1.5" />
+                  <div className="w-7 sm:w-9 h-1 bg-stone-800 rounded-full" />
                 </div>
 
                 {/* Inner Smartphone Screen Content */}
@@ -5325,14 +5333,17 @@ function StudioContent() {
                 </div>
 
                 {/* Home Indicator Bar */}
-                <div className="w-28 sm:w-32 h-1 bg-stone-700/60 rounded-full mx-auto mt-2 shrink-0 pointer-events-none" />
+                <div className="w-24 sm:w-28 h-1 bg-stone-700/60 rounded-full mx-auto mt-1.5 shrink-0 pointer-events-none" />
               </div>
             ) : (
               /* Fluid edge-to-edge frame */
               <div
-                className="relative w-full h-[580px] min-[390px]:h-[640px] sm:h-[700px] rounded-2xl sm:rounded-3xl shadow-xl border-2 border-stone-300 overflow-hidden flex flex-col"
+                className="relative w-full rounded-2xl sm:rounded-3xl shadow-xl border-2 border-stone-300 overflow-hidden flex flex-col"
                 style={{
                   backgroundColor,
+                  height: 'min(640px, calc(100dvh - 145px))',
+                  maxHeight: 'calc(100dvh - 145px)',
+                  minHeight: '440px',
                 }}
               >
                 <div className="relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar flex-1 flex flex-col">

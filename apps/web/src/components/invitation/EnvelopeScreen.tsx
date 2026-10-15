@@ -404,13 +404,13 @@ export function EnvelopeScreen({
     <div
       className={`${
         isPreview ? 'absolute inset-0 h-full w-full' : 'fixed inset-0'
-      } z-50 flex flex-col items-center justify-center p-3 select-none overflow-hidden transition-all duration-450 ease-out ${resolvedPatternClass} ${
+      } z-50 flex flex-col items-center justify-center p-3 select-none overflow-hidden transition-opacity duration-500 ease-out ${resolvedPatternClass} ${
         isPreview ? 'py-3 px-2.5 sm:px-3' : 'sm:p-6'
       } ${
-        isRevealing ? 'opacity-0 scale-102 pointer-events-none' : 'opacity-100 scale-100'
+        isRevealing ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{
-        backgroundColor: isDark ? '#0A0A0D' : backgroundColor || '#FAF7F2',
+        backgroundColor: backgroundColor || (isDark ? '#0F0F10' : '#FAF7F2'),
       }}
     >
       {/* Royal Ambient Glow Aura Orbs */}

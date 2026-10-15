@@ -43,7 +43,13 @@ export function EventTimeline({
         </p>
       </div>
 
-      <div className={`relative border-r-2 border-amber-300 ${isPreview ? 'mr-2 space-y-4 pr-3.5' : 'mr-4 sm:mr-8 space-y-8 pr-6 sm:pr-10'}`}>
+      <div className={`relative ${isPreview ? 'space-y-4 pr-6' : 'space-y-6 sm:space-y-8 pr-7 sm:pr-10'}`}>
+        {/* Continuous luxury golden gradient timeline line */}
+        <div
+          className="absolute top-4 bottom-4 w-0.5 bg-gradient-to-b from-amber-300 via-amber-400 to-amber-300 rounded-full"
+          style={{ right: isPreview ? '8px' : '12px' }}
+        />
+
         {visibleEvents.map((ev, idx) => {
           const labelInfo = EVENT_TYPE_LABELS[ev.type] || { icon: '🎉', ar: ev.titleAr };
           const override = ev.themeOverride as Record<string, any> | undefined;
@@ -67,17 +73,31 @@ export function EventTimeline({
 
           return (
             <div key={ev.id} className="relative group">
-              {/* Circle Step Marker on the vertical line */}
+              {/* Circle Step Marker centered perfectly on the vertical line */}
               <div
-                className="absolute -right-[31px] sm:-right-[47px] top-2 w-6 h-6 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xs"
-                style={{ backgroundColor: eventPrimary }}
+                className="absolute top-5 rounded-full border-2 border-white shadow-md flex items-center justify-center z-10"
+                style={{
+                  backgroundColor: eventPrimary,
+                  width: isPreview ? '18px' : '22px',
+                  height: isPreview ? '18px' : '22px',
+                  right: isPreview ? '8px' : '12px',
+                  transform: 'translate(50%, -50%)',
+                }}
               >
-                <div className="w-2 h-2 rounded-full bg-amber-300" />
+                <div
+                  className="rounded-full bg-amber-300"
+                  style={{
+                    width: isPreview ? '6px' : '7px',
+                    height: isPreview ? '6px' : '7px',
+                  }}
+                />
               </div>
 
               {/* Event Content Card */}
               <div
-                className="rounded-3xl border border-stone-200/90 p-5 sm:p-7 shadow-sm hover:shadow-lg transition-all space-y-4"
+                className={`rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-xs hover:shadow-md transition-all ${
+                  isPreview ? 'p-3.5 space-y-3' : 'p-4 sm:p-6 space-y-4'
+                }`}
                 style={{
                   backgroundColor: eventBg,
                   color: eventText,
@@ -85,39 +105,41 @@ export function EventTimeline({
                 }}
               >
                 {/* Header: Title + Day & Date */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl">{labelInfo.icon}</span>
-                    <div>
-                      <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl shrink-0">{labelInfo.icon}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <h3
-                          className="text-lg sm:text-xl font-black font-cairo"
+                          className={`${
+                            isPreview ? 'text-sm min-[360px]:text-base' : 'text-base sm:text-xl'
+                          } font-black font-cairo truncate`}
                           style={{ color: override?.primaryColor || undefined }}
                         >
                           {ev.titleAr}
                         </h3>
                         {override && (
                           <span
-                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
+                            className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap"
                             style={{
                               backgroundColor: `${override.primaryColor}15`,
                               color: override.primaryColor,
                               borderColor: `${override.primaryColor}40`,
                             }}
                           >
-                            ✨ ثيم مخصص خاص
+                            ✨ ثيم خاص
                           </span>
                         )}
                       </div>
                       {ev.subtitleAr && (
-                        <p className="text-xs text-stone-500 mt-0.5">{ev.subtitleAr}</p>
+                        <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{ev.subtitleAr}</p>
                       )}
                     </div>
                   </div>
 
                   <span
                     suppressHydrationWarning
-                    className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-full self-start sm:self-auto shadow-xs"
+                    className="text-[11px] sm:text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full self-start sm:self-auto shadow-2xs whitespace-nowrap"
                   >
                     {formatArabicDate(ev.date) || 'الموعد قريباً'}
                   </span>
@@ -132,22 +154,22 @@ export function EventTimeline({
                 )}
 
                 {/* Venue & Time Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-stone-700">
-                  <div className="flex items-center gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-stone-700">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Clock className="w-4 h-4 text-stone-400 shrink-0" />
-                    <span className="font-semibold">
+                    <span className="font-semibold text-xs leading-normal">
                       {ev.startTime
                         ? `من ${ev.startTime} ${ev.endTime ? `حتى ${ev.endTime}` : ''}`
                         : 'التوقيت سيحدد لاحقاً'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#720925] shrink-0" />
-                    <div>
-                      <span className="font-bold text-stone-800">{ev.venueNameAr || 'قاعة الاحتفال'}</span>
+                  <div className="flex items-start gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 text-[#720925] shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <span className="font-bold text-stone-800 block truncate">{ev.venueNameAr || 'قاعة الاحتفال'}</span>
                       {ev.addressAr && (
-                        <span className="text-[11px] text-stone-500 block">{ev.addressAr}</span>
+                        <span className="text-[11px] text-stone-500 block truncate">{ev.addressAr}</span>
                       )}
                     </div>
                   </div>
@@ -160,16 +182,16 @@ export function EventTimeline({
                 )}
 
                 {/* Action Bar: Google Maps Link + Independent Add to Calendar */}
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-stone-100">
+                <div className="pt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100">
                   {hasLocation ? (
                     <a
                       href={directionsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-800"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50/80 hover:bg-amber-100/90 px-3 py-1.5 rounded-xl border border-amber-200/80 transition-all shadow-2xs"
                     >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span>عرض موقع القاعة على Google Maps</span>
+                      <Navigation className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                      <span className="whitespace-nowrap">موقع القاعة على Google Maps 📍</span>
                     </a>
                   ) : (
                     <span />
@@ -177,15 +199,17 @@ export function EventTimeline({
 
                   {/* Independent Add to Calendar for this specific event */}
                   {ev.date && !isNaN(new Date(ev.date).getTime()) && (
-                    <AddToCalendar
-                      invitationId={invitationId}
-                      eventTitle={`${ev.titleAr} - ${coupleNames}`}
-                      eventDate={ev.date}
-                      startTime={ev.startTime}
-                      endTime={ev.endTime}
-                      venueName={ev.venueNameAr}
-                      address={ev.addressAr}
-                    />
+                    <div className="shrink-0">
+                      <AddToCalendar
+                        invitationId={invitationId}
+                        eventTitle={`${ev.titleAr} - ${coupleNames}`}
+                        eventDate={ev.date}
+                        startTime={ev.startTime}
+                        endTime={ev.endTime}
+                        venueName={ev.venueNameAr}
+                        address={ev.addressAr}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
