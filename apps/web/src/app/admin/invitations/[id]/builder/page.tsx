@@ -659,41 +659,109 @@ export default function VisualInvitationBuilderPage() {
               </div>
 
               {/* Invitation Type & Slug */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700 block flex items-center justify-between">
-                    <span>نوع المناسبة والدعوة:</span>
-                    <span className="text-[10px] font-mono text-[#720925] font-bold">
-                      /invitation/{invitation.type || 'wedding'}/
-                    </span>
-                  </label>
-                  <select
-                    value={invitation.type || 'wedding'}
-                    onChange={(e) => handleChange('type', e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white font-bold"
-                  >
-                    <option value="wedding">👑 دعوة زفاف وفرح (Wedding)</option>
-                    <option value="engagement">💍 دعوة خطوبة (Engagement)</option>
-                    <option value="katb_ketab">📜 دعوة كتب كتاب وعقد قران (Katb Ketab)</option>
-                    <option value="henna">🌿 دعوة ليلة حنة (Henna)</option>
-                    <option value="custom">✨ دعوة مناسبة خاصة / احتفال (Custom)</option>
-                  </select>
+              <div className="space-y-3 p-4 rounded-2xl bg-stone-50 border border-stone-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-stone-700 block flex items-center justify-between">
+                      <span>نوع المناسبة والدعوة:</span>
+                      <span className="text-[10px] font-mono text-[#720925] font-bold">
+                        /invitation/{invitation.type || 'wedding'}/
+                      </span>
+                    </label>
+                    <select
+                      value={invitation.type || 'wedding'}
+                      onChange={(e) => {
+                        if (pkgId === 'basic' && e.target.value === 'custom') {
+                          alert('⚠️ عذراً، مناسبة خاصة / احتفال (الكاستم) غير متاحة في باقة الـ 50 ج.م الفردية. يمكنك ترقية الباقة إلى باقة VIP الملكية (150 ج.م) لاستخدامها.');
+                          return;
+                        }
+                        handleChange('type', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white font-bold"
+                    >
+                      <option value="wedding">👑 دعوة زفاف وفرح (Wedding)</option>
+                      <option value="engagement">💍 دعوة خطوبة (Engagement)</option>
+                      <option value="katb_ketab">📜 دعوة كتب كتاب وعقد قران (Katb Ketab)</option>
+                      <option value="henna">🌿 دعوة ليلة حنة (Henna)</option>
+                      <option value="custom" disabled={pkgId === 'basic'}>
+                        ✨ دعوة مناسبة خاصة / احتفال (Custom) {pkgId === 'basic' ? '🔒 (غير متاح في باقة 50 ج.م)' : ''}
+                      </option>
+                    </select>
+                    {pkgId === 'basic' && invitation.type === 'custom' && (
+                      <p className="text-[10px] text-amber-800 font-bold bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1">
+                        ⚠️ هذه الدعوة مسجلة بباقة الـ 50 ج.م، والكاستم غير متاح لها. يرجى اختيار زفاف أو خطوبة أو كتب كتاب أو حنة، أو ترقية الباقة.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-stone-700 block">
+                        الرابط المختصر الفريد (Slug):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rand = Math.random().toString(36).substring(2, 6).toLowerCase();
+                          const current = (invitation.slug || '').replace(/^-+|-+$/g, '');
+                          handleChange('slug', current ? `${current}-${rand}` : `inv-${rand}`);
+                        }}
+                        className="text-[10px] font-bold text-[#720925] hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="إضافة 4 حروف عشوائية للرابط لتمييزه"
+                      >
+                        <span>🎲 إضافة كود عشوائي</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={invitation.slug || ''}
+                        onChange={(e) =>
+                          handleChange('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-mono text-left dir-ltr bg-white focus:border-[#720925] focus:outline-none"
+                        placeholder="ahmed-sara"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700 block">
-                    الرابط المختصر الفريد (Slug):
-                  </label>
-                  <input
-                    type="text"
-                    value={invitation.slug || ''}
-                    onChange={(e) =>
-                      handleChange('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-mono text-left dir-ltr"
-                    placeholder="ahmed-sara"
-                  />
+                {/* Live Full URL Display & Quick Actions */}
+                <div className="p-2.5 bg-white rounded-xl border border-stone-200 flex items-center justify-between gap-2 text-[11px] font-mono flex-wrap">
+                  <div className="text-stone-700 truncate dir-ltr text-left">
+                    <span className="text-stone-400">https://farahna.menuflowx.com/invitation/{invitation.type || 'wedding'}/</span>
+                    <span className="text-[#720925] font-black">{invitation.slug || 'link'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const full = `https://farahna.menuflowx.com/invitation/${invitation.type || 'wedding'}/${invitation.slug}`;
+                        if (navigator?.clipboard) {
+                          navigator.clipboard.writeText(full);
+                          alert('تم نسخ رابط الدعوة بنجاح! 📋');
+                        }
+                      }}
+                      className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-sans font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      title="نسخ الرابط المباشر"
+                    >
+                      <Copy className="w-3 h-3 text-stone-500" />
+                      <span>نسخ الرابط</span>
+                    </button>
+                    <a
+                      href={`/invitation/${invitation.type || 'wedding'}/${invitation.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#720925] border border-rose-200 text-[10px] font-sans font-bold flex items-center gap-1 transition-colors"
+                      title="معاينة الصفحة بالرابط المباشر"
+                    >
+                      <span>فتح الرابط ↗</span>
+                    </a>
+                  </div>
                 </div>
+                <p className="text-[10px] text-stone-500">
+                  💡 بصفتك أدمن، يمكنك تعديل الرابط بحرية تامة بدون أي حروف إجبارية. احفظ التعديلات لتطبيق الرابط الجديد فوراً.
+                </p>
               </div>
 
               <div className="space-y-1">

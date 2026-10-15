@@ -228,24 +228,20 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
     // Resolve or Auto-Generate Slug
     let finalSlug = (slug || '').toLowerCase().trim().replace(/^-+|-+$/g, '');
     if (finalSlug) {
-      // Append random characters if not already present
-      if (!/-[a-z0-9]{3,6}$/.test(finalSlug)) {
-        finalSlug = `${finalSlug}-${nanoid(4).toLowerCase()}`;
-      }
       const slugCheck = validateSlug(finalSlug);
       if (!slugCheck.valid) {
         return res.status(400).json({ success: false, message: slugCheck.error });
       }
 
-      // Check slug uniqueness; if duplicate, append another random suffix
-      let counter = 1;
-      while (await prisma.invitation.findUnique({ where: { slug: finalSlug } })) {
-        finalSlug = `${finalSlug.replace(/-[a-z0-9]+$/, '')}-${nanoid(4).toLowerCase()}`;
-        counter++;
-        if (counter > 10) {
-          finalSlug = `farah-${Date.now().toString().slice(-6)}-${nanoid(3).toLowerCase()}`;
-          break;
-        }
+      // Check slug uniqueness
+      const existingSlug = await prisma.invitation.findUnique({
+        where: { slug: finalSlug },
+      });
+      if (existingSlug) {
+        return res.status(400).json({
+          success: false,
+          message: 'الرابط المختصر مستخدم بالفعل، يرجى اختيار رابط آخر أو إضافة حروف لتمييزه',
+        });
       }
     } else {
       // Auto-generate clean unique slug

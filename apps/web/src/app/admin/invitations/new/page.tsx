@@ -128,9 +128,9 @@ const PACKAGES_CONFIG = [
     color: 'border-stone-300 text-stone-800',
     activeColor: 'border-amber-600 bg-amber-50/70 text-amber-950 shadow-md',
     badge: 'مناسبة واحدة فقط',
-    summary: 'حدث واحد محدد (فرح، أو خطوبة، أو كتب كتاب، أو حنة، أو احتفال خاص) برابط مستقل وسريع',
+    summary: 'حدث واحد محدد (فرح، أو خطوبة، أو كتب كتاب، أو حنة) برابط مستقل وسريع',
     defaultMultiEvent: false,
-    guidance: '💡 نصيحة الأدمن: مناسبة واحدة مستقلة ومباشرة بدون تبويبات متعددة حتى تظل الدعوة بسيطة وسريعة.',
+    guidance: '💡 نصيحة الأدمن: باقة الـ 50 ج.م تقتصر على مناسبة محددة (فرح أو خطوبة أو كتب كتاب أو حنة). المناسبات المخصصة (الكاستم) متاحة في باقة VIP الملكية.',
   },
   {
     id: 'wedding-journey',
@@ -181,9 +181,6 @@ export default function NewInvitationPage() {
   // 4. Invitation Form State
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [slugSuffix, setSlugSuffix] = useState<string>(() =>
-    Math.random().toString(36).substring(2, 6).toLowerCase()
-  );
   const [isSlugCustomized, setIsSlugCustomized] = useState(false);
   const [coupleGroomAr, setCoupleGroomAr] = useState('');
   const [coupleBrideAr, setCoupleBrideAr] = useState('');
@@ -195,8 +192,23 @@ export default function NewInvitationPage() {
   const currentTypeConfig = INVITATION_TYPES.find((t) => t.id === type) || INVITATION_TYPES[0];
   const currentPkg = PACKAGES_CONFIG.find((p) => p.id === selectedPackage) || PACKAGES_CONFIG[1];
 
-  const randomizeSuffix = () => {
-    setSlugSuffix(Math.random().toString(36).substring(2, 6).toLowerCase());
+  // Helper to append a 4-character random code optionally if the admin desires
+  const appendRandomCode = () => {
+    setIsSlugCustomized(true);
+    const rand = Math.random().toString(36).substring(2, 6).toLowerCase();
+    setSlug((prev) => {
+      const clean = (prev || '').toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '');
+      return clean ? `${clean}-${rand}` : `inv-${rand}`;
+    });
+  };
+
+  // Helper to reset slug from names
+  const resetSlugFromNames = () => {
+    const part1 = transliterateArabicToSlug((coupleGroomAr || '').trim().split(/\s+/)[0]);
+    const part2 = transliterateArabicToSlug((coupleBrideAr || '').trim().split(/\s+/)[0]);
+    const combined = [part1, part2].filter(Boolean).join('-');
+    setSlug(combined || 'farah');
+    setIsSlugCustomized(false);
   };
 
   useEffect(() => {
@@ -230,6 +242,16 @@ export default function NewInvitationPage() {
 
   // When changing invitation type
   const handleTypeSelect = (selectedType: 'wedding' | 'engagement' | 'katb_ketab' | 'henna' | 'custom') => {
+    // 50 EGP package cannot choose custom occasions
+    if (selectedPackage === 'basic' && selectedType === 'custom') {
+      setErrorMsg('⚠️ عذراً، مناسبة خاصة / احتفال (الكاستم) غير متاحة في باقة الـ 50 ج.م الفردية. يمكنك ترقية الباقة إلى باقة VIP الملكية (150 ج.م) لتفعيلها.');
+      return;
+    }
+
+    if (errorMsg.includes('الكاستم')) {
+      setErrorMsg('');
+    }
+
     setType(selectedType);
     const newConfig = INVITATION_TYPES.find((t) => t.id === selectedType);
     if (!newConfig) return;
@@ -251,6 +273,19 @@ export default function NewInvitationPage() {
     const target = PACKAGES_CONFIG.find((p) => p.id === pkgId);
     if (target) {
       setIsMultiEvent(target.defaultMultiEvent);
+    }
+
+    // If switching to 50 EGP package, disallow custom type & disable multi-event
+    if (pkgId === 'basic') {
+      setIsMultiEvent(false);
+      if (type === 'custom') {
+        setType('wedding');
+        setErrorMsg('ℹ️ تم تحويل نوع المناسبة تلقائياً إلى "دعوة زفاف وفرح" لأن باقة الـ 50 ج.م لا تدعم المناسبات المخصصة (الكاستم).');
+      }
+    } else {
+      if (errorMsg.includes('الكاستم')) {
+        setErrorMsg('');
+      }
     }
   };
 
@@ -323,30 +358,33 @@ export default function NewInvitationPage() {
         }
       }
 
-      // 2. Sanitize and combine user's slug with the random suffix
-      const userBaseSlug = (slug || transliterateArabicToSlug(`${coupleGroomAr}-${coupleBrideAr}`) || 'farah')
+      // 2. Sanitize user's slug without forcing any random suffix
+      const cleanSlug = (slug || transliterateArabicToSlug(`${coupleGroomAr}-${coupleBrideAr}`) || 'farah')
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9-]/g, '')
         .replace(/^-+|-+$/g, '');
 
-      // Ensure random characters are appended to the user's slug
-      const finalSlug = userBaseSlug.endsWith(`-${slugSuffix}`)
-        ? userBaseSlug
-        : `${userBaseSlug}-${slugSuffix}`;
+      if (cleanSlug.length < 3) {
+        setErrorMsg('رابط الدعوة المختصر يجب أن يكون 3 أحرف إنجليزية أو أرقام على الأقل');
+        setSubmitting(false);
+        return;
+      }
+
+      const finalSlug = cleanSlug;
 
       const payload = {
         customerId: resolvedCustomerId || undefined,
         title:
           title ||
           `${currentTypeConfig.title} - ${coupleGroomAr || 'العروسين'}${coupleBrideAr ? ' & ' + coupleBrideAr : ''}`,
-        slug: finalSlug || `farah-${Date.now().toString().slice(-6)}-${slugSuffix}`,
+        slug: finalSlug,
         type,
         coupleGroomAr: coupleGroomAr || (type === 'custom' ? 'المحتفى به' : 'العريس'),
         coupleBrideAr: coupleBrideAr || (type === 'custom' ? 'المناسبة' : 'العروس'),
         eventDate: new Date(eventDate).toISOString(),
         themeId: themeId || (themes[0]?.id || 'theme-royal-burgundy'),
-        isMultiEvent,
+        isMultiEvent: selectedPackage === 'basic' ? false : isMultiEvent,
         status: 'draft',
         themeConfig: {
           selectedPackage,
@@ -417,26 +455,39 @@ export default function NewInvitationPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
             {INVITATION_TYPES.map((t) => {
               const isSelected = type === t.id;
+              const isCustomDisabled = selectedPackage === 'basic' && t.id === 'custom';
+
               return (
                 <div
                   key={t.id}
-                  onClick={() => handleTypeSelect(t.id)}
-                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-2 relative text-right ${
-                    isSelected
-                      ? 'border-[#720925] bg-rose-50/70 text-[#720925] shadow-xs'
-                      : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 text-stone-700'
+                  onClick={() => {
+                    if (isCustomDisabled) {
+                      setErrorMsg('⚠️ "مناسبة خاصة / احتفال" (الكاستم) غير متاحة في باقة الـ 50 ج.م الفردية. يمكنك ترقية الباقة إلى باقة VIP الملكية (150 ج.م) لتفعيلها.');
+                      return;
+                    }
+                    handleTypeSelect(t.id);
+                  }}
+                  className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between space-y-2 relative text-right ${
+                    isCustomDisabled
+                      ? 'opacity-40 grayscale border-dashed border-stone-300 bg-stone-100/80 cursor-not-allowed select-none'
+                      : isSelected
+                      ? 'border-[#720925] bg-rose-50/70 text-[#720925] shadow-xs cursor-pointer'
+                      : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 text-stone-700 cursor-pointer'
                   }`}
+                  title={isCustomDisabled ? 'غير متاح في باقة الـ 50 ج.م - مخصص لباقة VIP' : t.title}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-2xl">{t.icon}</span>
                     <span
                       className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                        isSelected
+                        isCustomDisabled
+                          ? 'bg-stone-200 text-stone-600 font-bold'
+                          : isSelected
                           ? 'bg-[#720925] text-white'
                           : 'bg-stone-100 text-stone-600'
                       }`}
                     >
-                      {t.badge}
+                      {isCustomDisabled ? '🔒 غير متاح في باقة 50 ج.م' : t.badge}
                     </span>
                   </div>
 
@@ -445,7 +496,7 @@ export default function NewInvitationPage() {
                       {t.title}
                     </h3>
                     <p className="text-[10px] text-stone-500 mt-0.5 line-clamp-2 leading-tight">
-                      {t.subtitle}
+                      {isCustomDisabled ? 'مخصصة لباقات VIP والرحلة الشاملة' : t.subtitle}
                     </p>
                   </div>
 
@@ -676,20 +727,30 @@ export default function NewInvitationPage() {
               />
             </div>
 
-            {/* Slug with DYNAMIC Prefix matching the chosen type + User's slug + Random Suffix */}
+            {/* Slug with DYNAMIC Prefix matching the chosen type + Full Admin Freedom */}
             <div className="space-y-2">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <label className="text-xs font-bold text-stone-700 block flex items-center gap-1.5">
-                  <span>الرابط المخصص للدعوة (مع حروف عشوائية فريدة): *</span>
+                  <span>الرابط المخصص للدعوة (تعديل حر للأدمن): *</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={randomizeSuffix}
-                  className="text-[11px] font-bold text-[#720925] hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
-                  title="تغيير الحروف العشوائية"
-                >
-                  <span>🎲 تغيير الحروف العشوائية ({slugSuffix})</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={appendRandomCode}
+                    className="text-[11px] font-bold text-[#720925] hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                    title="إضافة 4 حروف عشوائية للرابط لتجنب أي تكرار مع دعوة أخرى"
+                  >
+                    <span>🎲 إضافة كود عشوائي</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetSlugFromNames}
+                    className="text-[11px] font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-2 py-1 rounded-lg border border-stone-200 transition-colors cursor-pointer"
+                    title="استعادة الرابط التلقائي من أسماء العروسين"
+                  >
+                    <span>↺ من الأسماء</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch gap-2">
@@ -698,14 +759,14 @@ export default function NewInvitationPage() {
                   {currentTypeConfig.slugPrefix}
                 </div>
 
-                {/* User Base Slug Input */}
+                {/* User Base Slug Input - Fully editable by admin */}
                 <div className="relative flex-1">
                   <input
                     type="text"
                     required
                     pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                    minLength={2}
-                    maxLength={50}
+                    minLength={3}
+                    maxLength={60}
                     value={slug}
                     onChange={(e) => {
                       setIsSlugCustomized(true);
@@ -721,31 +782,25 @@ export default function NewInvitationPage() {
                     className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs font-mono text-left dir-ltr bg-white focus:border-[#720925] focus:ring-1 focus:ring-[#720925]"
                   />
                 </div>
-
-                {/* Random Characters Badge */}
-                <div className="flex items-center gap-1 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 font-mono text-xs font-bold shrink-0 dir-ltr select-none">
-                  <span className="text-amber-500 font-bold">-</span>
-                  <span className="text-amber-900 font-black">{slugSuffix}</span>
-                </div>
               </div>
 
               {/* Live Link Result Preview */}
               <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs font-mono flex items-center justify-between gap-2 flex-wrap">
                 <div className="text-stone-700 truncate dir-ltr text-left">
                   <span className="text-stone-400">https://farahna.menuflowx.com{currentTypeConfig.slugPrefix}</span>
-                  <span className="text-[#720925] font-black">{slug ? slug.replace(/^-+|-+$/g, '') : 'link'}-{slugSuffix}</span>
+                  <span className="text-[#720925] font-black">{slug ? slug.replace(/^-+|-+$/g, '') : 'link'}</span>
                 </div>
                 <span className="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0">
-                  الرابط النهائي الناتج ✅
+                  الرابط النهائي للدعوة ✅
                 </span>
               </div>
 
               <p className="text-[11px] text-stone-500">
-                💡 يتم أخذ الرابط منك وإضافة حروف عشوائية تلقائياً (<code className="font-mono text-[#720925] font-bold">-{slugSuffix}</code>) لضمان الخصوصية وعدم تكرار الرابط مع أي دعوة أخرى.
+                💡 بصفتك أدمن، يمكنك كتابة وتعديل رابط الصفحة بالكامل وبحرية تامة، أو النقر على &quot;🎲 إضافة كود عشوائي&quot; إذا أردت تمييز الرابط.
               </p>
 
-              {slug && slug.length < 2 && (
-                <span className="text-[10px] text-amber-700 block">⚠️ الرابط يجب أن يكون حرفين على الأقل</span>
+              {slug && slug.length < 3 && (
+                <span className="text-[10px] text-amber-700 block">⚠️ الرابط يجب أن يكون 3 أحرف على الأقل</span>
               )}
               {['admin', 'api', 'auth', 'login', 'preview', 'settings', 'static', 'storage', 'health', 'media'].includes(slug) && (
                 <span className="text-[10px] text-rose-700 font-bold block">❌ هذا الاسم محجوز لصفحات النظام، يرجى اختيار اسم آخر</span>
@@ -801,20 +856,30 @@ export default function NewInvitationPage() {
             </div>
 
             {/* Multi-event toggle */}
-            <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/90 cursor-pointer">
+            <label className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all ${
+              selectedPackage === 'basic'
+                ? 'bg-stone-100/70 border-stone-200 cursor-not-allowed opacity-80'
+                : 'bg-amber-50/70 border-amber-200/90 cursor-pointer'
+            }`}>
               <input
                 type="checkbox"
-                checked={isMultiEvent}
+                checked={selectedPackage === 'basic' ? false : isMultiEvent}
+                disabled={selectedPackage === 'basic'}
                 onChange={(e) => setIsMultiEvent(e.target.checked)}
-                className="w-4 h-4 rounded text-[#720925]"
+                className="w-4 h-4 rounded text-[#720925] disabled:opacity-50"
               />
               <div>
-                <span className="text-xs font-bold text-amber-950 block">
-                  تفعيل رحلة الفعاليات المتعددة (Multi-Event Tabs)
+                <span className="text-xs font-bold text-stone-900 block flex items-center gap-2">
+                  <span>تفعيل رحلة الفعاليات المتعددة (Multi-Event Tabs)</span>
+                  {selectedPackage === 'basic' && (
+                    <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                      🔒 غير متاح في باقة الـ 50 ج.م
+                    </span>
+                  )}
                 </span>
-                <span className="text-[11px] text-amber-800">
+                <span className="text-[11px] text-stone-500">
                   {selectedPackage === 'basic'
-                    ? '⚠️ ملحوظة: باقة المناسبة الواحدة (50 ج.م) لا تدعم تبويبات متعددة، ويفضل تركها غير مفعلة.'
+                    ? 'باقة المناسبة الواحدة (50 ج.م) مخصصة لحدث واحد فقط بدون تبويبات متعددة.'
                     : 'يتيح إضافة أكثر من فعالية (مثل كتب كتاب + حنة + فرح، أو حفل استقبال + عشاء) برابط موحد'}
                 </span>
               </div>
