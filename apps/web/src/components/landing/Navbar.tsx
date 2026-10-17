@@ -97,12 +97,6 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
             <span>🪄</span>
           </Link>
 
-          <Link
-            href="/admin/login"
-            className="hidden lg:inline-flex text-xs font-bold text-stone-600 hover:text-stone-900 px-2.5 py-2 rounded-lg hover:bg-stone-100 transition-colors"
-          >
-            لوحة الإدارة
-          </Link>
 
           <a
             href={whatsappUrl}
@@ -174,13 +168,7 @@ export function Navbar({ whatsappNumber = '201019262075' }: NavbarProps) {
               <MessageCircle className="w-4 h-4 fill-current" />
               <span>تواصل مع المصمم عبر واتساب 💬</span>
             </a>
-            <Link
-              href="/admin/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2 text-xs font-bold text-stone-500 hover:text-stone-900"
-            >
-              دخول لوحة تحكم الإدارة
-            </Link>
+
           </div>
         </div>
       )}

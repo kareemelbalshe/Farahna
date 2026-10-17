@@ -101,14 +101,6 @@ export function Footer({
                   <span>💍 خطوبة عمر وسلمى (ثيم ذهبي فاخر)</span>
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/admin/login"
-                  className="hover:text-stone-400 text-stone-500 transition-colors text-[11px]"
-                >
-                  دخول لوحة تحكم المشرفين
-                </Link>
-              </li>
             </ul>
           </div>
 
