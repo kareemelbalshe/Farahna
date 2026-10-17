@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { adminFetch } from '@/lib/api';
+import { adminFetch, getMediaUrl } from '@/lib/api';
 import { ORDER_STATUS_LABELS } from '@farahna/shared';
 import { formatArabicDate } from '@/lib/date';
 import {
@@ -730,11 +730,11 @@ export default function AdminOrdersPage() {
                             {p.paymentProofUrl ? (
                               <button
                                 type="button"
-                                onClick={() => setPreviewImage(p.paymentProofUrl)}
+                                onClick={() => setPreviewImage(getMediaUrl(p.paymentProofUrl))}
                                 className="relative group shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-amber-400 shadow-xs cursor-pointer hover:scale-105 transition-transform"
                                 title="اضغط لتكبير صورة إيصال التحويل"
                               >
-                                <img src={p.paymentProofUrl} alt="إيصال الدفع" className="w-full h-full object-cover" />
+                                <img src={getMediaUrl(p.paymentProofUrl)} alt="إيصال الدفع" className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-colors">
                                   <Camera className="w-4 h-4 text-white drop-shadow" />
                                 </div>
@@ -859,13 +859,13 @@ export default function AdminOrdersPage() {
               </button>
             </div>
             <img
-              src={previewImage}
+              src={getMediaUrl(previewImage)}
               alt="إيصال الدفع"
               className="w-full max-h-[65vh] object-contain rounded-2xl bg-black"
             />
             <div className="pt-3 text-center">
               <a
-                href={previewImage}
+                href={getMediaUrl(previewImage)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-amber-400 hover:underline text-xs font-bold"

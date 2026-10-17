@@ -21,7 +21,7 @@ router.get('/', requireRole(['super_admin', 'admin', 'editor']), getInvitations)
 router.get('/:id', requireRole(['super_admin', 'admin', 'editor']), getInvitationById);
 router.post('/', requireRole(['super_admin', 'admin', 'editor']), validateBody(invitationSchema), createInvitation);
 router.patch('/:id', requireRole(['super_admin', 'admin', 'editor']), updateInvitation);
-router.delete('/:id', requireRole(['super_admin', 'admin']), softDeleteInvitation);
+router.delete('/:id', requireRole(['super_admin', 'admin', 'editor']), softDeleteInvitation);
 
 // Workflow actions
 router.post('/:id/publish', requireRole(['super_admin', 'admin']), publishInvitation);

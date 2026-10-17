@@ -22,7 +22,7 @@ import {
   Trash2,
   ShoppingBag,
 } from 'lucide-react';
-import { adminFetch } from '@/lib/api';
+import { adminFetch, getMediaUrl } from '@/lib/api';
 import { PAYMENT_STATUS_LABELS } from '@farahna/shared';
 import { formatArabicDate } from '@/lib/date';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
@@ -339,7 +339,7 @@ export default function AdminPaymentsPage() {
         proofUrl ? (
           <button
             type="button"
-            onClick={() => setSelectedProofUrl(proofUrl)}
+            onClick={() => setSelectedProofUrl(getMediaUrl(proofUrl))}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer"
             title="عرض صورة الإيصال المحمية"
           >
@@ -557,7 +557,7 @@ export default function AdminPaymentsPage() {
 
             <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-50 max-h-[70vh] flex items-center justify-center p-2">
               <img
-                src={selectedProofUrl}
+                src={getMediaUrl(selectedProofUrl)}
                 alt="Payment Proof"
                 className="max-h-[65vh] w-auto object-contain rounded-xl shadow-xs"
               />

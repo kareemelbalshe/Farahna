@@ -15,8 +15,8 @@ const router = Router();
 // 1. Public static serving (covers, gallery, themes, music - BLOCKS payment proofs)
 router.get('/public/*', servePublicMedia);
 
-// 2. Secure static serving (Payment proofs: REQUIRES super_admin or admin)
-router.get('/secure/*', authenticateJWT, requireRole(['super_admin', 'admin']), serveSecureMedia);
+// 2. Secure static serving (Payment proofs: REQUIRES super_admin, admin, or editor)
+router.get('/secure/*', authenticateJWT, requireRole(['super_admin', 'admin', 'editor']), serveSecureMedia);
 
 // 3. Public get media for an invitation
 router.get('/invitation/:invitationId', getInvitationMedia);

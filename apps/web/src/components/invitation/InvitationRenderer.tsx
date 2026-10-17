@@ -116,7 +116,7 @@ export function InvitationRenderer({
   );
 
   // Resolve effective event date (auto-renew for demo invitations if expired/passed)
-  const rawEventDate = safeInv.eventDate || primaryEvent?.date || null;
+  const rawEventDate = primaryEvent?.date || safeInv.eventDate || null;
   const effectiveEventDate =
     isDemo && rawEventDate
       ? getAutoRenewingDemoDate(rawEventDate).toISOString()
@@ -194,7 +194,7 @@ export function InvitationRenderer({
   const isSectionEnabled = (key: string): boolean => {
     if (!sections || sections.length === 0) return true;
     const match = sections.find((s) => s.sectionKey === key);
-    return match ? match.isEnabled : true;
+    return match ? Boolean(match.isEnabled) : false;
   };
 
   // Record page view analytics
@@ -279,9 +279,20 @@ export function InvitationRenderer({
     safeInv.envelopeAnimationEnabled && isSectionEnabled('envelope') && !isEnvelopeOpen
   );
 
+  // Prevent background scrolling when envelope overlay is active in standalone browser mode
+  useEffect(() => {
+    if (isEnvelopeActive && !isMobileFrame) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isEnvelopeActive, isMobileFrame]);
+
   return (
     <div
-      className={`${
+      className={`w-full max-w-full ${
         isMobileFrame && isEnvelopeActive
           ? 'h-full max-h-full overflow-hidden'
           : 'min-h-full'
@@ -320,7 +331,13 @@ export function InvitationRenderer({
 
       {/* 👑 Preview Banner if in admin preview mode */}
       {isPreview && !hidePreviewBanner && (
-        <div className="sticky top-0 z-50 bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-black shadow-md flex items-center justify-center gap-2">
+        <div
+          className={`${
+            isEnvelopeActive && !isMobileFrame
+              ? 'fixed top-0 inset-x-0 z-[60]'
+              : 'sticky top-0 z-50'
+          } bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-black shadow-md flex items-center justify-center gap-2`}
+        >
           <span>👑 وضع المعاينة الآمنة — هذه النسخة غير معتمدة أو منشورة رسمياً بعد</span>
         </div>
       )}
@@ -346,6 +363,7 @@ export function InvitationRenderer({
           backgroundPattern={backgroundPattern}
           innerCardStyle={innerCardStyle}
           isPreview={isPreview}
+          isMobileFrame={isMobileFrame}
         />
       )}
 
@@ -355,7 +373,7 @@ export function InvitationRenderer({
           isMobileFrame && isEnvelopeActive ? 'hidden' : ''
         } ${
           isMobileFrame
-            ? 'w-full mx-auto px-2 py-3 space-y-4 max-w-full'
+            ? 'w-full mx-auto px-2 py-2.5 space-y-3 max-w-full overflow-x-hidden'
             : 'max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14 animate-fade-in-up'
         }`}
       >
@@ -376,7 +394,7 @@ export function InvitationRenderer({
             invitationType={safeInv.type}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -389,7 +407,7 @@ export function InvitationRenderer({
             coupleBrideEn={safeInv.coupleBrideEn}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -398,7 +416,7 @@ export function InvitationRenderer({
           <WeddingMessageSection
             weddingMessageAr={safeInv.weddingMessageAr}
             secondaryColor={secondaryColor}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -410,7 +428,7 @@ export function InvitationRenderer({
             secondaryColor={secondaryColor}
             isDark={isDark}
             autoRenew={isDemo}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -423,7 +441,7 @@ export function InvitationRenderer({
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             initialEventId={initialEventId}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -434,7 +452,7 @@ export function InvitationRenderer({
             events={visibleEvents}
             coupleNames={coupleNames}
             primaryColor={primaryColor}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -446,7 +464,7 @@ export function InvitationRenderer({
               parentsBrideAr={safeInv.parentsBrideAr}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
-              isPreview={isPreview}
+              isPreview={isCompact}
             />
           )}
 
@@ -460,7 +478,7 @@ export function InvitationRenderer({
               coupleNames={coupleNames}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
-              isPreview={isPreview}
+              isPreview={isCompact}
             />
           )}
 
@@ -471,7 +489,7 @@ export function InvitationRenderer({
             <PhotoGallery
               images={safeInv.galleryImages.filter((img) => typeof img === 'string' && img.trim().length > 0)}
               coupleName={coupleNames}
-              isPreview={isPreview}
+              isPreview={isCompact}
             />
           )}
 
@@ -483,7 +501,7 @@ export function InvitationRenderer({
               primaryEvent={effectivePrimaryEvent}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
-              isPreview={isPreview}
+              isPreview={isCompact}
             />
           )}
 
@@ -499,7 +517,7 @@ export function InvitationRenderer({
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
             invitationId={safeInv.id}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
 
@@ -511,7 +529,7 @@ export function InvitationRenderer({
               dressCodeAr={effectivePrimaryEvent.dressCodeAr}
               isHennaFemaleOnly={effectivePrimaryEvent.isHennaFemaleOnly}
               secondaryColor={secondaryColor}
-              isPreview={isPreview}
+              isPreview={isCompact}
             />
           )}
 
@@ -642,7 +660,7 @@ export function InvitationRenderer({
             invitationType={safeInv.type}
             groomName={safeInv.coupleGroomAr}
             brideName={safeInv.coupleBrideAr}
-            isPreview={isPreview}
+            isPreview={isCompact}
           />
         )}
       </main>
@@ -653,7 +671,7 @@ export function InvitationRenderer({
           musicUrl={safeInv.musicUrl.trim()}
           musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}
           shouldAutoTrigger={audioTriggered}
-          isPreview={isPreview}
+          isPreview={isCompact}
         />
       )}
 

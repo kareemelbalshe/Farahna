@@ -192,6 +192,7 @@ export default function AdminDashboardPage() {
                   ar: order.status,
                   color: 'bg-stone-100 text-stone-700',
                 };
+                const isRecent = order.status === 'payment_proof_received' || order.status === 'new';
                 return (
                   <div
                     key={order.id}
@@ -202,6 +203,11 @@ export default function AdminDashboardPage() {
                         <span className="text-xs font-bold text-stone-900">
                           {order.customer?.name || 'عميل'}
                         </span>
+                        {isRecent && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-rose-100 text-[#720925] border border-rose-300 animate-pulse">
+                            طلب جديد ✨
+                          </span>
+                        )}
                         <span
                           className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusInfo.color}`}
                         >
@@ -209,7 +215,7 @@ export default function AdminDashboardPage() {
                         </span>
                       </div>
                       <p className="text-[11px] text-stone-400">
-                        {order.invitation?.title || 'طلب تصميم دعوة'} • {order.finalPriceEgp || 0} ج.م
+                        {order.invitation?.title || 'طلب تصميم دعوة'} • {order.amount || order.finalPriceEgp || 0} ج.م
                       </p>
                     </div>
 

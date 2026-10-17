@@ -10,7 +10,7 @@ import {
   isValidCoordinates,
 } from '@farahna/shared';
 import { storageService } from '../services/storage';
-import { sendPaymentProofNotification } from '../services/email.service';
+import { sendPaymentProofNotification, sendCustomerOrderConfirmationEmail } from '../services/email.service';
 
 export async function getPublicInvitation(req: Request, res: Response, next: NextFunction) {
   try {
@@ -29,7 +29,6 @@ export async function getPublicInvitation(req: Request, res: Response, next: Nex
           orderBy: { sortOrder: 'asc' },
         },
         sections: {
-          where: { isEnabled: true },
           orderBy: { sortOrder: 'asc' },
         },
       },
@@ -363,6 +362,7 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
     const {
       customerName,
       customerPhone,
+      customerEmail,
       packageId = 'wedding-journey',
       amount = 95,
       paymentMethod = 'instapay',
@@ -386,6 +386,10 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
 
     const cleanPhone = customerPhone.trim();
     const cleanName = (customerName || invInput.coupleGroomAr || 'عميل تصميم ذاتي').trim();
+    const cleanEmail =
+      customerEmail && typeof customerEmail === 'string' && customerEmail.includes('@')
+        ? customerEmail.trim()
+        : null;
 
     // 1. Resolve or Create Customer
     let customer = await prisma.customer.findFirst({
@@ -397,11 +401,17 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
         data: {
           name: cleanName,
           phone: cleanPhone,
+          email: cleanEmail,
           whatsapp: cleanPhone,
           source: 'website',
           notes: `قام بتصميم دعوته ذاتياً عبر استوديو الموقع في ${new Date().toLocaleDateString('ar-EG')}`,
           status: 'active',
         },
+      });
+    } else if (cleanEmail && !customer.email) {
+      await prisma.customer.update({
+        where: { id: customer.id },
+        data: { email: cleanEmail },
       });
     }
 
@@ -542,11 +552,6 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
                   ? Boolean(invInput.whatsappContactEnabled)
                   : invInput.themeConfig?.whatsappContactEnabled !== false,
             };
-            if (!isVipTier) {
-              delete baseConfig.primaryColor;
-              delete baseConfig.secondaryColor;
-              delete baseConfig.backgroundColor;
-            }
             return baseConfig;
           })(),
           isMultiEvent: Boolean(invInput.isMultiEvent),
@@ -835,8 +840,26 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
       packageId,
       type: result.invitation.type,
     }).catch((err) => {
-      console.error('[PublicController] Background email notification error:', err);
+      console.error('[PublicController] Background admin email notification error:', err);
     });
+
+    // 8. Dispatch Customer Confirmation Email if email address was provided
+    if (cleanEmail) {
+      sendCustomerOrderConfirmationEmail({
+        customerEmail: cleanEmail,
+        customerName: cleanName,
+        coupleNames: `${groom} & ${bride}`,
+        orderNumber: result.order.orderNumber,
+        invitationTitle: result.invitation.title,
+        slug: result.invitation.slug,
+        previewToken: result.invitation.previewToken,
+        type: result.invitation.type,
+        amount: Number(result.order.amount),
+        packageId,
+      }).catch((err) => {
+        console.error('[PublicController] Customer confirmation email error:', err);
+      });
+    }
 
     return res.status(201).json({
       success: true,

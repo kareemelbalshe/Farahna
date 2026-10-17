@@ -237,3 +237,29 @@ export async function bulkUpdatePricingPlans(plans: any[]) {
   });
 }
 
+export async function deleteInvitation(id: string) {
+  return await adminFetch(`/invitations/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Helper to ensure secure media endpoints receive the required JWT token
+ * for protected files like payment proofs.
+ */
+export function getMediaUrl(url?: string | null): string {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+
+  let finalUrl = url;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('farahna_token') : null;
+
+  if (finalUrl.includes('/api/media/secure/') && token && !finalUrl.includes('token=')) {
+    const separator = finalUrl.includes('?') ? '&' : '?';
+    finalUrl = `${finalUrl}${separator}token=${encodeURIComponent(token)}`;
+  }
+  return finalUrl;
+}
+
+
+

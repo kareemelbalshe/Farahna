@@ -46,6 +46,7 @@ interface EnvelopeScreenProps {
   backgroundPattern?: string;
   innerCardStyle?: string;
   isPreview?: boolean;
+  isMobileFrame?: boolean;
 }
 
 type OpenStage = 'closed' | 'unsealing' | 'flap_open' | 'card_up' | 'revealing';
@@ -69,9 +70,12 @@ export function EnvelopeScreen({
   backgroundPattern,
   innerCardStyle = 'arched',
   isPreview = false,
+  isMobileFrame = false,
 }: EnvelopeScreenProps) {
   const [openStage, setOpenStage] = useState<OpenStage>('closed');
   const [isFlapBehind, setIsFlapBehind] = useState(false);
+
+  const isCompact = Boolean(isMobileFrame);
 
   if (isOpen) return null;
 
@@ -86,11 +90,21 @@ export function EnvelopeScreen({
 
   const formattedDate = eventDate ? formatArabicDate(eventDate) : '';
 
-  // Extract first line or excerpt of Quranic verse or message for the inner card
-  const verseExcerpt =
-    weddingMessageAr && weddingMessageAr.trim()
-      ? weddingMessageAr.split('\n')[0].replace(/^«|»$/g, '').trim()
-      : '';
+  // Extract the actual verse excerpt or message (skipping any standalone Bismillah line)
+  const messageLines = (weddingMessageAr || '')
+    .split('\n')
+    .map((l) => l.trim().replace(/^«|»|^"|"$/g, '').trim())
+    .filter(Boolean);
+
+  const nonBismillahLine = messageLines.find(
+    (l) =>
+      !l.includes('الرَّحْمَـٰنِ الرَّحِيمِ') &&
+      !l.includes('الرحمن الرحيم') &&
+      !l.includes('بِسْمِ اللَّـهِ') &&
+      !l.includes('بسم الله')
+  );
+
+  const verseExcerpt = nonBismillahLine || messageLines[0] || '';
 
   // Resolve palette per theme for maximum luxury
   const resolveThemePalette = () => {
@@ -354,7 +368,7 @@ export function EnvelopeScreen({
       ? `${cleanGroom} & ${cleanBride}`.length
       : cleanCoupleNames.length;
 
-    if (isPreview) {
+    if (isCompact) {
       if (totalLen > 30) return 'text-xs min-[360px]:text-sm leading-snug';
       if (totalLen > 18) return 'text-sm min-[360px]:text-base leading-snug';
       return 'text-base min-[360px]:text-lg leading-snug';
@@ -396,16 +410,16 @@ export function EnvelopeScreen({
       isDark={isDark}
       verseExcerpt={verseExcerpt}
       waxSealMonogram={waxSealMonogram}
-      isPreview={isPreview}
+      isPreview={isCompact}
     />
   );
 
   return (
     <div
       className={`${
-        isPreview ? 'absolute inset-0 h-full w-full' : 'fixed inset-0'
-      } z-50 flex flex-col items-center justify-center p-3 select-none overflow-hidden transition-opacity duration-500 ease-out ${resolvedPatternClass} ${
-        isPreview ? 'py-3 px-2.5 sm:px-3' : 'sm:p-6'
+        isCompact ? 'absolute inset-0 h-full w-full z-40' : 'fixed inset-0 z-50'
+      } flex flex-col items-center justify-center p-3 select-none overflow-hidden transition-opacity duration-500 ease-out ${resolvedPatternClass} ${
+        isCompact ? 'py-3 px-2.5 sm:px-3' : 'sm:p-6'
       } ${
         isRevealing ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
@@ -416,28 +430,28 @@ export function EnvelopeScreen({
       {/* Royal Ambient Glow Aura Orbs */}
       <div
         className={`absolute rounded-full blur-3xl opacity-30 pointer-events-none -z-10 animate-pulse ${
-          isPreview ? 'w-64 h-64' : 'w-[520px] h-[520px]'
+          isCompact ? 'w-64 h-64' : 'w-[520px] h-[520px]'
         }`}
         style={{ backgroundColor: palette.glowOrb }}
       />
       <div
         className={`absolute rounded-full blur-2xl opacity-25 pointer-events-none -z-10 ${
-          isPreview ? 'w-44 h-44' : 'w-[320px] h-[320px]'
+          isCompact ? 'w-44 h-44' : 'w-[320px] h-[320px]'
         }`}
         style={{ backgroundColor: palette.envelopeBorder }}
       />
 
       <div
         className={`relative w-full mx-auto my-auto text-center flex flex-col items-center justify-center transition-all ${
-          isPreview
+          isCompact
             ? 'max-w-[320px] space-y-2 min-[360px]:space-y-3'
-            : 'max-w-lg space-y-4 sm:space-y-6 max-h-[96vh]'
+            : `max-w-lg space-y-3 sm:space-y-4 max-h-[96vh] ${isPreview ? 'pt-8 sm:pt-6' : ''}`
         }`}
       >
         {/* Header Ribbon / Greetings */}
         <div
           className={`w-full transition-all duration-300 ease-out px-2 ${
-            isPreview ? 'space-y-1' : 'space-y-1.5 sm:space-y-2'
+            isCompact ? 'space-y-1' : 'space-y-1.5 sm:space-y-2'
           } ${
             openStage !== 'closed'
               ? 'opacity-0 -translate-y-3 pointer-events-none'
@@ -447,14 +461,14 @@ export function EnvelopeScreen({
           {/* Top Royal Badge */}
           <div
             className={`inline-flex items-center gap-1.5 rounded-full border shadow-md backdrop-blur-md transition-all max-w-[96%] ${
-              isPreview ? 'px-2.5 py-0.5' : 'px-3 sm:px-5 py-1 sm:py-1.5 shadow-lg'
+              isCompact ? 'px-2.5 py-0.5' : 'px-3 sm:px-5 py-1 sm:py-1.5 shadow-lg'
             } ${palette.badgeBg}`}
           >
-            <Sparkles className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'} text-amber-400 shrink-0`} />
-            <span className={`${isPreview ? 'text-[10px]' : 'text-[11px] sm:text-sm'} font-black font-cairo truncate`}>
+            <Sparkles className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'} text-amber-400 shrink-0`} />
+            <span className={`${isCompact ? 'text-[10px]' : 'text-[11px] sm:text-sm'} font-black font-cairo truncate`}>
               دعوة خاصة وفرحة لا تكتمل إلا بوجودكم ❤️
             </span>
-            <Crown className={`${isPreview ? 'w-2.5 h-2.5' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'} text-amber-400 shrink-0`} />
+            <Crown className={`${isCompact ? 'w-2.5 h-2.5' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'} text-amber-400 shrink-0`} />
           </div>
 
           {/* Couple Names */}
@@ -479,7 +493,7 @@ export function EnvelopeScreen({
           {/* Subtitle / Occasion */}
           <p
             className={`${
-              isPreview ? 'text-[10px] min-[360px]:text-[11px] line-clamp-1' : 'text-[11px] sm:text-sm'
+              isCompact ? 'text-[10px] min-[360px]:text-[11px] line-clamp-1' : 'text-xs sm:text-sm'
             } font-amiri font-bold tracking-wide px-2 break-words`}
             style={{ color: isDark ? '#F5D77F' : secondaryColor || '#D4AF37' }}
           >
@@ -493,7 +507,7 @@ export function EnvelopeScreen({
         {openingStyle === 'gatefold' && (
           <div
             className={`relative mx-auto max-w-full cursor-pointer group shrink-0 perspective-gatefold ${
-              isPreview
+              isCompact
                 ? 'w-[260px] min-[360px]:w-[280px] h-[170px] min-[360px]:h-[190px]'
                 : 'w-[min(92vw,290px)] min-[380px]:w-[320px] sm:w-[390px] h-[210px] min-[380px]:h-[230px] sm:h-[265px]'
             }`}
@@ -566,7 +580,7 @@ export function EnvelopeScreen({
         {openingStyle === 'slider' && (
           <div
             className={`relative mx-auto max-w-full cursor-pointer group shrink-0 ${
-              isPreview
+              isCompact
                 ? 'w-[250px] min-[360px]:w-[270px] h-[180px] min-[360px]:h-[200px]'
                 : 'w-[min(92vw,280px)] min-[380px]:w-[310px] sm:w-[360px] h-[220px] min-[380px]:h-[240px] sm:h-[280px]'
             }`}
@@ -608,60 +622,217 @@ export function EnvelopeScreen({
         )}
 
         {/* =========================================================================
-            STYLE 3: ROMANTIC BLOOMING PETALS (الزهور المتفتحة والشيفون)
+            STYLE 3: ROMANTIC BLOOMING PETALS (الزهور المتفتحة الملكية)
             ========================================================================= */}
         {openingStyle === 'blooming' && (
           <div
             className={`relative mx-auto max-w-full cursor-pointer group shrink-0 ${
-              isPreview
-                ? 'w-[250px] min-[360px]:w-[270px] h-[170px] min-[360px]:h-[190px]'
-                : 'w-[min(92vw,280px)] min-[380px]:w-[310px] sm:w-[370px] h-[200px] min-[380px]:h-[220px] sm:h-[260px]'
+              isCompact
+                ? 'w-[260px] min-[360px]:w-[280px] h-[175px] min-[360px]:h-[195px]'
+                : 'w-[min(92vw,300px)] min-[380px]:w-[330px] sm:w-[400px] h-[210px] min-[380px]:h-[230px] sm:h-[270px]'
             }`}
             onClick={handleUserAction}
             role="button"
             tabIndex={0}
-            aria-label="تفتح زهور الدعوة"
+            aria-label="تفتح زهور الدعوة الملكية"
           >
-            {/* Inner Card */}
+            {/* Ambient Petal Glow Emitter */}
             <div
-              className={`absolute inset-2 sm:inset-3 rounded-2xl transition-all duration-700 z-10 ${
-                isCardUp ? 'scale-105 shadow-2xl' : 'scale-95 opacity-80'
+              className={`absolute inset-4 rounded-3xl blur-xl pointer-events-none z-10 transition-opacity duration-700 ${
+                isFlapOpen ? 'opacity-90' : 'opacity-20'
+              }`}
+              style={{
+                background: `radial-gradient(circle, ${palette.envelopeBorder} 0%, transparent 70%)`,
+              }}
+            />
+
+            {/* Inner Revealed Card */}
+            <div
+              className={`absolute inset-2 sm:inset-3 rounded-2xl sm:rounded-3xl transition-all duration-700 z-15 ${
+                isCardUp
+                  ? 'scale-[1.03] shadow-[0_20px_45px_rgba(0,0,0,0.4),0_0_25px_rgba(212,175,55,0.35)]'
+                  : 'scale-100 opacity-90'
               }`}
             >
               {renderInnerCardContent()}
             </div>
 
-            {/* 4 Overlapping Petal Flaps */}
-            <div
-              className="absolute inset-0 z-30 pointer-events-none transition-transform duration-700"
-              style={{
-                transform: isFlapOpen ? 'scale(1.4) rotate(45deg)' : 'scale(1) rotate(0deg)',
-                opacity: isFlapOpen ? 0 : 1,
-              }}
-            >
+            {/* 4 Interlocking Blooming Petal Flaps */}
+            <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl">
+              {/* Top Petal Flap (Scalloped Arch folding down) */}
               <div
-                className="absolute inset-0 rounded-3xl border-2 shadow-2xl"
+                className="absolute inset-x-0 top-0 h-[62%] transition-all duration-700 ease-out origin-top"
                 style={{
-                  borderColor: palette.envelopeBorder,
-                  background: palette.envelopeBodyGradient,
+                  transform: isFlapOpen
+                    ? 'translateY(-115%) scale(0.9) rotate(-3deg)'
+                    : 'translateY(0) scale(1) rotate(0deg)',
+                  opacity: isFlapOpen ? 0 : 1,
                 }}
-              />
+              >
+                <svg
+                  className="w-full h-full overflow-visible drop-shadow-md"
+                  viewBox="0 0 300 130"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id={`bloomTopGrad_${isCompact ? 'c' : 'f'}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                      <stop offset="0%" stopColor={palette.flapColor} />
+                      <stop offset="100%" stopColor={palette.envelopeBody} />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M 0,0 L 300,0 L 300,32 Q 225,85 150,126 Q 75,85 0,32 Z"
+                    fill={`url(#bloomTopGrad_${isCompact ? 'c' : 'f'})`}
+                    stroke={palette.envelopeBorder}
+                    strokeWidth="1.8"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M 10,8 L 290,8 L 290,28 Q 220,76 150,114 Q 80,76 10,28 Z"
+                    fill="none"
+                    stroke={palette.sealBorder || palette.envelopeBorder}
+                    strokeWidth="1.2"
+                    strokeDasharray="4 3"
+                    opacity="0.65"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </div>
+
+              {/* Bottom Petal Flap (Scalloped Arch folding up) */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-[62%] transition-all duration-700 ease-out origin-bottom"
+                style={{
+                  transform: isFlapOpen
+                    ? 'translateY(115%) scale(0.9) rotate(3deg)'
+                    : 'translateY(0) scale(1) rotate(0deg)',
+                  opacity: isFlapOpen ? 0 : 1,
+                }}
+              >
+                <svg
+                  className="w-full h-full overflow-visible drop-shadow-md"
+                  viewBox="0 0 300 130"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id={`bloomBotGrad_${isCompact ? 'c' : 'f'}`} x1="50%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor={palette.envelopeBody} />
+                      <stop offset="100%" stopColor={palette.flapColor} />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M 0,130 L 300,130 L 300,98 Q 225,45 150,4 Q 75,45 0,98 Z"
+                    fill={`url(#bloomBotGrad_${isCompact ? 'c' : 'f'})`}
+                    stroke={palette.envelopeBorder}
+                    strokeWidth="1.8"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M 10,122 L 290,122 L 290,102 Q 220,54 150,16 Q 80,54 10,102 Z"
+                    fill="none"
+                    stroke={palette.sealBorder || palette.envelopeBorder}
+                    strokeWidth="1.2"
+                    strokeDasharray="4 3"
+                    opacity="0.65"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </div>
+
+              {/* Left Petal Flap */}
+              <div
+                className="absolute inset-y-0 left-0 w-[55%] transition-all duration-700 ease-out origin-left pointer-events-none"
+                style={{
+                  transform: isFlapOpen
+                    ? 'translateX(-115%) scale(0.9) rotate(-5deg)'
+                    : 'translateX(0) scale(1) rotate(0deg)',
+                  opacity: isFlapOpen ? 0 : 0.95,
+                }}
+              >
+                <svg
+                  className="w-full h-full overflow-visible"
+                  viewBox="0 0 160 210"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M 0,0 L 25,0 Q 115,55 158,105 Q 115,155 25,210 L 0,210 Z"
+                    fill={palette.envelopeBody}
+                    fillOpacity="0.45"
+                    stroke={palette.envelopeBorder}
+                    strokeWidth="1.2"
+                    strokeDasharray="3 3"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </div>
+
+              {/* Right Petal Flap */}
+              <div
+                className="absolute inset-y-0 right-0 w-[55%] transition-all duration-700 ease-out origin-right pointer-events-none"
+                style={{
+                  transform: isFlapOpen
+                    ? 'translateX(115%) scale(0.9) rotate(5deg)'
+                    : 'translateX(0) scale(1) rotate(0deg)',
+                  opacity: isFlapOpen ? 0 : 0.95,
+                }}
+              >
+                <svg
+                  className="w-full h-full overflow-visible"
+                  viewBox="0 0 160 210"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M 160,0 L 135,0 Q 45,55 2,105 Q 45,155 135,210 L 160,210 Z"
+                    fill={palette.envelopeBody}
+                    fillOpacity="0.45"
+                    stroke={palette.envelopeBorder}
+                    strokeWidth="1.2"
+                    strokeDasharray="3 3"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </div>
             </div>
 
-            {/* Center Rose Seal */}
+            {/* Center Rose / Monogram Golden Seal */}
             <div
               className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${
-                isFlapOpen ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100 animate-pulse'
+                openStage === 'unsealing'
+                  ? 'scale-115 brightness-125 drop-shadow-[0_0_30px_rgba(212,175,55,0.9)] animate-pulse'
+                  : isFlapOpen
+                  ? 'opacity-0 scale-50 pointer-events-none'
+                  : 'opacity-100 scale-100 hover:scale-105 active:scale-95 animate-seal-glow'
               }`}
             >
               <div
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center shadow-xl border-2"
+                className={`rounded-full flex flex-col items-center justify-center shadow-2xl border-2 cursor-pointer transition-transform ${
+                  isCompact
+                    ? 'w-14 h-14 min-[360px]:w-16 min-[360px]:h-16'
+                    : 'w-16 h-16 sm:w-22 sm:h-22'
+                }`}
                 style={{
                   background: palette.sealBg,
                   borderColor: palette.sealBorder,
+                  boxShadow: palette.sealShadow,
                 }}
               >
-                <Heart className="w-5 h-5 fill-current text-white drop-shadow-sm" />
+                <div className="flex flex-col items-center justify-center space-y-0.5">
+                  {waxSealMonogram ? (
+                    <span
+                      className={`font-black font-cairo tracking-widest drop-shadow-md ${
+                        isCompact ? 'text-xs min-[360px]:text-sm' : 'text-sm sm:text-lg'
+                      }`}
+                      style={{ color: palette.sealIconColor }}
+                    >
+                      {waxSealMonogram}
+                    </span>
+                  ) : (
+                    <>
+                      <Sparkles className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} drop-shadow-xs`} style={{ color: palette.sealIconColor }} />
+                      <Heart className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} fill-current drop-shadow-xs`} style={{ color: palette.sealIconColor }} />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -673,7 +844,7 @@ export function EnvelopeScreen({
         {(!openingStyle || openingStyle === 'wax-seal') && (
           <div
             className={`relative mx-auto max-w-full cursor-pointer group shrink-0 transition-all ${
-              isPreview
+              isCompact
                 ? 'w-[260px] min-[360px]:w-[280px] h-[160px] min-[360px]:h-[175px]'
                 : 'w-[min(92vw,290px)] min-[380px]:w-[320px] sm:w-[390px] h-[190px] min-[380px]:h-[210px] sm:h-[245px]'
             }`}
@@ -696,12 +867,12 @@ export function EnvelopeScreen({
             {/* 1. Inner Luxury Card (Slides UP out of the pocket) */}
             <div
               className={`absolute inset-x-2.5 sm:inset-x-3 bottom-2 rounded-2xl transition-all z-25 ${
-                isPreview
+                isCompact
                   ? 'h-[145px] min-[360px]:h-[155px]'
                   : 'h-[170px] min-[360px]:h-[195px] sm:h-[225px]'
               } ${
                 isCardUp
-                  ? isPreview
+                  ? isCompact
                     ? '-translate-y-16 min-[360px]:-translate-y-20 scale-[1.02] shadow-[0_15px_35px_rgba(0,0,0,0.5),0_0_20px_rgba(212,175,55,0.4)]'
                     : '-translate-y-20 min-[360px]:-translate-y-26 sm:-translate-y-36 scale-[1.02] shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(212,175,55,0.4)]'
                   : 'translate-y-0 opacity-95'
@@ -734,7 +905,7 @@ export function EnvelopeScreen({
               {/* Pocket Triangle Folds */}
               <div
                 className={`absolute inset-x-0 bottom-0 border-t ${
-                  isPreview ? 'h-26 min-[360px]:h-28' : 'h-32 sm:h-38'
+                  isCompact ? 'h-26 min-[360px]:h-28' : 'h-32 sm:h-38'
                 }`}
                 style={{
                   clipPath: 'polygon(0 100%, 100% 100%, 50% 22%)',
@@ -764,7 +935,7 @@ export function EnvelopeScreen({
             {/* 3. Envelope Top Flap with 3D Flip */}
             <div
               className={`absolute inset-x-0 top-0 pointer-events-none ${
-                isPreview ? 'h-[92px] min-[360px]:h-[100px]' : 'h-[110px] sm:h-[135px]'
+                isCompact ? 'h-[92px] min-[360px]:h-[100px]' : 'h-[110px] sm:h-[135px]'
               }`}
               style={{
                 transformOrigin: 'top center',
@@ -787,14 +958,14 @@ export function EnvelopeScreen({
               >
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id={`flapFrontGrad_${isPreview ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                    <linearGradient id={`flapFrontGrad_${isCompact ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
                       <stop offset="0%" stopColor={palette.flapColor} />
                       <stop offset="100%" stopColor={palette.envelopeBody} />
                     </linearGradient>
                   </defs>
                   <path
                     d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
-                    fill={`url(#flapFrontGrad_${isPreview ? 'prev' : 'live'})`}
+                    fill={`url(#flapFrontGrad_${isCompact ? 'prev' : 'live'})`}
                     stroke={palette.flapBorder}
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
@@ -814,14 +985,14 @@ export function EnvelopeScreen({
               >
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 300 130" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id={`flapBackGrad_${isPreview ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
+                    <linearGradient id={`flapBackGrad_${isCompact ? 'prev' : 'live'}`} x1="0%" y1="0%" x2="50%" y2="100%">
                       <stop offset="0%" stopColor={palette.flapColor} />
                       <stop offset="100%" stopColor={palette.envelopeBody} />
                     </linearGradient>
                   </defs>
                   <path
                     d="M 1,1 L 299,1 C 299,10 295,16 288,22 L 156,122 Q 150,128 144,122 L 12,22 C 5,16 1,10 1,1 Z"
-                    fill={`url(#flapBackGrad_${isPreview ? 'prev' : 'live'})`}
+                    fill={`url(#flapBackGrad_${isCompact ? 'prev' : 'live'})`}
                     stroke={palette.flapBorder}
                     strokeWidth="2"
                     vectorEffect="non-scaling-stroke"
@@ -857,7 +1028,7 @@ export function EnvelopeScreen({
               <div className="absolute top-[80%] left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 pointer-events-none -z-10">
                 <div
                   className={`shadow-md transform -rotate-12 origin-top ${
-                    isPreview ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
+                    isCompact ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
                   }`}
                   style={{
                     background: palette.ribbonBg,
@@ -866,7 +1037,7 @@ export function EnvelopeScreen({
                 />
                 <div
                   className={`shadow-md transform rotate-12 origin-top ${
-                    isPreview ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
+                    isCompact ? 'w-2 h-6 min-[360px]:h-7' : 'w-2.5 sm:w-3 h-8 sm:h-10'
                   }`}
                   style={{
                     background: palette.ribbonBg,
@@ -878,7 +1049,7 @@ export function EnvelopeScreen({
               {/* Wax Seal Circle Stamp */}
               <div
                 className={`relative rounded-full flex items-center justify-center transition-transform shadow-xl ${
-                  isPreview
+                  isCompact
                     ? 'w-14 h-14 min-[360px]:w-16 min-[360px]:h-16'
                     : 'w-18 h-18 sm:w-24 sm:h-24'
                 }`}
@@ -892,7 +1063,7 @@ export function EnvelopeScreen({
                   {waxSealMonogram ? (
                     <span
                       className={`font-black font-cairo tracking-widest drop-shadow-md ${
-                        isPreview ? 'text-xs min-[360px]:text-sm' : 'text-sm sm:text-xl'
+                        isCompact ? 'text-xs min-[360px]:text-sm' : 'text-sm sm:text-xl'
                       }`}
                       style={{ color: palette.sealIconColor }}
                     >
@@ -900,8 +1071,8 @@ export function EnvelopeScreen({
                     </span>
                   ) : (
                     <>
-                      <Crown className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-5 sm:h-5'} drop-shadow-sm`} style={{ color: palette.sealIconColor }} />
-                      <Heart className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} drop-shadow-sm fill-current`} style={{ color: palette.sealIconColor }} />
+                      <Crown className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-5 sm:h-5'} drop-shadow-sm`} style={{ color: palette.sealIconColor }} />
+                      <Heart className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} drop-shadow-sm fill-current`} style={{ color: palette.sealIconColor }} />
                     </>
                   )}
                 </div>
@@ -913,7 +1084,7 @@ export function EnvelopeScreen({
         {/* CTA Open Button with Gold Shimmer */}
         <div
           className={`w-full mx-auto px-2 ${
-            isPreview
+            isCompact
               ? 'max-w-[280px] min-[360px]:max-w-[300px] space-y-1.5 pt-0.5'
               : 'max-w-[min(92vw,360px)] sm:max-w-md space-y-2 pt-1'
           }`}
@@ -923,7 +1094,7 @@ export function EnvelopeScreen({
             onClick={handleUserAction}
             disabled={openStage === 'revealing'}
             className={`relative group overflow-hidden w-full rounded-full font-black flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-300 transform active:scale-[0.98] cursor-pointer ring-2 ring-amber-400/60 ring-offset-2 ring-offset-black/50 ${
-              isPreview
+              isCompact
                 ? 'py-2.5 px-3 text-xs'
                 : 'py-3 sm:py-3.5 px-4 sm:px-8 text-xs min-[360px]:text-sm sm:text-base'
             }`}
@@ -935,21 +1106,21 @@ export function EnvelopeScreen({
             }}
           >
             <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-gold-shimmer pointer-events-none" />
-            <Crown className={`${isPreview ? 'w-3.5 h-3.5' : 'w-4 h-4 sm:w-5 sm:h-5'} shrink-0 drop-shadow-sm`} />
+            <Crown className={`${isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4 sm:w-5 sm:h-5'} shrink-0 drop-shadow-sm`} />
             <span className="tracking-wide">
               {openStage === 'closed'
                 ? 'اضغط لفض الختم وفتح الدعوة الملكية 💌'
                 : 'جاري فتح الدعوة الملكية... ✨'}
             </span>
-            <Heart className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0 fill-current opacity-80`} />
+            <Heart className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0 fill-current opacity-80`} />
           </button>
 
           <div
             className={`flex items-center justify-center gap-1 font-semibold ${
-              isPreview ? 'text-[10px]' : 'text-[11px] sm:text-xs'
+              isCompact ? 'text-[10px]' : 'text-[11px] sm:text-xs'
             } ${isDark ? 'text-amber-300/80' : 'text-stone-600'}`}
           >
-            <Music className={`${isPreview ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-amber-500 shrink-0`} />
+            <Music className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-amber-500 shrink-0`} />
             <span>(يبدأ عزف الموسيقى الهادئة فور فض الختم ✨)</span>
           </div>
         </div>

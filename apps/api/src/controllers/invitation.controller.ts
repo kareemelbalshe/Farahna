@@ -14,10 +14,11 @@ import {
   isValidCoordinates,
 } from '@farahna/shared';
 import { storageService } from '../services/storage';
+import { sendNewInvitationNotification } from '../services/email.service';
 
 export async function getInvitations(req: Request, res: Response, next: NextFunction) {
   try {
-    const { status, type, search, page = '1', limit = '20' } = req.query;
+    const { status, type, search, page = '1', limit = '50' } = req.query;
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
@@ -484,6 +485,27 @@ export async function createInvitation(req: Request, res: Response, next: NextFu
       return inv;
     });
 
+    // Dispatch immediate notification email to admin (Async, Non-blocking)
+    const customerInfo = await prisma.customer.findUnique({
+      where: { id: invitation.customerId },
+      select: { name: true, phone: true, email: true },
+    }).catch(() => null);
+
+    sendNewInvitationNotification({
+      invitationId: invitation.id,
+      title: invitation.title,
+      slug: invitation.slug,
+      type: invitation.type,
+      coupleNames: `${invitation.coupleGroomAr} & ${invitation.coupleBrideAr}`,
+      previewToken: invitation.previewToken,
+      customerName: customerInfo?.name || undefined,
+      customerPhone: customerInfo?.phone || undefined,
+      customerEmail: customerInfo?.email || undefined,
+      eventDate: invitation.eventDate,
+    }).catch((err) => {
+      console.error('[createInvitation] Background email notification error:', err);
+    });
+
     return res.status(201).json({
       success: true,
       data: invitation,
@@ -512,6 +534,16 @@ export async function updateInvitation(req: Request, res: Response, next: NextFu
       analytics,
       whatsappPhone,
       whatsappContactEnabled,
+      // Metadata & relations to strip so they never break Prisma update
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      isDeleted: _isDeleted,
+      viewsCount: _viewsCount,
+      uniqueVisitorsCount: _uniqueVisitorsCount,
+      previewToken: _previewToken,
+      media: _media,
+      guests: _guests,
       ...rest
     } = req.body;
 
@@ -664,13 +696,15 @@ export async function updateInvitation(req: Request, res: Response, next: NextFu
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId)
         );
 
-      // Remove events that are no longer present
-      await prisma.invitationEvent.deleteMany({
-        where: {
-          invitationId: id,
-          ...(validEventIds.length > 0 ? { id: { notIn: validEventIds } } : {}),
-        },
-      });
+      // Remove events that are no longer present (only if valid UUIDs were supplied)
+      if (validEventIds.length > 0) {
+        await prisma.invitationEvent.deleteMany({
+          where: {
+            invitationId: id,
+            id: { notIn: validEventIds },
+          },
+        });
+      }
 
       // Upsert / create each event
       for (let idx = 0; idx < events.length; idx++) {
@@ -962,19 +996,23 @@ export async function softDeleteInvitation(req: Request, res: Response, next: Ne
 
     const invitation = await prisma.invitation.findUnique({
       where: { id },
-      select: { id: true, musicUrl: true },
+      select: { id: true, title: true, slug: true, musicUrl: true },
     });
 
-    if (invitation) {
-      // Clean up custom audio files from storage and database
-      await deleteInvitationCustomAudio(id, invitation.musicUrl);
+    if (!invitation) {
+      return res.status(404).json({ success: false, message: 'الدعوة غير موجودة أو تم حذفها بالفعل' });
     }
 
+    // Clean up custom audio files from storage and database
+    await deleteInvitationCustomAudio(id, invitation.musicUrl);
+
+    // Free up slug and soft-delete
+    const archivedSlug = `${invitation.slug}-deleted-${Date.now()}`;
     await prisma.invitation.update({
       where: { id },
-      data: { isDeleted: new Date(), status: 'archived', musicUrl: null },
+      data: { isDeleted: new Date(), status: 'archived', slug: archivedSlug, musicUrl: null },
     });
-    return res.json({ success: true, message: 'تم أرشفة الدعوة وحذف الأصوات المخصصة بنجاح من الخادم' });
+    return res.json({ success: true, message: `تم حذف دعوة "${invitation.title}" بنجاح وأرشفة بياناتها` });
   } catch (error) {
     next(error);
   }

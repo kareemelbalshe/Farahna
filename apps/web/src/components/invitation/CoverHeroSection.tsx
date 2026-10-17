@@ -41,9 +41,9 @@ export function CoverHeroSection({
 
   return (
     <section
-      className={`relative text-center mx-auto ${
+      className={`relative text-center mx-auto w-full overflow-hidden ${
         isPreview
-          ? 'pt-4 pb-2 px-2 max-w-full space-y-3'
+          ? 'pt-2 pb-1 px-1.5 max-w-full space-y-2'
           : 'pt-8 pb-4 px-4 max-w-4xl space-y-6'
       }`}
     >
@@ -52,7 +52,7 @@ export function CoverHeroSection({
         <div
           className={`relative w-full rounded-2xl overflow-hidden shadow-md ${
             isPreview
-              ? 'h-36 min-[360px]:h-44 mb-3'
+              ? 'h-36 min-[360px]:h-40 mb-2'
               : 'h-48 sm:h-64 md:h-80 rounded-3xl shadow-xl mb-6'
           }`}
         >
@@ -64,8 +64,8 @@ export function CoverHeroSection({
             onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          <div className="absolute bottom-3 inset-x-0 text-center">
-            <span className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold shadow-lg">
+          <div className="absolute bottom-2.5 inset-x-0 text-center">
+            <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[11px] font-bold shadow-lg">
               {getBadgeText(invitationType)}
             </span>
           </div>
@@ -73,25 +73,25 @@ export function CoverHeroSection({
       )}
 
       {/* Bismillah & Ornamentation */}
-      <div className="flex flex-col items-center justify-center space-y-2">
+      <div className="flex flex-col items-center justify-center space-y-1.5 w-full">
         <span
-          className={`text-stone-800 font-amiri font-bold tracking-wider theme-heading ${
-            isPreview ? 'text-lg min-[360px]:text-xl' : 'text-xl sm:text-2xl lg:text-3xl'
+          className={`text-stone-800 font-amiri font-bold tracking-wider theme-heading break-words px-1 ${
+            isPreview ? 'text-base min-[360px]:text-lg' : 'text-xl sm:text-2xl lg:text-3xl'
           }`}
         >
           بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
         </span>
 
         {!hasValidCover && (
-          <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-xs theme-badge">
+          <span className="inline-block px-3 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold shadow-xs theme-badge">
             {getBadgeText(invitationType)}
           </span>
         )}
 
-        <div className="flex items-center gap-3 pt-1">
-          <div className="w-12 sm:w-16 h-px" style={{ backgroundColor: secondaryColor }} />
-          <Heart className="w-4 h-4 animate-pulse" style={{ fill: primaryColor, color: primaryColor }} />
-          <div className="w-12 sm:w-16 h-px" style={{ backgroundColor: secondaryColor }} />
+        <div className="flex items-center gap-2 pt-0.5 justify-center w-full">
+          <div className={isPreview ? "w-8 h-px" : "w-12 sm:w-16 h-px"} style={{ backgroundColor: secondaryColor }} />
+          <Heart className={`${isPreview ? 'w-3.5 h-3.5' : 'w-4 h-4'} animate-pulse`} style={{ fill: primaryColor, color: primaryColor }} />
+          <div className={isPreview ? "w-8 h-px" : "w-12 sm:w-16 h-px"} style={{ backgroundColor: secondaryColor }} />
         </div>
       </div>
     </section>

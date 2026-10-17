@@ -33,7 +33,7 @@ export function InnerCardView({
   isPreview = false,
 }: InnerCardViewProps) {
   const currentStyle = style || 'arched';
-  const displayCoupleNames = coupleNames?.trim() || 'أحمد & سارة';
+  const displayCoupleNames = coupleNames?.trim() || 'العروسين';
   const displayTitle = invitationTitle?.trim() || 'نتشرف بحضوركم ومشاركتنا فرحتنا';
   const resolvedPrimaryColor = primaryColor || '#720925';
   const resolvedSecondaryColor = secondaryColor || '#D4AF37';
@@ -71,9 +71,9 @@ export function InnerCardView({
           ===================================================================== */}
       {currentStyle === 'arched' && (
         <>
-          {/* Inner Arched Decorative Filigree Line */}
+          {/* Inner Arched Decorative Filigree Line surrounding whole card */}
           <div
-            className="absolute inset-x-2.5 top-2.5 h-16 pointer-events-none rounded-t-[100px] border-t-2 border-x opacity-60"
+            className="absolute inset-2 sm:inset-2.5 pointer-events-none rounded-t-[70px] sm:rounded-t-[90px] rounded-b-xl border border-dashed opacity-60"
             style={{ borderColor: gold }}
           />
           {/* Crown Peak Emblem */}
