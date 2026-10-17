@@ -120,85 +120,92 @@ export async function convertLeadToCustomer(req: Request, res: Response, next: N
       return res.status(404).json({ success: false, message: 'العميل المحتمل غير موجود' });
     }
 
-    // 1. Create or retrieve Customer
-    let customer;
-    if (lead.customerId) {
-      customer = await prisma.customer.findUnique({ where: { id: lead.customerId } });
-    }
-    if (!customer) {
-      customer = await prisma.customer.create({
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create or retrieve Customer (check ID, then phone to prevent duplicate phone violations)
+      let customer;
+      if (lead.customerId) {
+        customer = await tx.customer.findUnique({ where: { id: lead.customerId } });
+      }
+      if (!customer && lead.phone) {
+        customer = await tx.customer.findFirst({ where: { phone: lead.phone } });
+      }
+      if (!customer) {
+        customer = await tx.customer.create({
+          data: {
+            name: lead.name,
+            phone: lead.phone,
+            whatsapp: lead.whatsapp || lead.phone,
+            notes: notes || lead.notes,
+            source: lead.source,
+            status: 'active',
+          },
+        });
+      }
+
+      // 2. Create Starter Invitation
+      const slug = `farah-${lead.phone.replace(/[^0-9]/g, '').slice(-4)}-${Date.now().toString().slice(-4)}`;
+      const defaultTheme =
+        (await tx.theme.findFirst({ where: { isDefault: true } })) ||
+        (await tx.theme.findFirst());
+
+      const eventType = (['wedding', 'engagement', 'henna', 'katb_ketab', 'reception', 'custom'].includes(lead.eventType)
+        ? lead.eventType
+        : 'wedding') as any;
+
+      const invitation = await tx.invitation.create({
         data: {
-          name: lead.name,
-          phone: lead.phone,
-          whatsapp: lead.whatsapp || lead.phone,
-          notes: notes || lead.notes,
-          source: lead.source,
-          status: 'active',
+          customerId: customer.id,
+          title: `دعوة فرح - ${lead.name}`,
+          type: eventType,
+          slug,
+          status: 'draft',
+          eventDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          coupleGroomAr: lead.name,
+          coupleBrideAr: 'العروس',
+          themeId: defaultTheme?.id || 'theme-royal-burgundy',
+          themeConfig: (defaultTheme?.config as any) || {},
         },
       });
-    }
 
-    // 2. Create Starter Invitation
-    const slug = `farah-${lead.phone.replace(/[^0-9]/g, '').slice(-4)}-${Date.now().toString().slice(-4)}`;
-    const defaultTheme =
-      (await prisma.theme.findFirst({ where: { isDefault: true } })) ||
-      (await prisma.theme.findFirst());
+      // 3. Create Order linked to Customer and Invitation
+      const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          customerId: customer.id,
+          invitationId: invitation.id,
+          packageId: packageId || 'wedding-journey',
+          amount: Number(amount),
+          currency: 'EGP',
+          status: 'details_received',
+          notes: `تم تحويل الطلب تلقائياً من مسار الـ Leads (${lead.name})`,
+        },
+        include: {
+          customer: true,
+          invitation: true,
+        },
+      });
 
-    const eventType = (['wedding', 'engagement', 'henna', 'katb_ketab', 'reception', 'custom'].includes(lead.eventType)
-      ? lead.eventType
-      : 'wedding') as any;
+      // 4. Update Lead with customerId & status
+      const updatedLead = await tx.lead.update({
+        where: { id },
+        data: {
+          customerId: customer.id,
+          status: 'details_received',
+        },
+      });
 
-    const invitation = await prisma.invitation.create({
-      data: {
-        customerId: customer.id,
-        title: `دعوة فرح - ${lead.name}`,
-        type: eventType,
-        slug,
-        status: 'draft',
-        eventDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        coupleGroomAr: lead.name,
-        coupleBrideAr: 'العروس',
-        themeId: defaultTheme?.id || 'theme-royal-burgundy',
-        themeConfig: (defaultTheme?.config as any) || {},
-      },
-    });
-
-    // 3. Create Order linked to Customer and Invitation
-    const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        customerId: customer.id,
-        invitationId: invitation.id,
-        packageId: packageId || 'wedding-journey',
-        amount: Number(amount),
-        currency: 'EGP',
-        status: 'details_received',
-        notes: `تم تحويل الطلب تلقائياً من مسار الـ Leads (${lead.name})`,
-      },
-      include: {
-        customer: true,
-        invitation: true,
-      },
-    });
-
-    // 4. Update Lead with customerId & status
-    const updatedLead = await prisma.lead.update({
-      where: { id },
-      data: {
-        customerId: customer.id,
-        status: 'details_received',
-      },
-    });
-
-    return res.json({
-      success: true,
-      data: {
+      return {
         customer,
         order,
         invitation,
         lead: updatedLead,
-      },
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: result,
       message: 'تم تحويل العميل المحتمل إلى عميل فعلي وإنشاء الطلب والدعوة بنجاح 🎉',
     });
   } catch (error) {

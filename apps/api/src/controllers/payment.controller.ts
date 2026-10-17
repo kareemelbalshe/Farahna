@@ -58,18 +58,24 @@ export async function getPayments(req: Request, res: Response, next: NextFunctio
 
 export async function recordPayment(req: Request, res: Response, next: NextFunction) {
   try {
-    const payment = await prisma.payment.create({
-      data: req.body,
-      include: {
-        customer: true,
-        order: true,
-      },
-    });
+    const payment = await prisma.$transaction(async (tx) => {
+      const createdPayment = await tx.payment.create({
+        data: req.body,
+        include: {
+          customer: true,
+          order: true,
+        },
+      });
 
-    // Update order status to proof_received if status was awaiting_payment
-    await prisma.order.update({
-      where: { id: req.body.orderId },
-      data: { status: 'payment_proof_received' },
+      // Update order status to proof_received if status was awaiting_payment or new
+      if (req.body.orderId) {
+        await tx.order.update({
+          where: { id: req.body.orderId },
+          data: { status: 'payment_proof_received' },
+        });
+      }
+
+      return createdPayment;
     });
 
     return res.status(201).json({

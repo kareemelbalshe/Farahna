@@ -106,22 +106,27 @@ export async function recordPublicAnalytics(data: {
   }
 }
 
+export const DEFAULT_SITE_SETTINGS = {
+  siteNameAr: 'فرحنا',
+  whatsappNumber: '201019262075',
+  supportPhone: '+201019262075',
+  paymentPhone: '01064906723',
+  paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش',
+};
+
 export async function fetchSiteSettings() {
   try {
     const res = await fetch(`${API_BASE_URL}/settings`, {
       cache: 'no-store',
-      signal: AbortSignal.timeout(1000),
+      signal: AbortSignal.timeout(1500),
     });
+    if (!res.ok) {
+      return DEFAULT_SITE_SETTINGS;
+    }
     const json = await res.json();
-    return json.data;
+    return json?.data || DEFAULT_SITE_SETTINGS;
   } catch (e) {
-    return {
-      siteNameAr: 'فرحنا',
-      whatsappNumber: '201019262075',
-      supportPhone: '+201019262075',
-      paymentPhone: '01064906723',
-      paymentInstructionsAr: 'الدفع متاح عبر InstaPay أو فودافون كاش',
-    };
+    return DEFAULT_SITE_SETTINGS;
   }
 }
 

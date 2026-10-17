@@ -36,17 +36,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const res = await fetch(`${apiUrl}/public/sitemap-invitations`, {
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(1500),
     });
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data)) {
-      json.data.forEach((inv: { type: string; slug: string; updatedAt: string }) => {
-        routes.push({
-          url: `${baseUrl}/invitation/${inv.type}/${inv.slug}`,
-          lastModified: new Date(inv.updatedAt),
-          changeFrequency: 'weekly',
-          priority: 0.9,
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        json.data.forEach((inv: { type: string; slug: string; updatedAt: string }) => {
+          routes.push({
+            url: `${baseUrl}/invitation/${inv.type}/${inv.slug}`,
+            lastModified: new Date(inv.updatedAt),
+            changeFrequency: 'weekly',
+            priority: 0.9,
+          });
         });
-      });
+      }
     }
   } catch (e) {
     // If backend isn't reachable during static generation, return base routes

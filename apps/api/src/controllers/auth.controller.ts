@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
-import { comparePassword, generateToken } from '../utils/auth';
+import { comparePassword, generateToken, hashPassword } from '../utils/auth';
 import { ROLE_PERMISSIONS, UserRole } from '@farahna/shared';
 
 export async function login(req: Request, res: Response, next: NextFunction) {
@@ -131,7 +131,6 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
       });
     }
 
-    const { hashPassword } = await import('../utils/auth');
     const newHashed = await hashPassword(newPassword);
     await prisma.user.update({
       where: { id: user.id },

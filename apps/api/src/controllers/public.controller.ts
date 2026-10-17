@@ -397,22 +397,34 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
     });
 
     if (!customer) {
-      customer = await prisma.customer.create({
-        data: {
-          name: cleanName,
-          phone: cleanPhone,
-          email: cleanEmail,
-          whatsapp: cleanPhone,
-          source: 'website',
-          notes: `قام بتصميم دعوته ذاتياً عبر استوديو الموقع في ${new Date().toLocaleDateString('ar-EG')}`,
-          status: 'active',
-        },
-      });
+      try {
+        customer = await prisma.customer.create({
+          data: {
+            name: cleanName,
+            phone: cleanPhone,
+            email: cleanEmail,
+            whatsapp: cleanPhone,
+            source: 'website',
+            notes: `قام بتصميم دعوته ذاتياً عبر استوديو الموقع في ${new Date().toLocaleDateString('ar-EG')}`,
+            status: 'active',
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === 'P2002') {
+          customer = await prisma.customer.findFirst({ where: { phone: cleanPhone } });
+        } else {
+          throw err;
+        }
+      }
     } else if (cleanEmail && !customer.email) {
       await prisma.customer.update({
         where: { id: customer.id },
         data: { email: cleanEmail },
       });
+    }
+
+    if (!customer) {
+      return res.status(500).json({ success: false, message: 'فشل تسجيل بيانات العميل' });
     }
 
     // 2. Handle Payment Proof Screenshot

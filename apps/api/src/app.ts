@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import routes from './routes';
 import { errorHandler } from './middleware/error';
 import { ENV } from './config/env';
+import { prisma } from './config/db';
 import {
   helmetSecurityHeaders,
   customSecurityHeaders,
@@ -84,8 +85,8 @@ app.use('/api/leads', leadLimiter);
 app.use('/api/media/upload', mediaUploadLimiter);
 app.use('/api/public/analytics', analyticsLimiter);
 
-// 10. Health & Security Status Check
-app.get('/health', (req, res) => {
+// 10. Health & Security Status Check (Liveness: /health, /healthz)
+app.get(['/health', '/healthz', '/api/health'], (req, res) => {
   res.json({
     status: 'healthy',
     service: 'farahna-api',
@@ -102,17 +103,23 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'farahna-api',
-    environment: ENV.NODE_ENV,
-    timestamp: new Date().toISOString(),
-    security: {
-      status: 'shield-active',
-      mode: 'strict-production',
-    },
-  });
+// Database Readiness Check (Readiness: /ready, /readyz, /api/readyz)
+app.get(['/ready', '/readyz', '/api/readyz'], async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'ready',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
+  } catch (error: any) {
+    res.status(503).json({
+      status: 'unready',
+      database: 'disconnected',
+      error: ENV.NODE_ENV === 'production' ? 'Database unreachable' : error?.message,
+    });
+  }
 });
 
 // 11. API Routes

@@ -95,62 +95,66 @@ export async function getOrderById(req: Request, res: Response, next: NextFuncti
 export async function createOrder(req: Request, res: Response, next: NextFunction) {
   try {
     const { customerId, packageId, amount, notes, status = 'new', createStarterInvitation } = req.body;
-    let invitationId = req.body.invitationId;
+    let initialInvitationId = req.body.invitationId;
 
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) {
       return res.status(404).json({ success: false, message: 'العميل المحدد غير موجود' });
     }
 
-    // Auto-create starter draft invitation if requested or if none provided
-    if (!invitationId && createStarterInvitation) {
-      const slug = `farah-${customer.phone.replace(/[^0-9]/g, '').slice(-4)}-${Date.now().toString().slice(-4)}`;
-      const defaultTheme =
-        (await prisma.theme.findFirst({ where: { isDefault: true } })) ||
-        (await prisma.theme.findFirst());
+    const order = await prisma.$transaction(async (tx) => {
+      let invitationId = initialInvitationId;
 
-      const invitation = await prisma.invitation.create({
+      // Auto-create starter draft invitation if requested or if none provided
+      if (!invitationId && createStarterInvitation) {
+        const slug = `farah-${customer.phone.replace(/[^0-9]/g, '').slice(-4)}-${Date.now().toString().slice(-4)}`;
+        const defaultTheme =
+          (await tx.theme.findFirst({ where: { isDefault: true } })) ||
+          (await tx.theme.findFirst());
+
+        const invitation = await tx.invitation.create({
+          data: {
+            customerId: customer.id,
+            title: `دعوة فرح - ${customer.name}`,
+            type: 'wedding',
+            slug,
+            status: 'draft',
+            eventDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            coupleGroomAr: customer.name,
+            coupleBrideAr: 'العروس',
+            themeId: defaultTheme?.id || 'theme-royal-burgundy',
+            themeConfig: (defaultTheme?.config as any) || {},
+          },
+        });
+        invitationId = invitation.id;
+
+        await tx.invitationSection.createMany({
+          data: DEFAULT_SECTIONS.map((sec, idx) => ({
+            invitationId: invitation.id,
+            sectionKey: sec.key,
+            isEnabled: sec.defaultEnabled,
+            sortOrder: idx,
+          })),
+        });
+      }
+
+      const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
+      return await tx.order.create({
         data: {
-          customerId: customer.id,
-          title: `دعوة فرح - ${customer.name}`,
-          type: 'wedding',
-          slug,
-          status: 'draft',
-          eventDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          coupleGroomAr: customer.name,
-          coupleBrideAr: 'العروس',
-          themeId: defaultTheme?.id || 'theme-royal-burgundy',
-          themeConfig: (defaultTheme?.config as any) || {},
+          orderNumber,
+          customerId,
+          invitationId: invitationId || null,
+          packageId: packageId || 'wedding-journey',
+          amount: Number(amount) || 95,
+          currency: 'EGP',
+          status: status || 'new',
+          notes: notes || null,
+        },
+        include: {
+          customer: true,
+          invitation: true,
         },
       });
-      invitationId = invitation.id;
-
-      await prisma.invitationSection.createMany({
-        data: DEFAULT_SECTIONS.map((sec, idx) => ({
-          invitationId: invitation.id,
-          sectionKey: sec.key,
-          isEnabled: sec.defaultEnabled,
-          sortOrder: idx,
-        })),
-      });
-    }
-
-    const orderNumber = `FARAH-${Date.now().toString().slice(-6)}`;
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        customerId,
-        invitationId: invitationId || null,
-        packageId: packageId || 'wedding-journey',
-        amount: Number(amount) || 95,
-        currency: 'EGP',
-        status: status || 'new',
-        notes: notes || null,
-      },
-      include: {
-        customer: true,
-        invitation: true,
-      },
     });
 
     return res.status(201).json({ success: true, data: order, message: 'تم إنشاء الطلب بنجاح' });

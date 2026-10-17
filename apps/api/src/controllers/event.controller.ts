@@ -52,12 +52,34 @@ export async function createEvent(req: Request, res: Response, next: NextFunctio
       rest.openStreetMapUrl = getOpenStreetMapUrl(rest.latitude, rest.longitude);
     }
 
-    const event = await prisma.invitationEvent.create({
-      data: {
-        ...rest,
-        date: new Date(date),
-      },
+    // If the only existing event is the default uncustomized placeholder, update it instead of creating a duplicate
+    const existingEvents = await prisma.invitationEvent.findMany({
+      where: { invitationId: rest.invitationId },
     });
+
+    let event;
+    let isReplacement = false;
+    if (
+      existingEvents.length === 1 &&
+      existingEvents[0].venueNameAr === 'قاعة الحفل الملكية' &&
+      existingEvents[0].googleMapsUrl === 'https://maps.google.com/?q=Cairo'
+    ) {
+      event = await prisma.invitationEvent.update({
+        where: { id: existingEvents[0].id },
+        data: {
+          ...rest,
+          date: new Date(date),
+        },
+      });
+      isReplacement = true;
+    } else {
+      event = await prisma.invitationEvent.create({
+        data: {
+          ...rest,
+          date: new Date(date),
+        },
+      });
+    }
 
     // Make sure invitation has isMultiEvent set to true if count > 1
     const count = await prisma.invitationEvent.count({
@@ -70,10 +92,10 @@ export async function createEvent(req: Request, res: Response, next: NextFunctio
       });
     }
 
-    return res.status(201).json({
+    return res.status(isReplacement ? 200 : 201).json({
       success: true,
       data: event,
-      message: 'تم إضافة المناسبة بنجاح إلى خطة الحفل',
+      message: isReplacement ? 'تم تحديث المناسبة الأساسية بنجاح' : 'تم إضافة المناسبة بنجاح إلى خطة الحفل',
     });
   } catch (error) {
     next(error);

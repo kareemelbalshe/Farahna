@@ -887,13 +887,24 @@ export async function duplicateInvitation(req: Request, res: Response, next: Nex
 
     const newSlug = `${original.slug}-copy-${nanoid(4).toLowerCase()}`;
     const duplicated = await prisma.$transaction(async (tx) => {
-      const { id: _, createdAt, updatedAt, events, sections, themeConfig, ...cloneData } = original;
+      const {
+        id: _,
+        previewToken: _p,
+        orderId: _ord,
+        createdAt,
+        updatedAt,
+        events,
+        sections,
+        themeConfig,
+        ...cloneData
+      } = original;
       const newInv = await tx.invitation.create({
         data: {
           ...cloneData,
           slug: newSlug,
           title: `${original.title} (نسخة)`,
           status: 'draft',
+          orderId: null,
           viewsCount: 0,
           uniqueVisitorsCount: 0,
           themeConfig: (themeConfig as any) ?? undefined,

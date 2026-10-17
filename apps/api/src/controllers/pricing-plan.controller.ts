@@ -170,32 +170,35 @@ export async function bulkUpdatePricingPlans(req: Request, res: Response, next: 
       return res.status(400).json({ success: false, message: 'plans must be an array' });
     }
 
-    const updatedList = [];
-    for (const item of plans) {
-      if (!item.slug) continue;
-      const updateData: any = {};
-      if (item.price !== undefined) updateData.price = Number(item.price);
-      if (item.badge !== undefined) updateData.badge = item.badge;
-      if (item.nameAr !== undefined) updateData.nameAr = item.nameAr;
-      if (item.isPopular !== undefined) updateData.isPopular = Boolean(item.isPopular);
-      if (item.isActive !== undefined) updateData.isActive = Boolean(item.isActive);
-      if (item.durationDays !== undefined) updateData.durationDays = Number(item.durationDays);
+    const updatedList = await prisma.$transaction(async (tx) => {
+      const list = [];
+      for (const item of plans) {
+        if (!item.slug) continue;
+        const updateData: any = {};
+        if (item.price !== undefined) updateData.price = Number(item.price);
+        if (item.badge !== undefined) updateData.badge = item.badge;
+        if (item.nameAr !== undefined) updateData.nameAr = item.nameAr;
+        if (item.isPopular !== undefined) updateData.isPopular = Boolean(item.isPopular);
+        if (item.isActive !== undefined) updateData.isActive = Boolean(item.isActive);
+        if (item.durationDays !== undefined) updateData.durationDays = Number(item.durationDays);
 
-      const updated = await prisma.pricingPlan.upsert({
-        where: { slug: item.slug },
-        update: updateData,
-        create: {
-          slug: item.slug,
-          name: item.name || item.slug,
-          nameAr: item.nameAr || item.slug,
-          price: Number(item.price) || 50,
-          currency: 'EGP',
-          badge: item.badge,
-          isPopular: Boolean(item.isPopular),
-        },
-      });
-      updatedList.push(formatPlan(updated));
-    }
+        const updated = await tx.pricingPlan.upsert({
+          where: { slug: item.slug },
+          update: updateData,
+          create: {
+            slug: item.slug,
+            name: item.name || item.slug,
+            nameAr: item.nameAr || item.slug,
+            price: Number(item.price) || 50,
+            currency: 'EGP',
+            badge: item.badge,
+            isPopular: Boolean(item.isPopular),
+          },
+        });
+        list.push(formatPlan(updated));
+      }
+      return list;
+    });
 
     return res.json({
       success: true,
