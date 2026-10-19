@@ -9,6 +9,7 @@ import {
   getSitemapInvitations,
   submitPublicDesign,
   uploadPublicAudio,
+  resolveMapEndpoint,
 } from '../controllers/public.controller';
 import { getPricingPlans } from '../controllers/pricing-plan.controller';
 import { uploadMiddleware } from '../controllers/media.controller';
@@ -18,10 +19,11 @@ import { rsvpSubmissionSchema, analyticsEventSchema } from '@farahna/shared';
 
 const router = Router();
 
-// 1. Self-Service Design Submission, Audio Upload & Pricing Plans
+// 1. Self-Service Design Submission, Audio Upload, Map Resolution & Pricing Plans
 router.get('/pricing-plans', getPricingPlans);
 router.post('/submit-design', submitPublicDesign);
 router.post('/upload-audio', uploadMiddleware, uploadPublicAudio);
+router.post('/resolve-map', resolveMapEndpoint);
 
 // 2. Sitemap indexable invitations (Must be before wildcard!)
 router.get('/sitemap-invitations', getSitemapInvitations);

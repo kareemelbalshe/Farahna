@@ -58,6 +58,23 @@ export async function submitPublicDesign(data: any) {
   }
 }
 
+export async function resolveMapLocationApi(options: {
+  urlOrText?: string;
+  venueName?: string;
+  address?: string;
+}) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/public/resolve-map`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: 'تعذر توحيد رابط الخريطة تلقائياً' };
+  }
+}
+
 export async function recordPublicAnalytics(data: {
   invitationId: string;
   eventType: string;

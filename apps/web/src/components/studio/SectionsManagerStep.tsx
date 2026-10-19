@@ -14,6 +14,7 @@ interface SectionsManagerStepProps {
   whatsappContactPhone: string;
   setWhatsappContactPhone: (val: string) => void;
   customerPhone: string;
+  selectedPackage?: string;
 }
 
 export const STUDIO_SECTION_ITEMS = [
@@ -115,7 +116,14 @@ export function SectionsManagerStep({
   whatsappContactPhone,
   setWhatsappContactPhone,
   customerPhone,
+  selectedPackage,
 }: SectionsManagerStepProps) {
+  const enabledCount = STUDIO_SECTION_ITEMS.filter(
+    (s) => sectionsVisibility[s.key] !== false
+  ).length;
+  const disabledCount = STUDIO_SECTION_ITEMS.length - enabledCount;
+  const isVipTier = selectedPackage === 'luxury-vip';
+
   return (
     <section className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-7 space-y-5 shadow-2xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -172,6 +180,34 @@ export function SectionsManagerStep({
           >
             الوضع الهادئ المختصر ⚡
           </button>
+        </div>
+      </div>
+
+      {/* VIP & Plan Freedom Reassurance Card */}
+      <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5 text-xs text-amber-950">
+            <p className="font-black text-amber-900">
+              {isVipTier
+                ? '👑 باقة VIP الملكية (صلاحية كاملة + حرية اختيار تامة):'
+                : '💎 تحكم كامل في أقسام وتفاصيل دعوتك:'}
+            </p>
+            <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+              حتى لو كانت باقتك VIP، يمكنك قفل أو حذف أي قسم تريده بنقرة واحدة (مثل حذف الموسيقى أو إغلاق نموذج تأكيد الحضور RSVP أو إخفاء الجدول الزمني). السكشن المحذوف لن يظهر للضيوف نهائياً.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            {enabledCount} سكشن مفعّل ✅
+          </span>
+          {disabledCount > 0 && (
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+              {disabledCount} محذوف ومخفي 🔒
+            </span>
+          )}
         </div>
       </div>
 

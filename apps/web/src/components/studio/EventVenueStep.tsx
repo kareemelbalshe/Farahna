@@ -1,8 +1,21 @@
 'use client';
 
-import React from 'react';
-import { Calendar, MapPin, Check, AlertCircle, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Calendar,
+  MapPin,
+  Check,
+  AlertCircle,
+  AlertTriangle,
+  ExternalLink,
+  Sparkles,
+  Loader2,
+  Compass,
+  Settings2,
+  Navigation,
+} from 'lucide-react';
 import { validateMapUrl, isDateInPast } from '@/lib/validation';
+import { resolveMapLocationApi } from '@/lib/api';
 import { JourneyEvent } from './studioConstants';
 
 interface EventVenueStepProps {
@@ -10,10 +23,18 @@ interface EventVenueStepProps {
   venueNameAr: string;
   addressAr: string;
   googleMapsUrl: string;
+  primaryLatitude?: number | null;
+  primaryLongitude?: number | null;
+  primaryOpenStreetMapUrl?: string | null;
   handlePrimaryDateChange: (val: string) => void;
   handlePrimaryVenueChange: (val: string) => void;
   handlePrimaryAddressChange: (val: string) => void;
   handlePrimaryMapUrlChange: (val: string) => void;
+  handlePrimaryCoordinatesChange?: (
+    lat: number | null,
+    lng: number | null,
+    osmUrl?: string | null
+  ) => void;
   designValidationError: string | null;
   selectedPackage: string;
   journeyEvents: JourneyEvent[];
@@ -31,10 +52,14 @@ export function EventVenueStep({
   venueNameAr,
   addressAr,
   googleMapsUrl,
+  primaryLatitude,
+  primaryLongitude,
+  primaryOpenStreetMapUrl,
   handlePrimaryDateChange,
   handlePrimaryVenueChange,
   handlePrimaryAddressChange,
   handlePrimaryMapUrlChange,
+  handlePrimaryCoordinatesChange,
   designValidationError,
   selectedPackage,
   journeyEvents,
@@ -47,6 +72,133 @@ export function EventVenueStep({
   setSectionsVisibility,
 }: EventVenueStepProps) {
   const isBasic = selectedPackage === 'basic';
+
+  // Primary event location resolution state
+  const [resolvingPrimary, setResolvingPrimary] = useState(false);
+  const [primaryFeedback, setPrimaryFeedback] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'error';
+  } | null>(null);
+  const [showPrimaryAdvanced, setShowPrimaryAdvanced] = useState(false);
+
+  // Sub-event location resolution state
+  const [resolvingSubEvent, setResolvingSubEvent] = useState(false);
+  const [subEventFeedback, setSubEventFeedback] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'error';
+  } | null>(null);
+  const [showSubEventAdvanced, setShowSubEventAdvanced] = useState(false);
+
+  const activeSubEvent = journeyEvents[activeJourneyEventIndex];
+
+  // Resolve primary wedding venue map location automatically
+  const handleAutoResolvePrimary = async () => {
+    if (!googleMapsUrl && !venueNameAr && !addressAr) {
+      setPrimaryFeedback({
+        text: 'يرجى وضع رابط خرائط جوجل أو اسم القاعة أولاً لتوحيد الخريطة',
+        type: 'info',
+      });
+      setTimeout(() => setPrimaryFeedback(null), 4000);
+      return;
+    }
+
+    setResolvingPrimary(true);
+    setPrimaryFeedback(null);
+
+    try {
+      const res = await resolveMapLocationApi({
+        urlOrText: googleMapsUrl,
+        venueName: venueNameAr,
+        address: addressAr,
+      });
+
+      if (res?.success && res.data?.resolved && res.data.latitude && res.data.longitude) {
+        handlePrimaryCoordinatesChange?.(
+          res.data.latitude,
+          res.data.longitude,
+          res.data.openStreetMapUrl
+        );
+
+        if (res.data.googleMapsUrl && res.data.googleMapsUrl !== googleMapsUrl) {
+          handlePrimaryMapUrlChange(res.data.googleMapsUrl);
+        }
+
+        setPrimaryFeedback({
+          text: `تم توحيد الخريطة بنجاح على الإحداثيات (${res.data.formattedCoords || `${res.data.latitude.toFixed(5)}, ${res.data.longitude.toFixed(5)}`})! خريطة OpenStreetMap التفاعلية وزر Google Maps موحدان بنسبة 100% بدون أي تعب 📍`,
+          type: 'success',
+        });
+        setTimeout(() => setPrimaryFeedback(null), 8000);
+      } else {
+        setPrimaryFeedback({
+          text: 'لم نتمكن من التقاط الإحداثيات تلقائياً من الرابط، يمكنك إدخال الإحداثيات مباشرة أو فتح "الإعدادات المتقدمة" لتحديدها بدقة.',
+          type: 'info',
+        });
+        setTimeout(() => setPrimaryFeedback(null), 6000);
+      }
+    } catch (err) {
+      setPrimaryFeedback({
+        text: 'حدث خطأ أثناء فحص الرابط، يمكنك إدخال الإحداثيات أو الرابط يدوياً.',
+        type: 'error',
+      });
+      setTimeout(() => setPrimaryFeedback(null), 5000);
+    } finally {
+      setResolvingPrimary(false);
+    }
+  };
+
+  // Resolve active journey sub-event map location
+  const handleAutoResolveSubEvent = async () => {
+    if (!activeSubEvent) return;
+
+    if (!activeSubEvent.googleMapsUrl && !activeSubEvent.venueNameAr && !activeSubEvent.addressAr) {
+      setSubEventFeedback({
+        text: 'يرجى وضع رابط خرائط جوجل أو اسم المكان لهذه المناسبة أولاً',
+        type: 'info',
+      });
+      setTimeout(() => setSubEventFeedback(null), 4000);
+      return;
+    }
+
+    setResolvingSubEvent(true);
+    setSubEventFeedback(null);
+
+    try {
+      const res = await resolveMapLocationApi({
+        urlOrText: activeSubEvent.googleMapsUrl,
+        venueName: activeSubEvent.venueNameAr,
+        address: activeSubEvent.addressAr,
+      });
+
+      if (res?.success && res.data?.resolved && res.data.latitude && res.data.longitude) {
+        updateJourneyEvent(activeJourneyEventIndex, {
+          latitude: res.data.latitude,
+          longitude: res.data.longitude,
+          openStreetMapUrl: res.data.openStreetMapUrl,
+          ...(res.data.googleMapsUrl ? { googleMapsUrl: res.data.googleMapsUrl } : {}),
+        });
+
+        setSubEventFeedback({
+          text: `تم توحيد موقع (${activeSubEvent.titleAr}) بنجاح! الإحداثيات: (${res.data.formattedCoords}) 📍`,
+          type: 'success',
+        });
+        setTimeout(() => setSubEventFeedback(null), 8000);
+      } else {
+        setSubEventFeedback({
+          text: 'يمكنك وضع رابط مباشر من خرائط جوجل أو كتابة الإحداثيات يدوياً لتوحيد الموقع بدقة.',
+          type: 'info',
+        });
+        setTimeout(() => setSubEventFeedback(null), 6000);
+      }
+    } catch (err) {
+      setSubEventFeedback({
+        text: 'تعذر توحيد الرابط تلقائياً، يرجى التحقق من الرابط والمحاولة مجدداً.',
+        type: 'error',
+      });
+      setTimeout(() => setSubEventFeedback(null), 5000);
+    } finally {
+      setResolvingSubEvent(false);
+    }
+  };
 
   return (
     <section className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-7 space-y-6 shadow-2xs text-right">
@@ -61,7 +213,7 @@ export function EventVenueStep({
       </div>
 
       {/* Primary Wedding Details */}
-      <div className="p-4 rounded-2xl bg-stone-50/80 border border-stone-200 space-y-4">
+      <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/80 border border-stone-200 space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
             <span>👑 موعد وقاعة حفل الزفاف الرئيسي: *</span>
@@ -156,61 +308,175 @@ export function EventVenueStep({
             )}
           </div>
 
+          {/* Unified Map Input & Instant Resolver */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-stone-700 block">
-              رابط خرائط جوجل (Google Maps Link):
-            </label>
-            <input
-              type="url"
-              value={googleMapsUrl}
-              onChange={(e) => handlePrimaryMapUrlChange(e.target.value)}
-              placeholder="https://maps.google.com/?q=... أو رابط مشاركة خرائط جوجل"
-              className={`w-full px-4 py-2.5 rounded-xl border text-xs text-left dir-ltr font-mono bg-white transition-all ${
-                validateMapUrl(googleMapsUrl).status === 'invalid'
-                  ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
-                  : 'border-stone-200'
-              }`}
-            />
-            {(() => {
-              const mapCheck = validateMapUrl(googleMapsUrl);
-              if (mapCheck.status === 'valid_google') {
-                return (
-                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>{mapCheck.message}</span>
+            <div className="flex items-center justify-between gap-1">
+              <label className="text-xs font-bold text-stone-700 block">
+                رابط خريطة Google Maps أو الإحداثيات:
+              </label>
+              <button
+                type="button"
+                onClick={handleAutoResolvePrimary}
+                disabled={resolvingPrimary}
+                className="text-[11px] font-bold text-[#720925] hover:text-rose-800 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                title="فك الرابط وتوحيد موقع OpenStreetMap مع Google Maps تلقائياً"
+              >
+                {resolvingPrimary ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>جاري التوحيد...</span>
+                  </>
+                ) : (
+                  <>
+                    <Compass className="w-3.5 h-3.5 text-amber-600" />
+                    <span>توحيد وضبط الخريطة 📍</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="url"
+                value={googleMapsUrl}
+                onChange={(e) => handlePrimaryMapUrlChange(e.target.value)}
+                onBlur={() => {
+                  if (googleMapsUrl.trim().length > 10 && !primaryLatitude) {
+                    handleAutoResolvePrimary();
+                  }
+                }}
+                placeholder="https://maps.google.com/?q=... أو رابط مشاركة خرائط جوجل أو الإحداثيات"
+                className={`w-full px-4 py-2.5 rounded-xl border text-xs text-left dir-ltr font-mono bg-white transition-all ${
+                  validateMapUrl(googleMapsUrl).status === 'invalid'
+                    ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
+                    : 'border-stone-200'
+                }`}
+              />
+            </div>
+
+            {/* Resolution feedback notification */}
+            {primaryFeedback && (
+              <div
+                className={`flex items-start gap-1.5 text-[11px] p-2.5 rounded-xl font-bold leading-relaxed animate-fade-in ${
+                  primaryFeedback.type === 'success'
+                    ? 'text-emerald-800 bg-emerald-50 border border-emerald-200'
+                    : primaryFeedback.type === 'error'
+                    ? 'text-rose-800 bg-rose-50 border border-rose-200'
+                    : 'text-amber-800 bg-amber-50 border border-amber-200'
+                }`}
+              >
+                {primaryFeedback.type === 'success' ? (
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                )}
+                <span>{primaryFeedback.text}</span>
+              </div>
+            )}
+
+            {/* Smart Unified Map Status Badge */}
+            {primaryLatitude && primaryLongitude ? (
+              <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] text-emerald-800 bg-emerald-50/90 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    الخريطة موحدة 100% بين OpenStreetMap و Google Maps ({primaryLatitude.toFixed(4)},{' '}
+                    {primaryLongitude.toFixed(4)})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPrimaryAdvanced((prev) => !prev)}
+                  className="text-[10px] text-emerald-700 underline hover:text-emerald-900 cursor-pointer"
+                >
+                  {showPrimaryAdvanced ? 'إخفاء الإعدادات المتقدمة' : 'الإعدادات المتقدمة ⚙️'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-[10px] text-stone-500 mt-1">
+                <span>
+                  💡 يمكنك وضع رابط مشاركة جوجل مابس، وسيقوم النظام بتوحيد نقطة الخريطة المفتوحة (OpenStreetMap) تلقائياً بدون تعب.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPrimaryAdvanced((prev) => !prev)}
+                  className="text-stone-600 hover:text-stone-900 flex items-center gap-1 shrink-0 font-bold cursor-pointer"
+                >
+                  <Settings2 className="w-3 h-3" />
+                  <span>{showPrimaryAdvanced ? 'إخفاء' : 'إعدادات متقدمة'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Advanced Map Settings (Manual Coordinates & OpenStreetMap Link) */}
+            {showPrimaryAdvanced && (
+              <div className="mt-3 p-3.5 rounded-2xl bg-white border border-stone-300/80 shadow-xs space-y-3 animate-fade-in text-right">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-stone-800 flex items-center gap-1">
+                    <Compass className="w-3.5 h-3.5 text-amber-600" />
+                    <span>إعدادات الإحداثيات والخرائط المفتوحة (OpenStreetMap):</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                    اختياري ودقيق
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-mono" dir="ltr">
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-600 block text-right font-cairo">
+                      خط العرض (Latitude):
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={primaryLatitude ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : null;
+                        handlePrimaryCoordinatesChange?.(val, primaryLongitude ?? null);
+                      }}
+                      placeholder="30.0571"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs bg-stone-50/50"
+                    />
                   </div>
-                );
-              }
-              if (mapCheck.status === 'valid_coords') {
-                return (
-                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>{mapCheck.message}</span>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-600 block text-right font-cairo">
+                      خط الطول (Longitude):
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={primaryLongitude ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : null;
+                        handlePrimaryCoordinatesChange?.(primaryLatitude ?? null, val);
+                      }}
+                      placeholder="31.2250"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs bg-stone-50/50"
+                    />
                   </div>
-                );
-              }
-              if (mapCheck.status === 'valid_url') {
-                return (
-                  <div className="flex items-center gap-1.5 text-[11px] text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <span>{mapCheck.message}</span>
-                  </div>
-                );
-              }
-              if (mapCheck.status === 'invalid') {
-                return (
-                  <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl mt-1.5 font-bold">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>{mapCheck.message}</span>
-                  </div>
-                );
-              }
-              return (
-                <p className="text-[10px] text-stone-400 mt-1">
-                  💡 يمكنك وضع رابط خرائط جوجل أو الإحداثيات مباشرة لفتح اتجاهات الملاحة بدقة لضيوفك.
-                </p>
-              );
-            })()}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-600 block">
+                    رابط الخريطة المفتوحة المباشر (OpenStreetMap URL):
+                  </label>
+                  <input
+                    type="url"
+                    value={primaryOpenStreetMapUrl || ''}
+                    onChange={(e) =>
+                      handlePrimaryCoordinatesChange?.(
+                        primaryLatitude ?? null,
+                        primaryLongitude ?? null,
+                        e.target.value
+                      )
+                    }
+                    placeholder="https://www.openstreetmap.org/?mlat=...#map=..."
+                    className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs text-left dir-ltr font-mono bg-stone-50/50"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -225,7 +491,7 @@ export function EventVenueStep({
                 <span>جدول ومواعيد باقي مناسبات رحلة الفرح (تظهر في تبويبات الدعوة):</span>
               </h4>
               <p className="text-[11px] text-stone-500 mt-0.5">
-                يمكنك تفعيل أو تعديل مواعيد وقاعات كل مناسبة من مناسباتكم بشكل منفصل:
+                يمكنك تفعيل أو تعديل مواعيد وقاعات كل مناسبة من مناسباتكم وتوحيد خرائطها بشكل منفصل:
               </p>
             </div>
           </div>
@@ -247,7 +513,11 @@ export function EventVenueStep({
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-xs">{jev.titleAr}</span>
-                  <span className={`w-2 h-2 rounded-full ${jev.enabled ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      jev.enabled ? 'bg-emerald-500' : 'bg-stone-300'
+                    }`}
+                  />
                 </div>
                 <span className="text-[10px] text-stone-500 font-mono" dir="ltr">
                   {jev.time}
@@ -257,50 +527,54 @@ export function EventVenueStep({
           </div>
 
           {/* Active Sub-Event Editor Card */}
-          {journeyEvents[activeJourneyEventIndex] && (
+          {activeSubEvent && (
             <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-base">📅</span>
                   <span className="text-xs font-black text-amber-950">
-                    تعديل تفاصيل: {journeyEvents[activeJourneyEventIndex].titleAr}
+                    تعديل تفاصيل: {activeSubEvent.titleAr}
                   </span>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer bg-white/80 px-3 py-1.5 rounded-xl border border-amber-200">
                   <input
                     type="checkbox"
-                    checked={journeyEvents[activeJourneyEventIndex].enabled}
-                    onChange={(e) => handleToggleEventEnabled(activeJourneyEventIndex, e.target.checked)}
+                    checked={activeSubEvent.enabled}
+                    onChange={(e) =>
+                      handleToggleEventEnabled(activeJourneyEventIndex, e.target.checked)
+                    }
                     className="w-4 h-4 rounded text-[#720925] focus:ring-[#720925]"
                   />
                   <span className="text-xs font-bold text-amber-900">تضمين في الدعوة</span>
                 </label>
               </div>
 
-              {journeyEvents[activeJourneyEventIndex].enabled ? (
+              {activeSubEvent.enabled ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                   {/* Venue Name */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
                       <span>اسم المكان / القاعة: <span className="text-rose-600">*</span></span>
-                      {!journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && (
+                      {!activeSubEvent.venueNameAr.trim() && (
                         <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
                       )}
                     </label>
                     <input
                       type="text"
-                      value={journeyEvents[activeJourneyEventIndex].venueNameAr}
+                      value={activeSubEvent.venueNameAr}
                       onChange={(e) =>
-                        updateJourneyEvent(activeJourneyEventIndex, { venueNameAr: e.target.value })
+                        updateJourneyEvent(activeJourneyEventIndex, {
+                          venueNameAr: e.target.value,
+                        })
                       }
                       placeholder="مثال: قاعة الحفل الملكية"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white transition-all ${
-                        !journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && designValidationError
+                        !activeSubEvent.venueNameAr.trim() && designValidationError
                           ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
                           : 'border-stone-200'
                       }`}
                     />
-                    {!journeyEvents[activeJourneyEventIndex].venueNameAr.trim() && designValidationError && (
+                    {!activeSubEvent.venueNameAr.trim() && designValidationError && (
                       <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0" />
                         <span>يرجى كتابة اسم المكان أو القاعة لهذه المناسبة</span>
@@ -312,38 +586,36 @@ export function EventVenueStep({
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
                       <span>تاريخ المناسبة: <span className="text-rose-600">*</span></span>
-                      {!journeyEvents[activeJourneyEventIndex].date && (
+                      {!activeSubEvent.date && (
                         <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
                       )}
                     </label>
                     <input
                       type="date"
                       value={
-                        journeyEvents[activeJourneyEventIndex].date
-                          ? journeyEvents[activeJourneyEventIndex].date.slice(0, 10)
-                          : ''
+                        activeSubEvent.date ? activeSubEvent.date.slice(0, 10) : ''
                       }
                       onChange={(e) => {
                         const val = e.target.value;
-                        const prevTime = journeyEvents[activeJourneyEventIndex].date?.includes('T')
-                          ? journeyEvents[activeJourneyEventIndex].date.split('T')[1]
+                        const prevTime = activeSubEvent.date?.includes('T')
+                          ? activeSubEvent.date.split('T')[1]
                           : '19:00';
                         updateJourneyEvent(activeJourneyEventIndex, {
                           date: val ? `${val}T${prevTime}` : '',
                         });
                       }}
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left font-mono dir-ltr transition-all ${
-                        !journeyEvents[activeJourneyEventIndex].date && designValidationError
+                        !activeSubEvent.date && designValidationError
                           ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
                           : 'border-stone-200'
                       }`}
                     />
-                    {!journeyEvents[activeJourneyEventIndex].date && designValidationError ? (
+                    {!activeSubEvent.date && designValidationError ? (
                       <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0" />
                         <span>يرجى تحديد تاريخ المناسبة</span>
                       </p>
-                    ) : isDateInPast(journeyEvents[activeJourneyEventIndex].date) ? (
+                    ) : isDateInPast(activeSubEvent.date) ? (
                       <p className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3 shrink-0 text-amber-600" />
                         <span>تنبيه: التاريخ المحدد قد مضى، يرجى مراجعة السنة</span>
@@ -351,69 +623,28 @@ export function EventVenueStep({
                     ) : null}
                   </div>
 
-                  {/* Time with Quick Presets */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between flex-wrap gap-1">
-                      <label className="text-[11px] font-bold text-stone-700 block">
-                        التوقيت والساعة: <span className="text-rose-600">*</span>
-                      </label>
-                      <div className="flex items-center gap-1">
-                        {['06:00 م', '07:00 م', '08:00 م', '09:00 م', '10:00 م'].map((preset) => (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => updateJourneyEvent(activeJourneyEventIndex, { time: preset })}
-                            className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-100/80 hover:bg-amber-200 text-amber-900 font-mono transition-colors cursor-pointer"
-                            title={`تحديد ${preset}`}
-                          >
-                            {preset}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <input
-                      type="text"
-                      value={journeyEvents[activeJourneyEventIndex].time}
-                      onChange={(e) =>
-                        updateJourneyEvent(activeJourneyEventIndex, { time: e.target.value })
-                      }
-                      placeholder="08:00 م"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left dir-ltr transition-all ${
-                        !journeyEvents[activeJourneyEventIndex].time.trim() && designValidationError
-                          ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
-                          : 'border-stone-200'
-                      }`}
-                    />
-                    {!journeyEvents[activeJourneyEventIndex].time.trim() && designValidationError && (
-                      <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        <span>يرجى كتابة التوقيت والساعة</span>
-                      </p>
-                    )}
-                  </div>
-
                   {/* Address */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
                       <span>العنوان أو الحي: <span className="text-rose-600">*</span></span>
-                      {!journeyEvents[activeJourneyEventIndex].addressAr.trim() && (
+                      {!activeSubEvent.addressAr.trim() && (
                         <span className="text-[10px] text-rose-600 font-bold">مطلوب</span>
                       )}
                     </label>
                     <input
                       type="text"
-                      value={journeyEvents[activeJourneyEventIndex].addressAr}
+                      value={activeSubEvent.addressAr}
                       onChange={(e) =>
                         updateJourneyEvent(activeJourneyEventIndex, { addressAr: e.target.value })
                       }
                       placeholder="مثال: فندق فورسيزونز نايل بلازا، القاهرة"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white transition-all ${
-                        !journeyEvents[activeJourneyEventIndex].addressAr.trim() && designValidationError
+                        !activeSubEvent.addressAr.trim() && designValidationError
                           ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
                           : 'border-stone-200'
                       }`}
                     />
-                    {!journeyEvents[activeJourneyEventIndex].addressAr.trim() && designValidationError && (
+                    {!activeSubEvent.addressAr.trim() && designValidationError && (
                       <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0" />
                         <span>يرجى إدخال العنوان أو الحي لتسهيل وصول الضيوف</span>
@@ -421,64 +652,97 @@ export function EventVenueStep({
                     )}
                   </div>
 
-                  {/* Google Maps URL with Smart Validation Feedback */}
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-[11px] font-bold text-stone-700 block">
-                      رابط خريطة Google Maps (اختياري):
-                    </label>
+                  {/* Sub-event Map URL & Auto-Resolver */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <label className="text-[11px] font-bold text-stone-700 block">
+                        رابط خريطة Google Maps (لهذه المناسبة):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAutoResolveSubEvent}
+                        disabled={resolvingSubEvent}
+                        className="text-[10px] font-bold text-amber-900 hover:text-amber-950 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                        title="توحيد موقع هذه المناسبة تلقائياً"
+                      >
+                        {resolvingSubEvent ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>جاري التوحيد...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Compass className="w-3 h-3 text-amber-700" />
+                            <span>توحيد الخريطة 📍</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     <input
                       type="url"
-                      value={journeyEvents[activeJourneyEventIndex].googleMapsUrl || ''}
+                      value={activeSubEvent.googleMapsUrl || ''}
                       onChange={(e) =>
-                        updateJourneyEvent(activeJourneyEventIndex, { googleMapsUrl: e.target.value })
+                        updateJourneyEvent(activeJourneyEventIndex, {
+                          googleMapsUrl: e.target.value,
+                        })
                       }
                       placeholder="https://maps.google.com/?q=... أو رابط مشاركة خرائط جوجل"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white text-left font-mono dir-ltr transition-all ${
-                        validateMapUrl(journeyEvents[activeJourneyEventIndex].googleMapsUrl).status === 'invalid'
-                          ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50/20'
-                          : 'border-stone-200'
-                      }`}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs bg-white text-left font-mono dir-ltr transition-all"
                     />
-                    {(() => {
-                      const mapCheck = validateMapUrl(journeyEvents[activeJourneyEventIndex].googleMapsUrl);
-                      if (mapCheck.status === 'valid_google') {
-                        return (
-                          <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
-                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>{mapCheck.message}</span>
-                          </div>
-                        );
-                      }
-                      if (mapCheck.status === 'valid_coords') {
-                        return (
-                          <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
-                            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>{mapCheck.message}</span>
-                          </div>
-                        );
-                      }
-                      if (mapCheck.status === 'valid_url') {
-                        return (
-                          <div className="flex items-center gap-1.5 text-[10px] text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
-                            <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span>{mapCheck.message}</span>
-                          </div>
-                        );
-                      }
-                      if (mapCheck.status === 'invalid') {
-                        return (
-                          <div className="flex items-center gap-1.5 text-[10px] text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-1.5 rounded-lg mt-1 font-bold">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                            <span>{mapCheck.message}</span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <p className="text-[10px] text-stone-500 mt-1">
-                          💡 {mapCheck.message}
-                        </p>
-                      );
-                    })()}
+
+                    {subEventFeedback && (
+                      <div className="text-[10px] p-2 rounded-lg font-bold bg-amber-100 text-amber-950 border border-amber-300">
+                        {subEventFeedback.text}
+                      </div>
+                    )}
+
+                    {activeSubEvent.latitude && activeSubEvent.longitude && (
+                      <div className="flex items-center justify-between text-[10px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded-md font-bold mt-1">
+                        <span>
+                          موحد على النقطة: ({activeSubEvent.latitude.toFixed(4)},{' '}
+                          {activeSubEvent.longitude.toFixed(4)})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowSubEventAdvanced((prev) => !prev)}
+                          className="text-emerald-700 underline cursor-pointer"
+                        >
+                          {showSubEventAdvanced ? 'إخفاء' : 'إعدادات متقدمة'}
+                        </button>
+                      </div>
+                    )}
+
+                    {showSubEventAdvanced && (
+                      <div className="mt-2 p-2.5 rounded-xl bg-white border border-amber-200 space-y-2 text-right">
+                        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono" dir="ltr">
+                          <input
+                            type="number"
+                            step="any"
+                            value={activeSubEvent.latitude ?? ''}
+                            onChange={(e) =>
+                              updateJourneyEvent(activeJourneyEventIndex, {
+                                latitude: e.target.value ? parseFloat(e.target.value) : null,
+                              })
+                            }
+                            placeholder="Lat"
+                            className="px-2 py-1 rounded border border-stone-200 text-xs"
+                          />
+                          <input
+                            type="number"
+                            step="any"
+                            value={activeSubEvent.longitude ?? ''}
+                            onChange={(e) =>
+                              updateJourneyEvent(activeJourneyEventIndex, {
+                                longitude: e.target.value ? parseFloat(e.target.value) : null,
+                              })
+                            }
+                            placeholder="Lng"
+                            className="px-2 py-1 rounded border border-stone-200 text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

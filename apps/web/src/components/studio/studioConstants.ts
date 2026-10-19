@@ -155,6 +155,9 @@ export interface JourneyEvent {
   venueNameAr: string;
   addressAr: string;
   googleMapsUrl: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  openStreetMapUrl?: string | null;
   enabled: boolean;
   dressCodeAr?: string;
   isHennaFemaleOnly?: boolean;

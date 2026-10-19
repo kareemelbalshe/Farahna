@@ -181,6 +181,9 @@ function StudioContent() {
   const [venueNameAr, setVenueNameAr] = useState('');
   const [addressAr, setAddressAr] = useState('');
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
+  const [primaryLatitude, setPrimaryLatitude] = useState<number | null>(null);
+  const [primaryLongitude, setPrimaryLongitude] = useState<number | null>(null);
+  const [primaryOpenStreetMapUrl, setPrimaryOpenStreetMapUrl] = useState<string | null>(null);
   const [isMultiEvent, setIsMultiEvent] = useState(true);
 
   // Media & Social Link Preview
@@ -815,6 +818,30 @@ function StudioContent() {
     setDesignValidationError(null);
   };
 
+  const handlePrimaryCoordinatesChange = (
+    lat: number | null,
+    lng: number | null,
+    osmUrl?: string | null
+  ) => {
+    setPrimaryLatitude(lat);
+    setPrimaryLongitude(lng);
+    if (osmUrl !== undefined) {
+      setPrimaryOpenStreetMapUrl(osmUrl);
+    }
+    setJourneyEvents((prev) =>
+      prev.map((ev) =>
+        ev.type === 'wedding' || ev.id === 'evt-wedding'
+          ? {
+              ...ev,
+              latitude: lat,
+              longitude: lng,
+              openStreetMapUrl: osmUrl !== undefined ? osmUrl : ev.openStreetMapUrl,
+            }
+          : ev
+      )
+    );
+  };
+
   const handlePrimaryDateChange = (val: string) => {
     setEventDate(val);
     setJourneyEvents((prev) =>
@@ -1035,25 +1062,34 @@ function StudioContent() {
                     venueNameAr: venueNameAr || 'قاعة الحفل الملكية',
                     addressAr: addressAr || '',
                     googleMapsUrl: googleMapsUrl || '',
+                    latitude: primaryLatitude,
+                    longitude: primaryLongitude,
+                    openStreetMapUrl: primaryOpenStreetMapUrl,
                     isVisible: true,
                   },
                 ]
               : journeyEvents
                   .filter((ev) => ev.enabled)
-                  .map((ev) => ({
-                    type: ev.type,
-                    titleAr: ev.titleAr,
-                    date: ev.type === 'wedding' ? eventDate : ev.date,
-                    startTime: ev.time,
-                    venueNameAr:
-                      ev.type === 'wedding' ? venueNameAr || ev.venueNameAr : ev.venueNameAr,
-                    addressAr: ev.type === 'wedding' ? addressAr || ev.addressAr : ev.addressAr,
-                    googleMapsUrl:
-                      ev.type === 'wedding' ? googleMapsUrl || ev.googleMapsUrl : ev.googleMapsUrl,
-                    isVisible: true,
-                    dressCodeAr: ev.dressCodeAr,
-                    isHennaFemaleOnly: ev.isHennaFemaleOnly,
-                  })),
+                  .map((ev) => {
+                    const isWedding = ev.type === 'wedding' || ev.id === 'evt-wedding';
+                    return {
+                      type: ev.type,
+                      titleAr: ev.titleAr,
+                      date: isWedding ? eventDate : ev.date,
+                      startTime: ev.time,
+                      venueNameAr:
+                        isWedding ? venueNameAr || ev.venueNameAr : ev.venueNameAr,
+                      addressAr: isWedding ? addressAr || ev.addressAr : ev.addressAr,
+                      googleMapsUrl:
+                        isWedding ? googleMapsUrl || ev.googleMapsUrl : ev.googleMapsUrl,
+                      latitude: isWedding ? (primaryLatitude ?? ev.latitude) : ev.latitude,
+                      longitude: isWedding ? (primaryLongitude ?? ev.longitude) : ev.longitude,
+                      openStreetMapUrl: isWedding ? (primaryOpenStreetMapUrl ?? ev.openStreetMapUrl) : ev.openStreetMapUrl,
+                      isVisible: true,
+                      dressCodeAr: ev.dressCodeAr,
+                      isHennaFemaleOnly: ev.isHennaFemaleOnly,
+                    };
+                  }),
         },
       });
 
@@ -1319,9 +1355,9 @@ function StudioContent() {
       const city = !extracted
         ? resolveCityCoordinates(`${venueNameAr} ${addressAr}`)
         : null;
-      const lat = extracted?.latitude ?? city?.latitude ?? null;
-      const lng = extracted?.longitude ?? city?.longitude ?? null;
-      const osmUrl = lat && lng ? getOpenStreetMapUrl(lat, lng) : null;
+      const lat = primaryLatitude ?? extracted?.latitude ?? city?.latitude ?? null;
+      const lng = primaryLongitude ?? extracted?.longitude ?? city?.longitude ?? null;
+      const osmUrl = primaryOpenStreetMapUrl || (lat && lng ? getOpenStreetMapUrl(lat, lng) : null);
 
       return [
         {
@@ -1344,26 +1380,36 @@ function StudioContent() {
     return journeyEvents
       .filter((ev) => ev.enabled)
       .map((ev) => {
+        const isWedding = ev.type === 'wedding' || ev.id === 'evt-wedding';
         const evVenue =
-          ev.type === 'wedding' ? (venueNameAr || ev.venueNameAr) : ev.venueNameAr;
+          isWedding ? (venueNameAr || ev.venueNameAr) : ev.venueNameAr;
         const evAddr =
-          ev.type === 'wedding' ? (addressAr || ev.addressAr) : ev.addressAr;
+          isWedding ? (addressAr || ev.addressAr) : ev.addressAr;
         const evMapUrl =
-          ev.type === 'wedding' ? (googleMapsUrl || ev.googleMapsUrl) : ev.googleMapsUrl;
+          isWedding ? (googleMapsUrl || ev.googleMapsUrl) : ev.googleMapsUrl;
         const evExtracted = evMapUrl ? extractCoordinatesFromUrl(evMapUrl) : null;
         const evCity = !evExtracted
           ? resolveCityCoordinates(`${evVenue} ${evAddr}`)
           : null;
-        const evLat = evExtracted?.latitude ?? evCity?.latitude ?? null;
-        const evLng = evExtracted?.longitude ?? evCity?.longitude ?? null;
+        const evLat =
+          (isWedding ? primaryLatitude : ev.latitude) ??
+          evExtracted?.latitude ??
+          evCity?.latitude ??
+          null;
+        const evLng =
+          (isWedding ? primaryLongitude : ev.longitude) ??
+          evExtracted?.longitude ??
+          evCity?.longitude ??
+          null;
         const evOsmUrl =
-          evLat && evLng ? getOpenStreetMapUrl(evLat, evLng) : null;
+          (isWedding ? primaryOpenStreetMapUrl : ev.openStreetMapUrl) ||
+          (evLat && evLng ? getOpenStreetMapUrl(evLat, evLng) : null);
 
         return {
           id: ev.id,
           type: ev.type,
           titleAr: ev.titleAr,
-          date: ev.type === 'wedding' ? eventDate : ev.date,
+          date: isWedding ? eventDate : ev.date,
           startTime: ev.time,
           venueNameAr: evVenue,
           addressAr: evAddr,
@@ -1386,6 +1432,9 @@ function StudioContent() {
     googleMapsUrl,
     sectionsVisibility,
     journeyEvents,
+    primaryLatitude,
+    primaryLongitude,
+    primaryOpenStreetMapUrl,
   ]);
 
   const primaryFontName = selectedFont.split(',')[0].replace(/['"]/g, '').trim();
@@ -1609,10 +1658,14 @@ function StudioContent() {
                   venueNameAr={venueNameAr}
                   addressAr={addressAr}
                   googleMapsUrl={googleMapsUrl}
+                  primaryLatitude={primaryLatitude}
+                  primaryLongitude={primaryLongitude}
+                  primaryOpenStreetMapUrl={primaryOpenStreetMapUrl}
                   handlePrimaryDateChange={handlePrimaryDateChange}
                   handlePrimaryVenueChange={handlePrimaryVenueChange}
                   handlePrimaryAddressChange={handlePrimaryAddressChange}
                   handlePrimaryMapUrlChange={handlePrimaryMapUrlChange}
+                  handlePrimaryCoordinatesChange={handlePrimaryCoordinatesChange}
                   designValidationError={designValidationError}
                   selectedPackage={selectedPackage}
                   journeyEvents={journeyEvents}
@@ -1699,6 +1752,7 @@ function StudioContent() {
                   whatsappContactPhone={whatsappContactPhone}
                   setWhatsappContactPhone={setWhatsappContactPhone}
                   customerPhone={customerPhone}
+                  selectedPackage={selectedPackage}
                 />
 
                 <WhatsAppContactStep

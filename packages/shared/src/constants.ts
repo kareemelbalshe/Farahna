@@ -501,5 +501,6 @@ export const FARAHNA_SOCIAL_LINKS = {
   facebook: 'https://www.facebook.com/profile.php?id=61595083454281',
   instagram: 'https://www.instagram.com/farahna.10/',
   instagramHandle: '@farahna.10',
+  googlePlay: 'https://play.google.com/store/apps/details?id=com.farahna.app',
 };
 

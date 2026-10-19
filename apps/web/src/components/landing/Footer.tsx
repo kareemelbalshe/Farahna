@@ -135,7 +135,7 @@ export function Footer({
                 </span>
               </a>
 
-              <div className="pt-2 flex items-center gap-2.5">
+              <div className="pt-2 flex flex-wrap items-center gap-2">
                 <a
                   href={FARAHNA_SOCIAL_LINKS.facebook}
                   target="_blank"
@@ -156,6 +156,17 @@ export function Footer({
                   <Instagram className="w-3.5 h-3.5" />
                   <span className="font-sans">{FARAHNA_SOCIAL_LINKS.instagramHandle}</span>
                 </a>
+                {FARAHNA_SOCIAL_LINKS.googlePlay && (
+                  <a
+                    href={FARAHNA_SOCIAL_LINKS.googlePlay}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-emerald-950 text-emerald-400 hover:text-emerald-300 transition-all text-xs font-bold border border-stone-800 hover:border-emerald-600/50"
+                    title="تحميل تطبيق فرحنا على Google Play"
+                  >
+                    <span>تطبيق Google Play</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>

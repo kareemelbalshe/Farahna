@@ -320,7 +320,7 @@ export function extractCoordinatesFromUrl(urlOrText: string): Coordinates | null
     }
   }
 
-  // 5. Pattern: Google Maps Embed / Protobuf parameters (!3d = lat, !2d/!4d = lng)
+  // 5. Pattern: Google Maps Embed / Protobuf parameters (!3d = lat, !2d/!4d = lng or !1d/!2d)
   const d3Match = clean.match(/!3d([+-]?\d{1,2}(?:\.\d+)?)/);
   const d2Match = clean.match(/![24]d([+-]?\d{1,3}(?:\.\d+)?)/);
   if (d3Match && d2Match) {
@@ -331,7 +331,87 @@ export function extractCoordinatesFromUrl(urlOrText: string): Coordinates | null
     }
   }
 
+  // 6. Pattern: OpenStreetMap mlat & mlon or lat & lon / lat & lng
+  const osmMlatMatch = clean.match(/[?&](?:mlat|lat)=([+-]?\d{1,2}(?:\.\d+)?)(?:.*?[?&](?:mlon|lon|lng)=([+-]?\d{1,3}(?:\.\d+)?))/i);
+  if (osmMlatMatch) {
+    const lat = parseFloat(osmMlatMatch[1]);
+    const lng = parseFloat(osmMlatMatch[2]);
+    if (isValidCoordinates(lat, lng)) {
+      return { latitude: lat, longitude: lng };
+    }
+  }
+  const osmMlonFirstMatch = clean.match(/[?&](?:mlon|lon|lng)=([+-]?\d{1,3}(?:\.\d+)?)(?:.*?[?&](?:mlat|lat)=([+-]?\d{1,2}(?:\.\d+)?))/i);
+  if (osmMlonFirstMatch) {
+    const lng = parseFloat(osmMlonFirstMatch[1]);
+    const lat = parseFloat(osmMlonFirstMatch[2]);
+    if (isValidCoordinates(lat, lng)) {
+      return { latitude: lat, longitude: lng };
+    }
+  }
+
+  // 7. Pattern: OpenStreetMap hash format (#map=zoom/lat/lng)
+  const osmHashMapMatch = clean.match(/#map=\d+\/([+-]?\d{1,2}(?:\.\d+)?)\/([+-]?\d{1,3}(?:\.\d+)?)/i);
+  if (osmHashMapMatch) {
+    const lat = parseFloat(osmHashMapMatch[1]);
+    const lng = parseFloat(osmHashMapMatch[2]);
+    if (isValidCoordinates(lat, lng)) {
+      return { latitude: lat, longitude: lng };
+    }
+  }
+
+  // 8. Pattern: Static map / markers (e.g. markers=color:red|30.0444,31.2357 or center=30.0444,31.2357)
+  const markerMatch = clean.match(/(?:markers=[^&]*?|center=)([+-]?\d{1,2}(?:\.\d+)?)[,%7C|]+([+-]?\d{1,3}(?:\.\d+)?)/i);
+  if (markerMatch) {
+    const lat = parseFloat(markerMatch[1]);
+    const lng = parseFloat(markerMatch[2]);
+    if (isValidCoordinates(lat, lng)) {
+      return { latitude: lat, longitude: lng };
+    }
+  }
+
   return null;
+}
+
+/**
+ * Checks if a URL is a Google Maps shortened sharing URL that requires redirect resolution.
+ */
+export function isGoogleMapsShortUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.trim().toLowerCase();
+  return (
+    lower.includes('maps.app.goo.gl') ||
+    lower.includes('goo.gl/maps') ||
+    lower.includes('app.goo.gl')
+  );
+}
+
+/**
+ * Formats coordinates into standard comma-separated string (e.g. "30.0571, 31.2250")
+ */
+export function formatCoordinates(coords: Coordinates, precision: number = 5): string {
+  return `${coords.latitude.toFixed(precision)}, ${coords.longitude.toFixed(precision)}`;
+}
+
+/**
+ * Generates unified navigation and map view links across Google Maps, OpenStreetMap and Apple Maps.
+ */
+export function buildUnifiedMapLinks(options: {
+  latitude: number;
+  longitude: number;
+  venueName?: string;
+  address?: string;
+}): {
+  googleMapsDirectionsUrl: string;
+  openStreetMapUrl: string;
+  appleMapsUrl: string;
+} {
+  const { latitude, longitude, venueName = '', address = '' } = options;
+  const label = [venueName, address].filter(Boolean).join(' - ') || 'قاعة الحفل';
+  return {
+    googleMapsDirectionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
+    openStreetMapUrl: getOpenStreetMapUrl(latitude, longitude),
+    appleMapsUrl: `https://maps.apple.com/?ll=${latitude},${longitude}&q=${encodeURIComponent(label)}`,
+  };
 }
 
 /**

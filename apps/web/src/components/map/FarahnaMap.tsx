@@ -17,8 +17,9 @@ import {
   getOpenStreetMapUrl,
   extractCoordinatesFromUrl,
   resolveCityCoordinates,
+  isGoogleMapsShortUrl,
 } from '@farahna/shared';
-import { recordPublicAnalytics } from '@/lib/api';
+import { recordPublicAnalytics, resolveMapLocationApi } from '@/lib/api';
 
 // Dynamically import Leaflet view without SSR
 const LeafletMapView = dynamic(() => import('./LeafletMapView'), {
@@ -71,8 +72,12 @@ export function FarahnaMap({
   // 1. Direct coordinates from props
   const directValid = isValidCoordinates(latitude, longitude);
 
-  // 2. Extracted coordinates from Google Maps URL
-  const urlCoords = !directValid && googleMapsUrl ? extractCoordinatesFromUrl(googleMapsUrl) : null;
+  // 2. Extracted coordinates from Google Maps URL or OpenStreetMap URL
+  const urlCoords =
+    !directValid
+      ? (googleMapsUrl ? extractCoordinatesFromUrl(googleMapsUrl) : null) ||
+        (openStreetMapUrl ? extractCoordinatesFromUrl(openStreetMapUrl) : null)
+      : null;
 
   // 3. Fast city / venue name database resolution
   const cityCoords = !directValid && !urlCoords ? resolveCityCoordinates(`${venueName} ${address}`) : null;
@@ -100,10 +105,34 @@ export function FarahnaMap({
       }
     }
 
+    if (openStreetMapUrl) {
+      const fromOsm = extractCoordinatesFromUrl(openStreetMapUrl);
+      if (fromOsm) {
+        setResolvedCoords({ lat: fromOsm.latitude, lng: fromOsm.longitude });
+        return;
+      }
+    }
+
     const fromCity = resolveCityCoordinates(`${venueName} ${address}`);
     if (fromCity) {
       setResolvedCoords({ lat: fromCity.latitude, lng: fromCity.longitude });
       return;
+    }
+
+    // Call unified map resolver API to expand shortlinks (maps.app.goo.gl) or resolve location
+    let isCancelled = false;
+    const targetUrl = googleMapsUrl || openStreetMapUrl;
+    if (targetUrl && (isGoogleMapsShortUrl(targetUrl) || targetUrl.includes('goo.gl') || targetUrl.includes('maps.app'))) {
+      resolveMapLocationApi({ urlOrText: targetUrl, venueName, address })
+        .then((res) => {
+          if (!isCancelled && res?.success && res.data?.resolved && res.data.latitude && res.data.longitude) {
+            setResolvedCoords({ lat: res.data.latitude, lng: res.data.longitude });
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isCancelled = true;
+      };
     }
 
     // Try OpenStreetMap Nominatim geocoder asynchronously if still unresolved
@@ -131,7 +160,7 @@ export function FarahnaMap({
 
       return () => controller.abort();
     }
-  }, [latitude, longitude, googleMapsUrl, venueName, address, directValid]);
+  }, [latitude, longitude, googleMapsUrl, openStreetMapUrl, venueName, address, directValid]);
 
   const effectiveLat = resolvedCoords?.lat ?? (directValid ? latitude! : null);
   const effectiveLng = resolvedCoords?.lng ?? (directValid ? longitude! : null);

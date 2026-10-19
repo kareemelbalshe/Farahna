@@ -11,6 +11,7 @@ import {
 } from '@farahna/shared';
 import { storageService } from '../services/storage';
 import { sendPaymentProofNotification, sendCustomerOrderConfirmationEmail } from '../services/email.service';
+import { resolveLocationCoordinates } from '../services/map-resolver.service';
 
 export async function getPublicInvitation(req: Request, res: Response, next: NextFunction) {
   try {
@@ -696,22 +697,23 @@ export async function submitPublicDesign(req: Request, res: Response, next: Next
             typeof ev.longitude === 'number' && isValidCoordinates(ev.latitude, ev.longitude)
               ? ev.longitude
               : null;
-          const evMapUrl =
+          let evMapUrl =
             ev.googleMapsUrl || (ev.type === 'wedding' ? invInput.googleMapsUrl : null) || null;
-          if (!evLat && evMapUrl) {
-            const extracted = extractCoordinatesFromUrl(evMapUrl);
-            if (extracted) {
-              evLat = extracted.latitude;
-              evLng = extracted.longitude;
-            }
-          }
           const evVenue = ev.venueNameAr || invInput.venueNameAr || 'قاعة الحفل';
           const evAddr = ev.addressAr || invInput.addressAr || 'القاهرة، مصر';
-          if (!evLat) {
-            const city = resolveCityCoordinates(`${evVenue} ${evAddr}`);
-            if (city) {
-              evLat = city.latitude;
-              evLng = city.longitude;
+
+          if (!evLat || !evLng) {
+            const resolved = await resolveLocationCoordinates({
+              urlOrText: evMapUrl,
+              venueName: evVenue,
+              address: evAddr,
+            });
+            if (resolved.resolved && resolved.latitude && resolved.longitude) {
+              evLat = resolved.latitude;
+              evLng = resolved.longitude;
+              if (resolved.googleMapsUrl) {
+                evMapUrl = resolved.googleMapsUrl;
+              }
             }
           }
           const evOsmUrl =
@@ -1034,6 +1036,27 @@ export async function getPrivateGuestList(req: Request, res: Response, next: Nex
     next(error);
   }
 }
+
+/**
+ * Public endpoint to resolve and unify location inputs (Google Maps link, OpenStreetMap, text, coords)
+ */
+export async function resolveMapEndpoint(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { urlOrText, venueName, address } = req.body || {};
+    const result = await resolveLocationCoordinates({
+      urlOrText,
+      venueName,
+      address,
+    });
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 
 
 
