@@ -225,6 +225,8 @@ function StudioContent() {
     couple: true,
     message: true,
     countdown: true,
+    events: true,
+    timeline: true,
     venue: true,
     map: true,
     parents: false,
@@ -232,6 +234,7 @@ function StudioContent() {
     gallery: true,
     henna_special: false,
     music: true,
+    dresscode: true,
     rsvp: true,
     calendar: true,
     share: true,
@@ -243,7 +246,16 @@ function StudioContent() {
       ...prev,
       [key]: !prev[key],
     }));
+    // Auto-open envelope so changes to sections are immediately visible in phone preview
+    setEnvelopePreviewOpen(true);
   };
+
+  // Auto-open envelope when user navigates to sections tab to inspect layout directly
+  useEffect(() => {
+    if (studioTab === 'sections') {
+      setEnvelopePreviewOpen(true);
+    }
+  }, [studioTab]);
 
   // UI state
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
@@ -1275,78 +1287,153 @@ function StudioContent() {
 
   const currentPkg = packagesList.find((p) => p.id === selectedPackage) || packagesList[1];
 
-  const livePreviewSections = DEFAULT_SECTIONS.map((sec, idx) => ({
-    id: `sec-${sec.key}`,
-    invitationId: 'studio-preview',
-    sectionKey: sec.key,
-    isEnabled:
-      sectionsVisibility[sec.key] !== undefined
-        ? sectionsVisibility[sec.key]
-        : sec.defaultEnabled,
-    sortOrder: idx,
-  }));
+  const livePreviewSections = useMemo(() => {
+    const allKeys = Array.from(
+      new Set([
+        ...DEFAULT_SECTIONS.map((s) => s.key as string),
+        ...Object.keys(sectionsVisibility),
+      ])
+    );
+
+    return allKeys.map((key, idx) => {
+      const def = DEFAULT_SECTIONS.find((s) => s.key === key);
+      const isEnabled =
+        sectionsVisibility[key] !== undefined
+          ? Boolean(sectionsVisibility[key])
+          : (def ? def.defaultEnabled : true);
+
+      return {
+        id: `sec-${key}`,
+        invitationId: 'studio-preview',
+        sectionKey: key,
+        isEnabled,
+        sortOrder: idx,
+      };
+    });
+  }, [sectionsVisibility]);
 
   // Mock invitation object for live preview
-  const livePreviewInvitation: any = {
-    id: 'studio-preview',
-    slug: generatedSlug,
-    title: title || `دعوة فرح ${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}`,
-    type,
-    status: 'preview',
-    privacy: 'unlisted',
-    coupleGroomAr: coupleGroomAr || 'اسم العريس',
-    coupleBrideAr: coupleBrideAr || 'اسم العروس',
-    coupleGroomEn: coupleGroomEn || null,
-    coupleBrideEn: coupleBrideEn || null,
-    parentsGroomAr: sectionsVisibility.parents ? parentsGroomAr || null : null,
-    parentsBrideAr: sectionsVisibility.parents ? parentsBrideAr || null : null,
-    eventDate,
-    venueNameAr: venueNameAr || 'قاعة الحفل الملكية',
-    addressAr: addressAr || 'القاهرة، مصر',
-    googleMapsUrl,
-    weddingMessageAr:
-      sectionsVisibility.message && customWeddingMessage?.trim()
-        ? customWeddingMessage.trim()
+  const livePreviewInvitation: any = useMemo(() => {
+    return {
+      id: 'studio-preview',
+      slug: generatedSlug,
+      title: title || `دعوة فرح ${coupleGroomAr || 'العريس'} & ${coupleBrideAr || 'العروس'}`,
+      type,
+      status: 'preview',
+      privacy: 'unlisted',
+      envelopeAnimationEnabled: Boolean(sectionsVisibility.envelope),
+      countdownEnabled: Boolean(sectionsVisibility.countdown),
+      rsvpEnabled: Boolean(sectionsVisibility.rsvp),
+      coupleGroomAr: coupleGroomAr || 'اسم العريس',
+      coupleBrideAr: coupleBrideAr || 'اسم العروس',
+      coupleGroomEn: coupleGroomEn || null,
+      coupleBrideEn: coupleBrideEn || null,
+      parentsGroomAr: sectionsVisibility.parents
+        ? (parentsGroomAr?.trim() || 'عائلة العريس الكريمة')
         : null,
-    musicUrl:
-      sectionsVisibility.music && customMusicUrl?.trim() ? customMusicUrl.trim() : null,
-    musicTitle: customMusicTitle || null,
-    coverImageUrl: sectionsVisibility.cover ? coverImageUrl || null : null,
-    coupleImageUrl: sectionsVisibility.couple_photo ? coupleImageUrl || null : null,
-    galleryImages: selectedPackage === 'luxury-vip' ? galleryImages : [],
-    customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
-    whatsappPhone:
-      sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
-        ? whatsappContactPhone.trim()
+      parentsBrideAr: sectionsVisibility.parents
+        ? (parentsBrideAr?.trim() || 'عائلة العروس الكريمة')
         : null,
-    whatsappContactEnabled: sectionsVisibility.whatsapp && whatsappContactEnabled,
-    themeConfig: {
-      primaryColor,
-      secondaryColor,
-      backgroundColor,
-      textColor,
-      fontFamily: effectiveFont,
-      selectedPackage,
-      openingStyle: effectiveOpeningStyle,
-      backgroundPattern: effectiveBackgroundPattern,
-      innerCardStyle: effectiveInnerCardStyle,
-      floatingParticles: effectiveFloatingParticles,
+      eventDate,
+      venueNameAr: venueNameAr || 'قاعة الحفل الملكية',
+      addressAr: addressAr || 'القاهرة، مصر',
+      googleMapsUrl,
+      weddingMessageAr: sectionsVisibility.message
+        ? (customWeddingMessage?.trim() || 'وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً')
+        : null,
+      musicUrl: sectionsVisibility.music
+        ? (customMusicUrl?.trim() || WEDDING_MUSIC_PRESETS[0].url)
+        : null,
+      musicTitle: customMusicTitle || null,
+      coverImageUrl: sectionsVisibility.cover
+        ? (coverImageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80')
+        : null,
+      coupleImageUrl: sectionsVisibility.couple_photo
+        ? (coupleImageUrl || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80')
+        : null,
+      galleryImages: sectionsVisibility.gallery
+        ? (galleryImages && galleryImages.length > 0
+            ? galleryImages
+            : [
+                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+                'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+                'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+              ])
+        : [],
       customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
-      hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
-      hennaMessage,
-      hennaSpecialEnabled:
-        sectionsVisibility.henna_special || (selectedPackage === 'luxury-vip' && hennaFemaleOnly),
-      enableRoyalShimmer: selectedPackage === 'luxury-vip' ? enableRoyalShimmer : false,
-      waxSealMonogram:
-        waxSealMonogram ||
-        `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`,
       whatsappPhone:
         sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
           ? whatsappContactPhone.trim()
           : null,
-      whatsappContactEnabled: sectionsVisibility.whatsapp && whatsappContactEnabled,
-    },
-  };
+      whatsappContactEnabled: Boolean(sectionsVisibility.whatsapp && whatsappContactEnabled),
+      sections: livePreviewSections,
+      themeConfig: {
+        primaryColor,
+        secondaryColor,
+        backgroundColor,
+        textColor,
+        fontFamily: effectiveFont,
+        selectedPackage,
+        openingStyle: effectiveOpeningStyle,
+        backgroundPattern: effectiveBackgroundPattern,
+        innerCardStyle: effectiveInnerCardStyle,
+        floatingParticles: effectiveFloatingParticles,
+        customOgImageUrl: customOgImageUrl || coverImageUrl || coupleImageUrl || null,
+        hennaPasscode: hennaFemaleOnly ? hennaPasscode : undefined,
+        hennaMessage,
+        hennaSpecialEnabled: Boolean(sectionsVisibility.henna_special),
+        enableRoyalShimmer: selectedPackage === 'luxury-vip' ? enableRoyalShimmer : false,
+        waxSealMonogram:
+          waxSealMonogram ||
+          `${coupleGroomAr?.trim()?.charAt(0) || 'أ'} & ${coupleBrideAr?.trim()?.charAt(0) || 'س'}`,
+        whatsappPhone:
+          sectionsVisibility.whatsapp && whatsappContactEnabled && whatsappContactPhone.trim()
+            ? whatsappContactPhone.trim()
+            : null,
+        whatsappContactEnabled: Boolean(sectionsVisibility.whatsapp && whatsappContactEnabled),
+      },
+    };
+  }, [
+    generatedSlug,
+    title,
+    coupleGroomAr,
+    coupleBrideAr,
+    coupleGroomEn,
+    coupleBrideEn,
+    type,
+    sectionsVisibility,
+    parentsGroomAr,
+    parentsBrideAr,
+    eventDate,
+    venueNameAr,
+    addressAr,
+    googleMapsUrl,
+    customWeddingMessage,
+    customMusicUrl,
+    customMusicTitle,
+    coverImageUrl,
+    coupleImageUrl,
+    galleryImages,
+    customOgImageUrl,
+    whatsappContactPhone,
+    whatsappContactEnabled,
+    livePreviewSections,
+    primaryColor,
+    secondaryColor,
+    backgroundColor,
+    textColor,
+    effectiveFont,
+    selectedPackage,
+    effectiveOpeningStyle,
+    effectiveBackgroundPattern,
+    effectiveInnerCardStyle,
+    effectiveFloatingParticles,
+    hennaFemaleOnly,
+    hennaPasscode,
+    hennaMessage,
+    enableRoyalShimmer,
+    waxSealMonogram,
+  ]);
 
   const livePreviewEvents = useMemo(() => {
     if (selectedPackage === 'basic') {
@@ -1373,6 +1460,7 @@ function StudioContent() {
           longitude: lng,
           openStreetMapUrl: osmUrl,
           isVisible: sectionsVisibility.venue !== false,
+          dressCodeAr: 'ملابس رسمية فاخرة وفستان سواريه أنيق 🎩👗',
         },
       ];
     }
@@ -1419,7 +1507,7 @@ function StudioContent() {
           openStreetMapUrl: evOsmUrl,
           isVisible: true,
           isHennaFemaleOnly: ev.isHennaFemaleOnly,
-          dressCodeAr: ev.dressCodeAr,
+          dressCodeAr: ev.dressCodeAr || 'ملابس رسمية فاخرة وفستان سواريه أنيق 🎩👗',
         };
       });
   }, [

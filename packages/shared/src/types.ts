@@ -339,6 +339,7 @@ export type SectionKey =
   | 'gallery'
   | 'venue'
   | 'map'
+  | 'music'
   | 'dresscode'
   | 'rsvp'
   | 'calendar'

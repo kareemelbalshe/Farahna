@@ -421,7 +421,7 @@ export function InvitationRenderer({
         )}
 
         {/* 4. العداد التنازلي (Countdown Timer - Only if valid date exists) */}
-        {isSectionEnabled('countdown') && safeInv.countdownEnabled && hasValidEventDate && (
+        {isSectionEnabled('countdown') && safeInv.countdownEnabled !== false && hasValidEventDate && (
           <CountdownTimer
             eventDate={effectiveEventDate!}
             primaryColor={primaryColor}
@@ -534,8 +534,7 @@ export function InvitationRenderer({
           )}
 
         {/* 12.1. قسم ليلة الحنة المخصص للسيدات (VIP Henna Special Section) */}
-        {(isSectionEnabled('henna_special') ||
-          (isVip && ((safeInv.themeConfig as any)?.hennaSpecialEnabled || (safeInv as any).hennaSpecialEnabled))) && (
+        {isSectionEnabled('henna_special') && (
           <section className="py-6 px-3 sm:px-4 max-w-2xl mx-auto space-y-4 text-center font-cairo">
             <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-rose-50/90 via-white to-amber-50/70 border-2 border-rose-300/80 shadow-md space-y-4">
               <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-100 text-[#720925] border border-rose-300 text-xs font-black shadow-2xs">
@@ -567,7 +566,7 @@ export function InvitationRenderer({
         )}
 
         {/* 13. RSVP (Attendance Form) */}
-        {isSectionEnabled('rsvp') && safeInv.rsvpEnabled && (
+        {isSectionEnabled('rsvp') && safeInv.rsvpEnabled !== false && (
           <RsvpModal
             invitationId={safeInv.id}
             primaryColor={primaryColor}
@@ -666,7 +665,7 @@ export function InvitationRenderer({
       </main>
 
       {/* 🎵 Music Player (Sticky Floating Dock in Preview, Fixed in Live) */}
-      {safeInv.musicUrl && typeof safeInv.musicUrl === 'string' && safeInv.musicUrl.trim() && isEnvelopeOpen && (
+      {isSectionEnabled('music') && safeInv.musicUrl && typeof safeInv.musicUrl === 'string' && safeInv.musicUrl.trim() && isEnvelopeOpen && (
         <MusicPlayer
           musicUrl={safeInv.musicUrl.trim()}
           musicTitle={safeInv.musicTitle?.trim() || 'موسيقى ليلة العمر'}

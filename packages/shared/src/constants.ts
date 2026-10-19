@@ -377,6 +377,7 @@ export const DEFAULT_SECTIONS: { key: SectionKey; labelAr: string; defaultEnable
   { key: 'gallery', labelAr: 'معرض صور العروسين (Photo Album)', defaultEnabled: true },
   { key: 'venue', labelAr: 'معلومات القاعة ومكان الحفل', defaultEnabled: true },
   { key: 'map', labelAr: 'الخريطة التفاعلية والاتجاهات', defaultEnabled: true },
+  { key: 'music', labelAr: 'الموسيقى والخلفية الصوتية', defaultEnabled: true },
   { key: 'dresscode', labelAr: 'إرشادات اللباس (Dress Code)', defaultEnabled: true },
   { key: 'rsvp', labelAr: 'تأكيد الحضور (RSVP)', defaultEnabled: true },
   { key: 'calendar', labelAr: 'إضافة الموعد لتقويم الهاتف', defaultEnabled: true },
